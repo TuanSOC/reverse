@@ -149,18 +149,22 @@ async def _simple_list(db: Database, model, scan_id: str, fields: list[str]) -> 
 
 
 async def get_assets(db: Database, scan_id: str) -> list[dict]:
-    return await _simple_list(db, Asset, scan_id, ["asset_type", "url", "observation"])
+    return await _simple_list(
+        db, Asset, scan_id,
+        ["asset_type", "url", "observation", "content_hash", "size_bytes", "meta"],
+    )
 
 
 async def get_endpoints(db: Database, scan_id: str) -> list[dict]:
     return await _simple_list(
-        db, Endpoint, scan_id, ["url", "method", "kind", "observation", "source"]
+        db, Endpoint, scan_id, ["url", "method", "kind", "observation", "source", "meta"]
     )
 
 
 async def get_pages(db: Database, scan_id: str) -> list[dict]:
     return await _simple_list(
-        db, Page, scan_id, ["url", "title", "status_code", "depth", "content_hash"]
+        db, Page, scan_id,
+        ["url", "title", "status_code", "depth", "content_hash", "discovered_from"],
     )
 
 

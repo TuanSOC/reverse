@@ -52,6 +52,12 @@ def test_api_serves_scan_data(mock_site: str, tmp_path) -> None:
 
         endpoints = client.get(f"/api/scans/{sid}/endpoints").json()
         assert any(e["observation"] == "observed" for e in endpoints)
+        # detail fields the drawer relies on are present
+        assert "meta" in endpoints[0]
+        assets = client.get(f"/api/scans/{sid}/assets").json()
+        assert assets and "meta" in assets[0] and "content_hash" in assets[0]
+        pages = client.get(f"/api/scans/{sid}/pages").json()
+        assert pages and "discovered_from" in pages[0]
 
         techs = client.get(f"/api/scans/{sid}/technologies").json()
         assert any(t["name"] == "WordPress" for t in techs)
