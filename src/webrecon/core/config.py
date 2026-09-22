@@ -131,6 +131,9 @@ class ScanConfig(BaseSettings):
     # (.git/.env/...). Off by default so a plain scan stays passive; GET-only,
     # scope-gated, content-verified. Enable only for authorized targets.
     probe: bool = False
+    # Active API/DB assessment (apitest module). Off by default; GET-only,
+    # observed-endpoints-only, detection-level (no exploitation). Authorized only.
+    active: bool = False
     database_url: str = "sqlite+aiosqlite:///webrecon.db"
     log_level: str = "INFO"
 

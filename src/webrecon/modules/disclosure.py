@@ -64,3 +64,12 @@ def mask_email(email: str) -> str:
     name, _, dom = email.partition("@")
     shown = name[:2] if len(name) > 2 else name[:1]
     return f"{shown}***@{dom}"
+
+
+def mask_value(value: str) -> str:
+    """Mask an arbitrary sensitive value (token/secret/PII), keeping a short hint."""
+    if "@" in value and "." in value.split("@")[-1]:
+        return mask_email(value)
+    if len(value) <= 6:
+        return "***"
+    return f"{value[:3]}…***({len(value)} chars)"

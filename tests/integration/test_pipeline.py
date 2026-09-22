@@ -25,7 +25,7 @@ def _lab_config() -> ScanConfig:
 ALL_MODULES = {
     "target", "scope", "http", "crawler", "dns", "tls", "headers", "cookies",
     "cors", "technology", "javascript", "browser", "exposure", "subdomains",
-    "api", "security",
+    "api", "apitest", "security",
 }
 
 
@@ -33,10 +33,10 @@ async def test_pipeline_runs_all_modules(mock_site: str) -> None:
     ctx = await Pipeline(_lab_config()).run(mock_site)
     assert set(ctx.results) == ALL_MODULES
     # Core path always succeeds; dns/tls/subdomains skip on a loopback IP
-    # literal; browser skips because browser_mode is off in the lab config.
+    # literal; browser + apitest skip because they are off by default.
     for name in ("target", "scope", "http", "crawler", "headers", "cookies", "cors", "exposure"):
         assert ctx.results[name].status == ModuleStatus.SUCCESS, name
-    for name in ("dns", "tls", "browser", "subdomains"):
+    for name in ("dns", "tls", "browser", "subdomains", "apitest"):
         assert ctx.results[name].status == ModuleStatus.SKIPPED, name
     assert ctx.target is not None
     assert ctx.target.hostname == "127.0.0.1"

@@ -8,6 +8,7 @@ their phases land.
 
 from . import (  # noqa: F401  (import side-effect: registration)
     api,
+    apitest,
     browser,
     cookies,
     cors,
@@ -41,5 +42,6 @@ __all__ = [
     "exposure",
     "subdomains",
     "api",
+    "apitest",
     "security",
 ]

@@ -47,3 +47,18 @@ def test_sensitive_flag() -> None:
     agg = EndpointAggregator("ex.com")
     agg.add("https://ex.com/api/admin/settings", Observation.REFERENCED, "js")
     assert agg.endpoints()[0].sensitive
+
+
+def test_captures_query_param_names() -> None:
+    agg = EndpointAggregator("ex.com")
+    agg.add("https://ex.com/api/search?q=1&page=2", Observation.OBSERVED, "crawler")
+    agg.add("https://ex.com/api/search?sort=asc", Observation.REFERENCED, "js")
+    ep = agg.endpoints()[0]
+    assert ep.url == "https://ex.com/api/search"  # query stripped from the key
+    assert ep.params == {"q", "page", "sort"}  # but param names retained
+
+
+def test_no_params_when_none() -> None:
+    agg = EndpointAggregator("ex.com")
+    agg.add("https://ex.com/api/users", Observation.OBSERVED, "crawler")
+    assert agg.endpoints()[0].params == set()

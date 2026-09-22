@@ -25,6 +25,10 @@ INDEX_HTML = b"""<!doctype html>
 <a href="/contact">Contact</a>
 <a href="/admin">Admin</a>
 <a href="/api/status">Status</a>
+<a href="/api/users">Users</a>
+<a href="/api/config">Config</a>
+<a href="/api/db-error">DbErr</a>
+<a href="/api/search?q=1">Search</a>
 <a href="https://third-party.example/out">External</a>
 <form action="/search" method="get"><input name="q"></form>
 </body></html>"""
@@ -116,6 +120,38 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, body, ctype="application/xml")
         elif path == "/api/status":
             self._send(200, b'{"ok":true,"version":"1"}', ctype="application/json")
+        elif path == "/api/users":
+            # Sensitive path + substantive JSON with token fields (data exposure).
+            body = (
+                b'[{"id":1,"email":"a@corp.io","token":"tok_abcdef123456","role":"admin"},'
+                b'{"id":2,"email":"b@corp.io","token":"tok_bcdefg234567","role":"user"},'
+                b'{"id":3,"email":"c@corp.io","token":"tok_cdefgh345678","role":"user"},'
+                b'{"id":4,"email":"d@corp.io","token":"tok_defghi456789","role":"user"},'
+                b'{"id":5,"email":"e@corp.io","token":"tok_efghij567890","role":"user"}]'
+            )
+            self._send(200, body, ctype="application/json")
+        elif path == "/api/config":
+            # Public, small, benign JSON -> must NOT trip unauth (low-FP control).
+            self._send(200, b'{"version":"1","env":"prod"}', ctype="application/json")
+        elif path == "/api/db-error":
+            self._send(
+                200, b'{"error":"SQLSTATE[42000]: syntax error near \'FROM\'"}',
+                ctype="application/json",
+            )
+        elif path == "/api/search":
+            # DB error only when the query carries an unbalanced quote (for P2).
+            q = ""
+            if "?" in self.path:
+                q = self.path.split("?", 1)[1]
+            from urllib.parse import unquote
+            decoded = unquote(q)
+            if decoded.count("'") % 2 == 1:
+                self._send(
+                    200, b'{"error":"SQLSTATE[42000]: unclosed quotation mark"}',
+                    ctype="application/json",
+                )
+            else:
+                self._send(200, b'{"results":[]}', ctype="application/json")
         elif path == "/.git/HEAD":
             # A deliberately-exposed .git for the opt-in sensitive-file probe.
             self._send(200, b"ref: refs/heads/master\n", ctype="text/plain")

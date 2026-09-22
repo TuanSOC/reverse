@@ -42,6 +42,9 @@ class Endpoint:
     in_scope: bool = True
     sources: set[str] = field(default_factory=set)
     methods: set[str] = field(default_factory=set)
+    # Observed query-param NAMES (values are dropped). The normalized `url` has
+    # its query stripped, so we retain param names here for the apitest module.
+    params: set[str] = field(default_factory=set)
 
     @property
     def sensitive(self) -> bool:
@@ -50,6 +53,16 @@ class Endpoint:
 
 def looks_like_api(url: str) -> bool:
     return bool(_API_MARKERS.search(url))
+
+
+def _query_param_names(url: str) -> set[str]:
+    from urllib.parse import parse_qsl, urlsplit
+
+    try:
+        query = urlsplit(url).query
+    except ValueError:
+        return set()
+    return {k for k, _ in parse_qsl(query, keep_blank_values=True) if k}
 
 
 def _kind(url: str) -> str:
@@ -88,6 +101,8 @@ class EndpointAggregator:
         ep.sources.add(source)
         if method:
             ep.methods.add(method.upper())
+        # Retain observed query-param names before the query is normalized away.
+        ep.params.update(_query_param_names(url))
 
     def _key(self, url: str) -> str | None:
         if url.lower().startswith(("ws://", "wss://")):
