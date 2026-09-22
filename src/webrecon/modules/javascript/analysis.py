@@ -35,6 +35,8 @@ class JsAnalysis:
     framework_clues: list[str] = field(default_factory=list)
     sourcemap_url: str | None = None
     truncated: bool = False
+    # Retained JS source (capped) for downstream static analysis (dom_security).
+    content: str = ""
 
 
 def _dedup(items: list[str], cap: int = 200) -> list[str]:
@@ -55,6 +57,7 @@ def analyze_js(url: str, content: str, *, truncated: bool = False) -> JsAnalysis
         size=len(content.encode("utf-8", errors="ignore")),
         sha256=hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest(),
         truncated=truncated,
+        content=content[:400_000],  # cap retained source to bound memory
     )
 
     result.endpoints = _dedup([m.group(1) for m in patterns.API_PATH.finditer(data)])
