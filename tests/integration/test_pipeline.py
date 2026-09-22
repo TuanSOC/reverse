@@ -24,7 +24,7 @@ def _lab_config() -> ScanConfig:
 
 ALL_MODULES = {
     "target", "scope", "http", "crawler", "dns", "tls",
-    "headers", "cookies", "cors", "technology", "javascript", "api",
+    "headers", "cookies", "cors", "technology", "javascript", "api", "security",
 }
 
 

@@ -22,9 +22,23 @@ def build_report(ctx: ScanContext) -> dict[str, Any]:
     def sev_key(f: Any) -> int:
         return SEVERITY_ORDER.get(Severity(str(f.severity)), 0)
 
+    risk = ctx.shared.get("risk_summary")
+    risk_dict = (
+        {
+            "level": risk.level,
+            "decisive_severity": risk.decisive_severity,
+            "by_severity": risk.by_severity,
+            "by_confidence": risk.by_confidence,
+            "by_category": risk.by_category,
+        }
+        if risk is not None
+        else None
+    )
+
     return {
         "scan_id": ctx.scan_id,
         "target": ctx.target.model_dump(mode="json") if ctx.target else None,
+        "risk": risk_dict,
         "config": ctx.config.model_dump(mode="json"),
         "modules": [
             {

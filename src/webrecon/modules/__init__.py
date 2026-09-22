@@ -16,6 +16,7 @@ from . import (  # noqa: F401  (import side-effect: registration)
     http,
     javascript,
     scope,
+    security,
     target,
     technology,
     tls,
@@ -34,4 +35,5 @@ __all__ = [
     "technology",
     "javascript",
     "api",
+    "security",
 ]

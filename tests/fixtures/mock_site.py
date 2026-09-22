@@ -18,6 +18,7 @@ INDEX_HTML = b"""<!doctype html>
 <link rel="canonical" href="/">
 <script src="/static/app.js"></script>
 <script src="/wp-content/themes/mock/app.js"></script>
+<script src="/static/jquery-1.12.4.min.js"></script>
 </head>
 <body>
 <a href="/about">About</a>
@@ -109,6 +110,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, APP_JS_MAP, ctype="application/json")
         elif path == "/wp-content/themes/mock/app.js":
             self._send(200, b"console.log('wp theme');", ctype="application/javascript")
+        elif path == "/static/jquery-1.12.4.min.js":
+            self._send(200, b"/*! jQuery v1.12.4 */", ctype="application/javascript")
         elif path == "/redirect":
             self._send(301, b"", extra={"Location": "/"})
         elif path == "/redirect-external":
