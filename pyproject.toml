@@ -106,6 +106,8 @@ ignore = [
 "tests/**" = ["S101", "S105", "S106"]
 # The HTML report is one big embedded template string; long CSS/markup lines are fine.
 "src/webrecon/reporting/html_report.py" = ["E501"]
+# Signatures are a dense data table of regexes; readable rows outweigh line length.
+"src/webrecon/modules/technology/signatures.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

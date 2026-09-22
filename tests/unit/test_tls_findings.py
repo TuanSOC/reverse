@@ -22,7 +22,7 @@ def _cert(**kw) -> CertInfo:
         subject="CN=example.com", issuer="CN=Some CA", common_name="example.com",
         san=["example.com", "www.example.com"],
         not_before=NOW - timedelta(days=30), not_after=NOW + timedelta(days=200),
-        self_signed=False,
+        self_signed=False, sig_algo="sha256",
     )
     base.update(kw)
     return CertInfo(**base)
@@ -52,3 +52,8 @@ def test_self_signed() -> None:
 def test_weak_protocol() -> None:
     checks = _findings(_cert(), meta={"protocol": "TLSv1.1"})
     assert "tls.protocol.weak" in checks
+
+
+def test_weak_signature_algorithm() -> None:
+    assert "tls.cert.weak_signature" in _findings(_cert(sig_algo="sha1"))
+    assert "tls.cert.weak_signature" not in _findings(_cert(sig_algo="sha256"))

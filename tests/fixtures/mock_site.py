@@ -63,6 +63,12 @@ class _Handler(BaseHTTPRequestHandler):
     def do_HEAD(self) -> None:  # noqa: N802
         self.do_GET()
 
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(200)
+        self.send_header("Allow", "GET, POST, OPTIONS, TRACE")  # TRACE is risky
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_GET(self) -> None:  # noqa: N802
         path = self.path.split("?", 1)[0]
         if path == "/":
@@ -104,6 +110,9 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, body, ctype="application/xml")
         elif path == "/api/status":
             self._send(200, b'{"ok":true,"version":"1"}', ctype="application/json")
+        elif path == "/.git/HEAD":
+            # A deliberately-exposed .git for the opt-in sensitive-file probe.
+            self._send(200, b"ref: refs/heads/master\n", ctype="text/plain")
         elif path == "/static/app.js":
             self._send(200, APP_JS, ctype="application/javascript")
         elif path == "/static/app.js.map":

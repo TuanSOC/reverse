@@ -39,6 +39,7 @@ export flag, prints a one-line risk summary.
 | `--concurrency N` | Max concurrent requests. |
 | `--timeout S` | Per-request timeout. |
 | `--no-robots` | Ignore robots.txt (authorized only). |
+| `--probe` | Probe curated sensitive files (.git/.env/…), content-verified, GET-only. Authorized targets only. |
 | `--html P` / `--pdf P` | Also write HTML / PDF report. |
 | `--no-db` | Don't persist to the database. |
 

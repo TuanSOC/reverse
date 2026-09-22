@@ -29,6 +29,7 @@ from ...engine.ssrf_guard import SsrfGuard
 from .analysis import CertInfo, days_until, hostname_matches, parse_certificate
 
 _WEAK_PROTOCOLS = {"TLSv1", "TLSv1.1", "SSLv3", "SSLv2"}
+_WEAK_SIG_ALGOS = {"sha1", "md5", "md2"}
 _NEAR_EXPIRY_DAYS = 30
 
 
@@ -158,6 +159,20 @@ class TlsModule(ScannerModule):
                     impact="Not trusted by browsers; enables trivial MITM if accepted.",
                     recommendation="Use a certificate from a trusted CA.",
                     evidence=[ev("Self-signed", {"issuer": info.issuer})],
+                )
+            )
+
+        if info.sig_algo and info.sig_algo.lower() in _WEAK_SIG_ALGOS:
+            result.findings.append(
+                Finding(
+                    check_id="tls.cert.weak_signature",
+                    name=f"Weak certificate signature ({info.sig_algo})",
+                    category=FindingCategory.TRANSPORT, severity=Severity.MEDIUM,
+                    confidence=Confidence.HIGH, observation=Observation.OBSERVED, module=self.name,
+                    description=f"The certificate is signed with {info.sig_algo}.",
+                    impact="Weak signature hashes (SHA-1/MD5) are collision-prone and deprecated.",
+                    recommendation="Re-issue the certificate with SHA-256 or stronger.",
+                    evidence=[ev("Weak signature algorithm", {"sig_algo": info.sig_algo})],
                 )
             )
 

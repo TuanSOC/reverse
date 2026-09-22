@@ -13,6 +13,7 @@ from . import (  # noqa: F401  (import side-effect: registration)
     cors,
     crawler,
     dns,
+    exposure,
     headers,
     http,
     javascript,
@@ -36,6 +37,7 @@ __all__ = [
     "technology",
     "javascript",
     "browser",
+    "exposure",
     "api",
     "security",
 ]

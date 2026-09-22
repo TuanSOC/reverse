@@ -19,7 +19,7 @@ from .risk import classify
 # Modules whose findings/signals this engine correlates. They must have run
 # first (even if some SKIP) so the risk summary covers the whole scan.
 _UPSTREAM = (
-    "headers", "cookies", "cors", "tls", "dns", "technology", "javascript", "api",
+    "headers", "cookies", "cors", "tls", "dns", "technology", "javascript", "api", "exposure",
 )
 
 RISK_SUMMARY_KEY = "risk_summary"

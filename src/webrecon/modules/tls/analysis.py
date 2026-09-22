@@ -19,16 +19,24 @@ class CertInfo:
     not_after: datetime | None = None
     self_signed: bool = False
     serial: str | None = None
+    sig_algo: str | None = None  # signature hash algorithm, e.g. "sha256"
 
 
 def parse_certificate(der: bytes) -> CertInfo:
     """Parse a DER-encoded X.509 certificate into a CertInfo."""
     cert = x509.load_der_x509_certificate(der)
+    sig_algo = None
+    try:
+        alg = cert.signature_hash_algorithm
+        sig_algo = alg.name if alg is not None else None
+    except Exception:  # noqa: BLE001 - exotic/unknown algorithms
+        sig_algo = None
     info = CertInfo(
         subject=cert.subject.rfc4514_string(),
         issuer=cert.issuer.rfc4514_string(),
         self_signed=cert.subject == cert.issuer,
         serial=format(cert.serial_number, "x"),
+        sig_algo=sig_algo,
     )
     # Prefer timezone-aware accessors (cryptography >= 42).
     info.not_before = getattr(cert, "not_valid_before_utc", None) or _aware(cert.not_valid_before)

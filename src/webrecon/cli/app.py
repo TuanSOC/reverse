@@ -95,6 +95,9 @@ def scan(
     no_robots: bool = typer.Option(
         False, "--no-robots", help="Ignore robots.txt (authorized only)."
     ),
+    probe: bool = typer.Option(
+        False, "--probe", help="Probe curated sensitive files (.git/.env/...); authorized only."
+    ),
     browser: bool | None = typer.Option(
         None, "--browser/--no-browser", help="Use the headless browser engine."
     ),
@@ -141,6 +144,8 @@ def scan(
         cfg.http.timeout_seconds = timeout
     if no_robots:
         cfg.crawl.respect_robots = False
+    if probe:
+        cfg.probe = True
     if modules_opt:
         cfg.enabled_modules = [m.strip() for m in modules_opt.split(",") if m.strip()]
 

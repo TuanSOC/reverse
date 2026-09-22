@@ -127,6 +127,10 @@ class ScanConfig(BaseSettings):
     # Enabled modules; empty means "all registered modules".
     enabled_modules: list[str] = Field(default_factory=list)
     browser_mode: bool = False
+    # Active probing of a curated list of commonly-exposed sensitive files
+    # (.git/.env/...). Off by default so a plain scan stays passive; GET-only,
+    # scope-gated, content-verified. Enable only for authorized targets.
+    probe: bool = False
     database_url: str = "sqlite+aiosqlite:///webrecon.db"
     log_level: str = "INFO"
 

@@ -24,7 +24,7 @@ def _lab_config() -> ScanConfig:
 
 ALL_MODULES = {
     "target", "scope", "http", "crawler", "dns", "tls", "headers", "cookies",
-    "cors", "technology", "javascript", "browser", "api", "security",
+    "cors", "technology", "javascript", "browser", "exposure", "api", "security",
 }
 
 
@@ -33,7 +33,7 @@ async def test_pipeline_runs_all_modules(mock_site: str) -> None:
     assert set(ctx.results) == ALL_MODULES
     # Core path always succeeds; dns/tls skip on a loopback IP literal;
     # browser skips because browser_mode is off in the lab config.
-    for name in ("target", "scope", "http", "crawler", "headers", "cookies", "cors"):
+    for name in ("target", "scope", "http", "crawler", "headers", "cookies", "cors", "exposure"):
         assert ctx.results[name].status == ModuleStatus.SUCCESS, name
     for name in ("dns", "tls", "browser"):
         assert ctx.results[name].status == ModuleStatus.SKIPPED, name

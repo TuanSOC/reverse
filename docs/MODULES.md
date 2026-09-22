@@ -19,7 +19,8 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 | Technology | `technology` | `http`, `crawler` | ✅ P5 | Signature-based fingerprint (headers/cookies/HTML/scripts/meta) with confidence + version + evidence. |
 | JavaScript | `javascript` | `crawler` | ✅ P6 | Download in-scope JS; extract endpoints/ws/graphql/analytics/cloud; masked secret scan; exposed source-map detection. |
 | API | `api` | `crawler`, `javascript` | ✅ P7 | Consolidate endpoints (crawler/JS/sitemap) → observed/referenced/potential; REST/GraphQL/WebSocket; no probing. |
-| Security | `security` | headers/cookies/cors/tls/dns/technology/javascript/api | ✅ P8 | Cross-module rules (mixed content, outdated tech, dir listing) + deterministic risk classification. |
+| Exposure | `exposure` | `http` | ✅ | security.txt (RFC 9116), risky HTTP methods (OPTIONS), opt-in sensitive-file probes (.git/.env/… — `--probe`, content-verified). |
+| Security | `security` | headers/cookies/cors/tls/dns/technology/javascript/api/exposure | ✅ P8 | Cross-module rules (mixed content, outdated tech, dir listing) + deterministic risk classification. |
 | Browser | `browser` | `scope` | ✅ P9 | Opt-in Playwright render; XHR/fetch/WebSocket observation; scope-enforced in-browser; screenshots. |
 
 ## Result contract (every module)
