@@ -138,6 +138,7 @@ def _parse_form(base_url: str, form) -> DiscoveredForm:
                 "name": field.attributes.get("name"),
                 "type": field.attributes.get("type") or field.tag,
                 "required": "required" in field.attributes,
+                "autocomplete": field.attributes.get("autocomplete"),
             }
         )
     return DiscoveredForm(

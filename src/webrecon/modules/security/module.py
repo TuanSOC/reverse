@@ -20,7 +20,7 @@ from .risk import classify
 # first (even if some SKIP) so the risk summary covers the whole scan.
 _UPSTREAM = (
     "headers", "cookies", "cors", "tls", "dns", "technology", "javascript",
-    "api", "exposure", "subdomains", "apitest", "dom_security",
+    "api", "exposure", "subdomains", "apitest", "dom_security", "forms_auth",
 )
 
 RISK_SUMMARY_KEY = "risk_summary"
