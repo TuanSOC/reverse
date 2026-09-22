@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: 'SQLi Susceptibility (error-based, detection-only)'
-status: in-progress
+status: completed
 priority: P1
 effort: 0.5d
 dependencies:

@@ -65,6 +65,20 @@ def looks_substantive_json(body: str, content_type: str | None) -> bool:
     return False
 
 
+# Read-only GraphQL introspection query (sent via GET, url-encoded).
+INTROSPECTION_QUERY = "{__schema{types{name}}}"
+
+
+def is_introspection_result(body: str) -> bool:
+    """True if a response is a GraphQL introspection result (data.__schema.types)."""
+    try:
+        doc = json.loads(body)
+    except (json.JSONDecodeError, ValueError):
+        return False
+    schema = (doc.get("data") or {}).get("__schema") if isinstance(doc, dict) else None
+    return isinstance(schema, dict) and "types" in schema
+
+
 def find_sensitive_data(body: str) -> list[dict]:
     """Detect sensitive-looking data in a response body. Returns masked hits."""
     hits: list[dict] = []

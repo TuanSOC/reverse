@@ -40,6 +40,13 @@ def test_find_sensitive_data_masks() -> None:
     assert all("hunter2" not in str(h.get("sample")) for h in hits)
 
 
+def test_is_introspection_result() -> None:
+    assert sig.is_introspection_result('{"data":{"__schema":{"types":[{"name":"Q"}]}}}')
+    assert not sig.is_introspection_result('{"data":null}')
+    assert not sig.is_introspection_result("not json")
+    assert not sig.is_introspection_result('{"data":{"user":{"id":1}}}')
+
+
 async def test_safe_engine_refuses_non_get() -> None:
     class _Fake:
         async def get(self, url):  # noqa: D401

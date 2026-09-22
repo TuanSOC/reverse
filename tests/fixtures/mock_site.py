@@ -29,6 +29,7 @@ INDEX_HTML = b"""<!doctype html>
 <a href="/api/config">Config</a>
 <a href="/api/db-error">DbErr</a>
 <a href="/api/search?q=1">Search</a>
+<a href="/graphql">GraphQL</a>
 <a href="https://third-party.example/out">External</a>
 <form action="/search" method="get"><input name="q"></form>
 </body></html>"""
@@ -120,6 +121,15 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, body, ctype="application/xml")
         elif path == "/api/status":
             self._send(200, b'{"ok":true,"version":"1"}', ctype="application/json")
+        elif path == "/graphql":
+            q = self.path.split("?", 1)[1] if "?" in self.path else ""
+            if "__schema" in q:
+                self._send(
+                    200, b'{"data":{"__schema":{"types":[{"name":"Query"}]}}}',
+                    ctype="application/json",
+                )
+            else:
+                self._send(200, b'{"data":null}', ctype="application/json")
         elif path == "/api/users":
             # Sensitive path + substantive JSON with token fields (data exposure).
             body = (

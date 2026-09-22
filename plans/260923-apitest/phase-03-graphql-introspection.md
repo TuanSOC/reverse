@@ -1,10 +1,11 @@
 ---
 phase: 3
-title: "GraphQL Introspection (GET)"
-status: pending
+title: GraphQL Introspection (GET)
+status: in-progress
 priority: P2
-effort: "0.5d"
-dependencies: [1]
+effort: 0.5d
+dependencies:
+  - 1
 ---
 
 # Phase 3: GraphQL introspection + verbose errors (GET only)

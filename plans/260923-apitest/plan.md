@@ -87,8 +87,8 @@ guarantees and detection logic before implementation.
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Core+DBError+DataExposure+Unauth](./phase-01-core-dberror-dataexposure-unauth.md) | Completed |
-| 2 | [SQLi Susceptibility](./phase-02-sqli-susceptibility.md) | In Progress |
-| 3 | [GraphQL Introspection](./phase-03-graphql-introspection.md) | Pending |
+| 2 | [SQLi Susceptibility](./phase-02-sqli-susceptibility.md) | Completed |
+| 3 | [GraphQL Introspection](./phase-03-graphql-introspection.md) | In Progress |
 | 4 | [Dashboard+Docs](./phase-04-dashboard-docs.md) | Pending |
 
 Sequential: P1 establishes the safe request harness + module skeleton that

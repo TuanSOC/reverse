@@ -72,6 +72,9 @@ class ApiTestModule(ScannerModule):
             # Phase 2 hook: SQLi susceptibility uses the remaining probe budget.
             await self._check_sqli(engine, result, ep, resp, probes)
 
+        # GraphQL introspection (read-only, GET) on graphql endpoints.
+        await self._check_graphql(engine, result, endpoints)
+
         result.data = {
             "active": True,
             "endpoints_tested": tested,
@@ -197,6 +200,29 @@ class ApiTestModule(ScannerModule):
                     {"url": ep.url, "param": param, "signal": "error_based"},
                 ))
                 return  # one finding per endpoint is enough
+
+    async def _check_graphql(self, engine, result, endpoints) -> None:
+        from urllib.parse import quote
+
+        for ep in endpoints:
+            if getattr(ep, "kind", "") != "graphql" or not getattr(ep, "in_scope", False):
+                continue
+            if str(getattr(ep, "observation", "")) != str(Observation.OBSERVED):
+                continue
+            url = f"{ep.url}?query={quote(sig.INTROSPECTION_QUERY)}"
+            resp = await self._get(engine, url)
+            if resp is None or resp.status_code >= 400:
+                continue  # GET-only GraphQL rejected → skip gracefully
+            if sig.is_introspection_result(resp.text):
+                result.findings.append(self._f(
+                    "apitest.graphql.introspection", "GraphQL introspection enabled",
+                    FindingCategory.EXPOSURE, Severity.MEDIUM, Confidence.HIGH,
+                    Observation.OBSERVED, ep.url,
+                    "The GraphQL endpoint answers introspection queries.",
+                    "Exposes the full schema (types/fields), aiding attackers.",
+                    "Disable introspection in production or restrict it.",
+                    {"url": ep.url},
+                ))
 
     # -- helpers -----------------------------------------------------------
 

@@ -83,6 +83,12 @@ async def test_sqli_not_flagged_without_params(mock_site: str) -> None:
     assert not any((u or "").endswith("/api/users") for u in sqli_urls)
 
 
+async def test_graphql_introspection_flagged(mock_site: str) -> None:
+    ctx = await Pipeline(_cfg(active=True)).run(mock_site)
+    checks = {f.check_id for f in ctx.results["apitest"].findings}
+    assert "apitest.graphql.introspection" in checks
+
+
 async def test_no_raw_secret_in_evidence(mock_site: str) -> None:
     ctx = await Pipeline(_cfg(active=True)).run(mock_site)
     blob = str([f.model_dump() for f in ctx.results["apitest"].findings])
