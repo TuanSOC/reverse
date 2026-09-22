@@ -45,6 +45,9 @@ def test_api_serves_scan_data(mock_site: str, tmp_path) -> None:
         assert overview["risk_level"] == "high"
         assert overview["total_findings"] >= 1
         assert any(m["module"] == "security" for m in overview["modules"])
+        # v0.3.0: IP intelligence surfaced on the overview (loopback → minimal)
+        assert "ip_intel" in overview
+        assert overview["ip_intel"]["ips"][0]["ip"] == "127.0.0.1"
 
         findings = client.get(f"/api/scans/{sid}/findings").json()
         assert findings

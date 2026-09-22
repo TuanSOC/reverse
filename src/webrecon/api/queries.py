@@ -19,6 +19,7 @@ from ..storage.models import (
     EvidenceRecord,
     FindingRecord,
     Form,
+    IpIntelRecord,
     ModuleRun,
     Page,
     Scan,
@@ -107,6 +108,14 @@ async def get_overview(db: Database, scan_id: str) -> dict[str, Any] | None:
         techs = (
             await s.execute(select(Technology).where(Technology.scan_id == scan_id))
         ).scalars().all()
+        ip_row = (
+            await s.execute(select(IpIntelRecord).where(IpIntelRecord.scan_id == scan_id))
+        ).scalars().first()
+        ip_intel = (
+            {"edge_cdn": ip_row.edge_cdn, "origin_exposed": ip_row.origin_exposed,
+             "ips": ip_row.ips}
+            if ip_row is not None else None
+        )
         return {
             "id": scan.id,
             "status": scan.status,
@@ -134,6 +143,7 @@ async def get_overview(db: Database, scan_id: str) -> dict[str, Any] | None:
                  "confidence": t.confidence}
                 for t in techs
             ],
+            "ip_intel": ip_intel,
         }
 
 

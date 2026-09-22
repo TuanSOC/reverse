@@ -24,6 +24,7 @@ async def test_html_report_contains_key_sections(mock_site: str) -> None:
     assert "Findings" in html
     assert "Scope &amp; Methodology" in html
     assert "WordPress" in html  # technology table
+    assert "IP Intelligence &amp; Network Footprint" in html  # v0.3.0 IP section
     # risk pill present
     assert "b-high" in html
 

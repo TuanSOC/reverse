@@ -378,7 +378,8 @@ const SECTIONS=[
 ];
 const FLATSECTIONS=SECTIONS.flatMap(([,items])=>items);
 const state={scanId:null,section:"Overview",ws:null,runningId:null,
-  sevFilter:new Set(),catFilter:new Set(),confFilter:new Set(),counts:{},searchIndex:[]};
+  sevFilter:new Set(),catFilter:new Set(),confFilter:new Set(),secretsOnly:false,
+  counts:{},searchIndex:[]};
 
 /* ============================ theme ============================ */
 const root=document.documentElement;
@@ -492,6 +493,7 @@ const RENDER={
         el("div",{class:"v",style:`color:${(o.findings_by_severity?.[s])?riskColor(s):"var(--faint)"}`},
           String(o.findings_by_severity?.[s]||0))));
     w.append(cards);
+    if(o.ip_intel)w.append(ipWidget(o.ip_intel));
     // screenshot (click opens full image in a new tab)
     const img=new Image();img.className="shot";img.src=`/api/scans/${SID()}/screenshot`;
     img.title="Open full screenshot";
@@ -520,6 +522,16 @@ const RENDER={
       const chip=el("span",{class:`chip ${s}`+(state.sevFilter.has(s)?" on":""),
         onclick:()=>{state.sevFilter.has(s)?state.sevFilter.delete(s):state.sevFilter.add(s);
           chip.classList.toggle("on");apply();}},`${s} ${counts[s]}`);bar.append(chip);}
+    // quick filter: Secrets & Leaks (secret_leak module findings)
+    const secretCount=data.filter(isSecret).length;
+    if(secretCount){
+      const sc=el("span",{class:"chip"+(state.secretsOnly?" on":""),
+        style:state.secretsOnly?"background:var(--crit);color:#fff;border-color:transparent":"",
+        onclick:()=>{state.secretsOnly=!state.secretsOnly;
+          sc.style.cssText=state.secretsOnly?"background:var(--crit);color:#fff;border-color:transparent":"";
+          apply();}},`🔑 Secrets & Leaks ${secretCount}`);
+      bar.append(sc);
+    }
     w.append(bar);
     // second filter row: category + confidence facets (plain chips, AND across facets)
     const bar2=el("div",{class:"toolbar"});
@@ -540,13 +552,15 @@ const RENDER={
     const clearRow=el("div",{class:"toolbar"});
     const summary=el("span",{class:"sub"});clearRow.append(summary,
       el("button",{class:"ghost",style:"padding:3px 10px;font-size:12px",onclick:()=>{
-        state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();go("Findings");}},"Clear filters"));
+        state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();
+        state.secretsOnly=false;go("Findings");}},"Clear filters"));
     w.append(clearRow);
     const list=el("div");w.append(list);
     function apply(){list.innerHTML="";const q=search.value.toLowerCase();
       const items=data.filter(f=>(!state.sevFilter.size||state.sevFilter.has(f.severity))
         &&(!state.catFilter.size||state.catFilter.has(f.category))
         &&(!state.confFilter.size||state.confFilter.has(f.confidence))
+        &&(!state.secretsOnly||isSecret(f))
         &&(!q||JSON.stringify(f).toLowerCase().includes(q)));
       summary.textContent=`${items.length} of ${data.length} shown`;
       if(!items.length){list.append(emptyState("No matching findings."));return;}
@@ -560,8 +574,17 @@ const RENDER={
         body.append(el("p",{},f.description));
         if(f.impact)body.append(el("div",{},el("b",{},"Impact: "),f.impact));
         if(f.recommendation)body.append(el("div",{},el("b",{},"Fix: "),f.recommendation));
-        for(const e of f.evidence)body.append(el("div",{class:"evi"},
-          `[${e.source}] ${e.url||""}\n${JSON.stringify(e.data)}`));
+        for(const e of f.evidence){
+          const masked=e.data&&e.data.masked;
+          if(masked){  // secret finding: surface the masked value + copy button
+            body.append(el("div",{class:"evi"},
+              el("b",{},"Masked: "),el("code",{},masked),copyBtn(masked),
+              el("div",{class:"kv",style:"margin-top:4px"},`[${e.source}] ${e.url||""}`)));
+          }else{
+            body.append(el("div",{class:"evi"},
+              `[${e.source}] ${e.url||""}\n${JSON.stringify(e.data)}`));
+          }
+        }
         if(f.references?.length)body.append(el("div",{class:"kv",style:"margin-top:6px"},
           ...f.references.map(r=>el("a",{href:r,target:"_blank"},r+" "))));
         card.append(head,body);list.append(card);
@@ -662,6 +685,37 @@ const RENDER={
   async Reports(){ return reportsView(); },
 };
 function confClass(c){return (c==="confirmed"||c==="high")?"low":"informational";}
+function isSecret(f){return f.module==="secret_leak"||(f.check_id||"").startsWith("secret.");}
+
+/* ---- IP & Infrastructure widget (Overview) ---- */
+function flagEmoji(cc){ if(!cc||cc.length!==2)return "🌐";
+  return String.fromCodePoint(...[...cc.toUpperCase()].map(c=>0x1F1E6+c.charCodeAt(0)-65)); }
+function ipWidget(ii){
+  const w=el("div");w.append(el("h2",{},"IP & Infrastructure"));
+  const p=(ii.ips&&ii.ips[0])||{};
+  const coords=(p.latitude!=null&&p.longitude!=null)?`${p.latitude}, ${p.longitude}`:"—";
+  const badges=el("div",{class:"toolbar",style:"margin:0 0 10px"});
+  if(ii.edge_cdn)badges.append(el("span",{class:"pill low"},"Edge: "+ii.edge_cdn));
+  if(p.provider)badges.append(el("span",{class:"pill informational"},p.provider));
+  if(!p.provider&&p.ip)badges.append(el("span",{class:"pill informational"},"Bare-Metal"));
+  if(ii.origin_exposed)badges.append(el("span",{class:"pill high"},"⚠ Origin IP exposed"));
+  const rows=[
+    ["IP",p.ip?el("span",{},el("code",{},p.ip),copyBtn(p.ip)):"—"],
+    ["Reverse DNS",p.ptr?el("code",{},p.ptr):"—"],
+    ["Country",`${flagEmoji(p.country_code)} ${p.country||p.country_code||"—"}`],
+    ["City / Region",[p.city,p.region].filter(Boolean).join(", ")||"—"],
+    ["Coordinates",coords],
+    ["Timezone",p.timezone||"—"],
+    ["ISP / Org",p.isp||p.org||"—"],
+    ["ASN",p.asn?`AS${p.asn}${p.as_name?" · "+p.as_name:""}`:"—"],
+  ];
+  const card=el("div",{class:"card",style:"min-width:min(560px,100%);width:100%"});
+  card.append(badges);
+  const grid=el("div");
+  for(const [k,v] of rows)grid.append(el("div",{class:"drow"},
+    el("div",{class:"dk"},k),el("div",{class:"dv"},v)));
+  card.append(grid);w.append(card);return w;
+}
 
 /* ---- small SVG charts ---- */
 function severityDonut(counts){

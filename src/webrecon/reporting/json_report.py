@@ -27,6 +27,18 @@ def collect_extras(ctx: ScanContext) -> dict[str, Any]:
         "technologies": technologies,
         "pages_count": len(inv.pages) if inv else 0,
         "assets_count": len(inv.assets) if inv else 0,
+        "ip_intel": _ip_intel_dict(ctx),
+    }
+
+
+def _ip_intel_dict(ctx: ScanContext) -> dict[str, Any] | None:
+    ii = ctx.shared.get("ip_intel")
+    if ii is None:
+        return None
+    return {
+        "edge_cdn": ii.edge_cdn,
+        "origin_exposed": ii.origin_exposed,
+        "ips": [i.as_dict() for i in ii.ips],
     }
 
 
@@ -79,4 +91,5 @@ def build_report(ctx: ScanContext) -> dict[str, Any]:
             f.model_dump(mode="json")
             for f in sorted(findings, key=sev_key, reverse=True)
         ],
+        "ip_intel": _ip_intel_dict(ctx),
     }

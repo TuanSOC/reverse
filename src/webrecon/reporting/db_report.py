@@ -50,5 +50,7 @@ async def build_report_from_db(
         "technologies": technologies,
         "pages_count": len(pages),
         "assets_count": len(assets),
+        "ip_intel": overview.get("ip_intel"),
     }
+    report["ip_intel"] = overview.get("ip_intel")
     return report, extras

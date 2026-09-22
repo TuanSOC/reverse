@@ -105,6 +105,26 @@ or denial-of-service techniques were used. Findings marked <em>referenced</em> o
 <td><code>{{ e.url }}</code></td></tr>{% endfor %}</table>
 {% else %}<p class="muted">None discovered.</p>{% endif %}
 
+<h2>IP Intelligence &amp; Network Footprint</h2>
+{% if ip_intel and ip_intel.ips %}
+{% set p = ip_intel.ips[0] %}
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>IP address</td><td><code>{{ p.ip or "—" }}</code></td></tr>
+<tr><td>Reverse DNS</td><td>{{ p.ptr or "—" }}</td></tr>
+<tr><td>Country</td><td>{{ p.country or p.country_code or "—" }}</td></tr>
+<tr><td>City / Region</td><td>{{ [p.city, p.region]|select|join(", ") or "—" }}</td></tr>
+<tr><td>Coordinates</td><td>{% if p.latitude is not none %}{{ p.latitude }}, {{ p.longitude }}{% else %}—{% endif %}</td></tr>
+<tr><td>Timezone</td><td>{{ p.timezone or "—" }}</td></tr>
+<tr><td>ISP / Org</td><td>{{ p.isp or p.org or "—" }}</td></tr>
+<tr><td>ASN</td><td>{% if p.asn %}AS{{ p.asn }}{% if p.as_name %} · {{ p.as_name }}{% endif %}{% else %}—{% endif %}</td></tr>
+<tr><td>Provider</td><td>{{ p.provider or "Bare-Metal / unknown" }}</td></tr>
+<tr><td>Edge CDN</td><td>{{ ip_intel.edge_cdn or "—" }}</td></tr>
+</table>
+{% if ip_intel.origin_exposed %}<p class="muted"><b>⚠ Possible origin-IP exposure:</b>
+the edge is a CDN but the resolved IP is not — verify origin access controls.</p>{% endif %}
+{% else %}<p class="muted">No IP intelligence collected (private target or offline).</p>{% endif %}
+
 <h2>Asset Inventory</h2>
 <p class="muted">{{ counts.pages }} page(s), {{ counts.assets }} asset(s),
 {{ counts.endpoints }} endpoint(s), {{ counts.technologies }} technology(ies).</p>
@@ -144,4 +164,5 @@ def render_html(report: dict[str, Any], extras: dict[str, Any] | None = None) ->
         technologies=technologies,
         endpoints=endpoints,
         counts=counts,
+        ip_intel=extras.get("ip_intel") or report.get("ip_intel"),
     )
