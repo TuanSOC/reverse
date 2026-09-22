@@ -88,22 +88,32 @@ backs off on HTTP 429.
 
 ## Phased implementation plan
 
-| Phase | Scope | Depends on |
+| Phase | Scope | Status |
 |---|---|---|
-| **P1 ✅** | Core: schemas, storage, registry, config, logging, CLI wiring, tests | — |
-| P2 | Target + Scope + HTTP engine + SSRF guard + rate limit | P1 |
-| P3 | Crawler + asset discovery + redirect analysis | P2 |
-| P4 | DNS ‖ TLS ‖ HTTP header/cookie/CORS analysis | P2 |
-| P5 | Technology fingerprinting | P3, P4 |
-| P6 | JavaScript analysis + source maps | P3 |
-| P7 | API discovery (observed/referenced/potential) | P3, P6 |
-| P8 | Security check engine + severity aggregation | P4–P7 |
-| P9 | Browser mode (Playwright) | P3 |
-| P10 | Dashboard (React/TS) ‖ P11 Reports ‖ P12 CLI scan | P8 |
-| P13 | Test hardening + security tests | all |
-| P14 | Final review + docs | all |
+| P1 | Core: schemas, storage, registry, config, logging, CLI wiring | ✅ |
+| P2 | Target + Scope + HTTP engine + SSRF guard + rate limit | ✅ |
+| P3 | Crawler + asset discovery + redirect analysis | ✅ |
+| P4 | DNS ‖ TLS ‖ HTTP header/cookie/CORS analysis | ✅ |
+| P5 | Technology fingerprinting | ✅ |
+| P6 | JavaScript analysis + source maps | ✅ |
+| P7 | API discovery (observed/referenced/potential) | ✅ |
+| P8 | Security check engine + risk classification | ✅ |
+| P9 | Browser mode (Playwright) | ✅ |
+| P10 | Dashboard (FastAPI + self-contained UI) | ✅ |
+| P11 | Reports (JSON / HTML / PDF) | ✅ |
+| P12 | CLI (scan/serve/scans/report + tuning flags) | ✅ |
+| P13 | Test hardening + tool self-defense tests | ✅ |
+| P14 | Final review + docs | ✅ |
 
-**MVP Definition of Done:** the full pipeline runs end-to-end against a bundled
-local mock site, producing evidence-backed findings visible in dashboard + report,
-with tests, error handling, logging, cancellation, scope enforcement, and rate
-limiting throughout.
+**MVP Definition of Done — met:** the full 14-module pipeline runs end-to-end
+against a bundled local mock site, producing evidence-backed findings visible in
+the dashboard and JSON/HTML/PDF reports, with tests (136), error handling,
+logging, cancellation, scope enforcement, and rate limiting throughout.
+
+### Dependency-ordered module run
+
+`target → scope → http → crawler → javascript → browser → api →`
+`cookies ‖ cors ‖ dns ‖ headers ‖ tls → technology → security`
+
+(Exact order is a topological sort of each module's `requires`; independent
+analysis modules are interleaved.)

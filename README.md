@@ -18,7 +18,9 @@ report.
 
 ## Status
 
-Early development — building module-by-module against a phased plan.
+**MVP complete** — the full pipeline (14 modules) runs end-to-end with a
+dashboard, CLI, and JSON/HTML/PDF reports. 136 tests pass; ruff + mypy clean.
+Built module-by-module against a phased plan:
 
 - **Phase 1 (core foundation)** ✅ — schemas, storage, module registry, config, logging, CLI.
 - **Phase 2 (safety spine + HTTP engine)** ✅ — target validation, SSRF guard, scope
@@ -89,11 +91,15 @@ pip install -e ".[dev]"
 
 ```bash
 webrecon version
-webrecon init-db
-webrecon modules                 # list registered scanner modules
-webrecon scan https://example.com --depth 3 --max-pages 300
+webrecon modules                       # list registered scanner modules
+webrecon scan https://example.com --depth 3 --max-pages 300 \
+    --browser --json report.json --html report.html --pdf report.pdf
+webrecon scans                         # list stored scans
+webrecon report <scan-id> --html out.html   # regenerate a report from the DB
+webrecon serve                         # open the dashboard at http://127.0.0.1:8000
 ```
 
+For local lab targets (loopback/private), add `--allow-private`.
 Full CLI reference: [`docs/CLI.md`](docs/CLI.md).
 
 ## Development

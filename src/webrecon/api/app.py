@@ -107,6 +107,13 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
         try:
             for ev in manager.progress(scan_id):  # replay any buffered events
                 await ws.send_json(ev)
+            # If the scan already finished before this socket connected, emit the
+            # terminal event immediately so the client doesn't hang waiting.
+            status = manager.status.get(scan_id)
+            if status and status != "running":
+                await ws.send_json(
+                    {"module": "_done", "status": status, "index": 0, "total": 0}
+                )
             while True:
                 ev = await q.get()
                 await ws.send_json(ev)
