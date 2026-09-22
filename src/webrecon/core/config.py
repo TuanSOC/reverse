@@ -109,8 +109,12 @@ class BrowserConfig(BaseSettings):
     screenshots: bool = True
     # Where to write screenshots (created on demand); None = skip saving.
     screenshot_dir: str | None = "scans/screenshots"
-    nav_timeout_ms: int = 15000
-    wait_until: str = "networkidle"  # load | domcontentloaded | networkidle
+    nav_timeout_ms: int = 30000
+    # "load" is robust; "networkidle" is discouraged by Playwright and never
+    # fires on SPAs/CDNs that hold connections open (long-poll, analytics, WS).
+    wait_until: str = "load"  # load | domcontentloaded | networkidle
+    # Extra settle time after load so client-rendered apps hydrate + fire XHRs.
+    settle_ms: int = 2500
 
 
 class ScanConfig(BaseSettings):

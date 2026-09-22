@@ -85,17 +85,24 @@ class BrowserModule(ScannerModule):
                     page.on("response", lambda r: responses.append(_resp_dict(r)))
                     page.on("websocket", lambda ws: websockets.append(ws.url))
 
-                    await page.goto(
-                        ctx.target.base_url,
-                        wait_until=bcfg.wait_until,
-                        timeout=bcfg.nav_timeout_ms,
-                    )
                     try:
-                        await page.wait_for_load_state(
-                            "networkidle", timeout=bcfg.nav_timeout_ms
+                        await page.goto(
+                            ctx.target.base_url,
+                            wait_until=bcfg.wait_until,
+                            timeout=bcfg.nav_timeout_ms,
                         )
-                    except Exception:  # noqa: BLE001, S110 - networkidle timeout is expected/benign
-                        pass  # a busy page may never reach networkidle; proceed anyway
+                    except Exception as nav:  # noqa: BLE001 - partial render still useful
+                        # A slow SPA/CDN may not reach the wait state in time; the
+                        # DOM is often already rendered, so proceed best-effort
+                        # instead of failing the whole module.
+                        log.warning("navigation wait timed out; using partial render",
+                                    error=str(nav))
+                    # Let a client-rendered app hydrate and fire its XHRs, without
+                    # depending on networkidle (which busy pages never reach).
+                    try:
+                        await page.wait_for_timeout(bcfg.settle_ms)
+                    except Exception:  # noqa: BLE001, S110 - settle is best-effort
+                        pass
 
                     title = await page.title()
                     dom_length = len(await page.content())
