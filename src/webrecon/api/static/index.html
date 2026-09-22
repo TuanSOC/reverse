@@ -6,65 +6,108 @@
 <title>WebRecon</title>
 <style>
   :root{
-    --bg:#0b0e14; --panel:#11151f; --panel2:#161b26; --border:#232a38;
-    --fg:#d7dce5; --muted:#8a93a6; --accent:#4da3ff; --accent2:#7c5cff;
-    --crit:#ff4d6d; --high:#ff784e; --med:#f2c14e; --low:#4dd0e1; --info:#6b7280;
-    --ok:#3ddc97;
+    --bg:#0b0e14; --panel:#11151f; --panel2:#161b26; --panel3:#1b2130; --border:#232a38;
+    --fg:#d7dce5; --muted:#8a93a6; --faint:#5b6472; --accent:#4da3ff; --accent2:#7c5cff;
+    --crit:#ff4d6d; --high:#ff784e; --med:#f2c14e; --low:#4dd0e1; --info:#6b7280; --ok:#3ddc97;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
+  html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--fg);
-    font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  a{color:var(--accent);text-decoration:none}
-  .app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:52px 1fr;height:100vh}
-  header{grid-column:1/3;display:flex;align-items:center;gap:16px;padding:0 16px;
-    background:var(--panel);border-bottom:1px solid var(--border)}
-  header .brand{font-weight:700;letter-spacing:.5px}
-  header .brand span{color:var(--accent)}
-  header .spacer{flex:1}
-  select,button,input{background:var(--panel2);color:var(--fg);border:1px solid var(--border);
-    border-radius:6px;padding:6px 10px;font:inherit}
-  button{cursor:pointer}
-  button.primary{background:var(--accent);color:#04101f;border-color:var(--accent);font-weight:600}
-  button.primary:hover{filter:brightness(1.1)}
-  nav{background:var(--panel);border-right:1px solid var(--border);padding:10px 8px;overflow:auto}
-  nav a{display:block;padding:8px 12px;border-radius:6px;color:var(--muted);cursor:pointer}
-  nav a.active,nav a:hover{background:var(--panel2);color:var(--fg)}
-  main{overflow:auto;padding:20px 24px}
-  h1{font-size:20px;margin:0 0 4px}
-  h2{font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:24px 0 10px}
-  .cards{display:flex;gap:12px;flex-wrap:wrap}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
-    padding:14px 16px;min-width:130px}
-  .card .k{color:var(--muted);font-size:12px}
-  .card .v{font-size:22px;font-weight:700;margin-top:4px}
-  table{width:100%;border-collapse:collapse;margin-top:6px}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
-  tr:hover td{background:var(--panel)}
-  code,.mono{font-family:var(--mono);font-size:12.5px}
-  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600}
-  .sev-critical{background:rgba(255,77,109,.15);color:var(--crit)}
-  .sev-high{background:rgba(255,120,78,.15);color:var(--high)}
-  .sev-medium{background:rgba(242,193,78,.15);color:var(--med)}
-  .sev-low{background:rgba(77,208,225,.15);color:var(--low)}
-  .sev-informational{background:rgba(107,114,128,.2);color:var(--muted)}
-  .obs-observed{color:var(--ok)} .obs-referenced{color:var(--accent)} .obs-potential{color:var(--muted)}
-  .row-toggle{cursor:pointer}
-  .evidence{background:var(--panel2);border:1px solid var(--border);border-radius:8px;
-    padding:10px 12px;margin:6px 0;white-space:pre-wrap}
-  .filters{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
-  .muted{color:var(--muted)}
-  .progress{display:flex;gap:6px;align-items:center;font-size:12px}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
-  .dot.ok{background:var(--ok)} .dot.run{background:var(--med)} .dot.fail{background:var(--crit)}
-  dialog{background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;
-    padding:20px;width:min(460px,92vw)}
-  dialog label{display:block;margin:10px 0 4px;color:var(--muted);font-size:12px}
+    font:14px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  button,select,input{font:inherit;color:var(--fg);background:var(--panel2);
+    border:1px solid var(--border);border-radius:7px;padding:7px 11px}
+  button{cursor:pointer;transition:.12s} button:hover{border-color:#33405a}
+  button.primary{background:linear-gradient(180deg,#57a8ff,#3f8ae0);color:#04101f;
+    border:0;font-weight:700}
+  button.ghost{background:transparent}
+  button.danger{background:transparent;border-color:#5a2530;color:var(--crit)}
+  .app{display:grid;grid-template-columns:232px 1fr;grid-template-rows:56px 1fr;height:100vh}
+  header{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 18px;
+    background:var(--panel);border-bottom:1px solid var(--border);z-index:5}
+  .brand{font-weight:800;letter-spacing:1px;font-size:15px}
+  .brand span{color:var(--accent)}
+  .spacer{flex:1}
+  select#scanSelect{max-width:420px}
+  nav{background:var(--panel);border-right:1px solid var(--border);padding:12px 10px;overflow:auto}
+  nav .grp{color:var(--faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;
+    margin:14px 10px 6px}
+  nav a{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:7px;
+    color:var(--muted);cursor:pointer;font-size:13.5px}
+  nav a .ic{width:7px;height:7px;border-radius:2px;background:var(--faint)}
+  nav a.active{background:var(--panel3);color:#fff} nav a.active .ic{background:var(--accent)}
+  nav a:hover{background:var(--panel2);color:var(--fg)}
+  main{overflow:auto;padding:22px 26px}
+  h1{font-size:21px;margin:0 0 3px} h2{font-size:12px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.08em;margin:26px 0 10px}
+  .sub{color:var(--muted);font-size:13px}
+  .cards{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px 18px;min-width:120px}
+  .card .k{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+  .card .v{font-size:24px;font-weight:800;margin-top:6px}
+  .riskhero{display:flex;align-items:center;gap:16px;background:var(--panel);
+    border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin:16px 0}
+  .riskbadge{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+    padding:8px 16px;border-radius:10px;color:#fff}
+  table{width:100%;border-collapse:collapse;margin-top:4px;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);
+    vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;
+    letter-spacing:.04em;position:sticky;top:0;background:var(--bg)}
+  tbody tr:hover td{background:var(--panel)}
+  code,.mono{font-family:var(--mono);font-size:12px;word-break:break-all}
+  .pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11px;font-weight:700}
+  .b-critical,.pill.critical{background:rgba(255,77,109,.16);color:var(--crit)}
+  .b-high,.pill.high{background:rgba(255,120,78,.16);color:var(--high)}
+  .b-medium,.pill.medium{background:rgba(242,193,78,.16);color:var(--med)}
+  .b-low,.pill.low{background:rgba(77,208,225,.16);color:var(--low)}
+  .b-informational,.pill.informational{background:rgba(107,114,128,.22);color:var(--muted)}
+  .obs-observed{color:var(--ok);font-weight:600} .obs-referenced{color:var(--accent)}
+  .obs-potential{color:var(--muted)}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+  .toolbar input{min-width:220px}
+  .chip{padding:5px 11px;border-radius:999px;border:1px solid var(--border);cursor:pointer;
+    font-size:12px;color:var(--muted);background:var(--panel2)}
+  .chip.on{color:#fff;border-color:transparent}
+  .chip.critical.on{background:var(--crit)} .chip.high.on{background:var(--high)}
+  .chip.medium.on{background:var(--med);color:#04101f} .chip.low.on{background:var(--low);color:#04101f}
+  .chip.informational.on{background:var(--info)}
+  .finding{border:1px solid var(--border);border-radius:10px;margin:9px 0;overflow:hidden}
+  .finding>.head{display:flex;gap:10px;align-items:center;padding:11px 14px;cursor:pointer}
+  .finding>.head:hover{background:var(--panel)}
+  .finding .body{padding:0 14px 14px;border-top:1px solid var(--border);display:none}
+  .finding.open .body{display:block}
+  .finding .name{font-weight:600} .kv{color:var(--muted);font-size:12px}
+  .evi{background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+    padding:9px 11px;margin-top:8px;font-family:var(--mono);font-size:11.5px;
+    white-space:pre-wrap;word-break:break-word}
+  .empty{color:var(--muted);padding:26px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  dialog{background:var(--panel);color:var(--fg);border:1px solid var(--border);
+    border-radius:14px;padding:22px;width:min(480px,94vw)}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  dialog label{display:block;margin:12px 0 5px;color:var(--muted);font-size:12px}
   dialog input[type=text],dialog input[type=number],dialog select{width:100%}
-  .risk{font-size:26px;font-weight:800}
-  svg text{fill:var(--fg);font-size:10px}
-  .empty{color:var(--muted);padding:24px 0}
+  .check{display:flex;align-items:center;gap:9px;margin:9px 0;color:var(--fg)}
+  .check input{width:auto}
+  .prog{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
+  .bar{width:180px;height:6px;background:var(--panel3);border-radius:4px;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4da3ff,#7c5cff);
+    transition:width .3s}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .dot.ok{background:var(--ok)} .dot.run{background:var(--med)} .dot.fail{background:var(--crit)}
+  .modgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:6px}
+  .modcell{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);
+    border-radius:7px;font-size:12px;background:var(--panel)}
+  .shot{max-width:100%;border:1px solid var(--border);border-radius:10px;margin-top:8px}
+  svg text{fill:var(--fg)} .legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:12px}
+  .legend b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+  iframe.preview{width:100%;height:520px;border:1px solid var(--border);border-radius:10px;background:#fff}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+  .diffcol h3{font-size:13px;margin:10px 0 4px}
+  .add{color:var(--ok)} .rem{color:var(--crit)}
 </style>
 </head>
 <body>
@@ -72,20 +115,21 @@
   <header>
     <div class="brand">WEB<span>RECON</span></div>
     <select id="scanSelect" title="Select a scan"></select>
-    <div id="progress" class="progress"></div>
+    <div id="progress" class="prog"></div>
+    <button id="cancelBtn" class="danger" style="display:none">Cancel</button>
     <div class="spacer"></div>
     <button class="primary" id="newScanBtn">+ New Scan</button>
   </header>
   <nav id="nav"></nav>
-  <main id="main"><div class="empty">No scan selected. Start one with “New Scan”.</div></main>
+  <main id="main"><div class="empty">No scan selected — start one with “New Scan”.</div></main>
 </div>
 
 <dialog id="scanDialog">
-  <h1>New Scan</h1>
-  <p class="muted" style="margin:.2em 0 0">Only scan assets you own or are authorized to test.</p>
+  <h1 style="margin:0 0 2px">New Scan</h1>
+  <div class="sub">Only scan assets you own or are authorized to test.</div>
   <label>Target URL</label>
-  <input type="text" id="f_url" placeholder="https://example.com">
-  <div style="display:flex;gap:10px">
+  <input type="text" id="f_url" placeholder="https://example.com" autofocus>
+  <div style="display:flex;gap:12px">
     <div style="flex:1"><label>Max depth</label><input type="number" id="f_depth" value="3"></div>
     <div style="flex:1"><label>Max pages</label><input type="number" id="f_pages" value="300"></div>
   </div>
@@ -95,216 +139,326 @@
     <option value="same-origin">same-origin</option>
     <option value="include-subdomains">include-subdomains</option>
   </select>
-  <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
-    <input type="checkbox" id="f_browser" style="width:auto"> Browser mode (render JS)</label>
-  <label style="display:flex;align-items:center;gap:8px">
-    <input type="checkbox" id="f_private" style="width:auto"> Lab mode (allow private/loopback)</label>
+  <label class="check"><input type="checkbox" id="f_browser"> Browser mode (render JS, screenshot)</label>
+  <label class="check"><input type="checkbox" id="f_private"> Lab mode (allow private/loopback)</label>
   <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
-    <button onclick="document.getElementById('scanDialog').close()">Cancel</button>
+    <button class="ghost" id="cancelDialog">Cancel</button>
     <button class="primary" id="startScanBtn">Start Scan</button>
   </div>
 </dialog>
 
 <script type="module">
-const SECTIONS = ["Overview","Findings","Endpoints","Technologies","Pages","Assets","DNS / TLS","Graph"];
-const state = { scanId:null, section:"Overview", ws:null };
-
+const SECTIONS = [
+  ["Recon",["Overview"]],
+  ["Content",["Findings","Endpoints","Technologies","Pages","Assets","Forms"]],
+  ["Infra",["DNS / TLS","Graph"]],
+  ["Output",["Timeline","Reports"]],
+];
+const state = { scanId:null, section:"Overview", ws:null, scanning:false, sevFilter:new Set() };
 const $ = s => document.querySelector(s);
-const el = (tag, attrs={}, ...kids) => {
-  const n = document.createElement(tag);
-  for(const [k,v] of Object.entries(attrs)){
-    if(k==="class") n.className=v; else if(k==="html") n.innerHTML=v; else n.setAttribute(k,v);
-  }
-  for(const kid of kids) n.append(kid?.nodeType?kid:document.createTextNode(kid??""));
-  return n;
-};
-const api = (p)=>fetch(p).then(r=>r.ok?r.json():Promise.reject(r.status));
+const api = p => fetch(p).then(r=>r.ok?r.json():Promise.reject(r.status));
+const el = (t,a={},...k)=>{const n=document.createElement(t);
+  for(const[x,v]of Object.entries(a)){if(x==="class")n.className=v;else if(x==="html")n.innerHTML=v;
+    else if(x.startsWith("on"))n.addEventListener(x.slice(2),v);else n.setAttribute(x,v);}
+  for(const c of k)n.append(c==null?"":c.nodeType?c:document.createTextNode(String(c)));return n;};
 
 function renderNav(){
-  const nav=$("#nav"); nav.innerHTML="";
-  for(const s of SECTIONS){
-    const a=el("a",{class:s===state.section?"active":""},s);
-    a.onclick=()=>{state.section=s;renderNav();renderSection();};
-    nav.append(a);
+  const nav=$("#nav");nav.innerHTML="";
+  for(const [grp,items] of SECTIONS){
+    nav.append(el("div",{class:"grp"},grp));
+    for(const s of items){
+      const a=el("a",{class:s===state.section?"active":"",onclick:()=>{state.section=s;renderNav();render();}},
+        el("span",{class:"ic"}), s);
+      nav.append(a);
+    }
   }
 }
 
-async function loadScans(){
+async function loadScans(keep){
   const scans=await api("/api/scans");
-  const sel=$("#scanSelect"); sel.innerHTML="";
-  if(!scans.length){ sel.append(el("option",{},"— no scans —")); return; }
-  for(const s of scans){
-    const label=`${s.target}  ·  ${s.status}  ·  ${s.findings} findings`;
-    sel.append(el("option",{value:s.id}, label));
-  }
-  sel.onchange=()=>{state.scanId=sel.value;renderSection();};
-  if(!state.scanId){ state.scanId=scans[0].id; sel.value=scans[0].id; }
-  renderSection();
+  const sel=$("#scanSelect");sel.innerHTML="";
+  if(!scans.length){sel.append(el("option",{},"— no scans —"));return scans;}
+  for(const s of scans)
+    sel.append(el("option",{value:s.id},`${s.target}  ·  ${s.status}  ·  ${s.findings} findings  ·  ${s.created_at.slice(0,16).replace("T"," ")}`));
+  sel.onchange=()=>{state.scanId=sel.value;render();};
+  if(!keep||!scans.find(s=>s.id===state.scanId)){state.scanId=scans[0].id;}
+  sel.value=state.scanId;
+  return scans;
 }
 
-const sevPill = s => el("span",{class:`pill sev-${s}`},s);
-
-async function renderSection(){
-  const main=$("#main");
-  if(!state.scanId){ main.innerHTML='<div class="empty">No scan selected.</div>'; return; }
-  main.innerHTML='<div class="muted">Loading…</div>';
-  try{
-    if(state.section==="Overview") return renderOverview(main);
-    if(state.section==="Findings") return renderFindings(main);
-    if(state.section==="Endpoints") return renderEndpoints(main);
-    if(state.section==="Technologies") return renderTable(main,`/api/scans/${state.scanId}/technologies`,
-      ["name","category","version","confidence"],"Technologies");
-    if(state.section==="Pages") return renderTable(main,`/api/scans/${state.scanId}/pages`,
-      ["url","title","status_code","depth"],"Pages");
-    if(state.section==="Assets") return renderTable(main,`/api/scans/${state.scanId}/assets`,
-      ["asset_type","observation","url"],"Assets");
-    if(state.section==="DNS / TLS") return renderDnsTls(main);
-    if(state.section==="Graph") return renderGraph(main);
-  }catch(e){ main.innerHTML=`<div class="empty">Error loading: ${e}</div>`; }
+async function render(){
+  const m=$("#main");
+  if(!state.scanId){m.innerHTML='<div class="empty">No scan selected.</div>';return;}
+  m.innerHTML='<div class="sub">Loading…</div>';
+  try{ await RENDER[state.section](m); }
+  catch(e){ m.innerHTML=`<div class="empty">Error: ${e}</div>`; }
 }
 
-async function renderOverview(main){
-  const o=await api(`/api/scans/${state.scanId}`);
-  main.innerHTML="";
-  main.append(el("h1",{},o.target.base_url||"—"),
-    el("div",{class:"muted"},`${o.status} · scan ${o.id.slice(0,8)}`));
-  const risk=o.risk_level||"informational";
-  const cards=el("div",{class:"cards"});
-  cards.append(card("Risk", el("span",{class:`risk sev-${risk}`},risk)));
-  cards.append(card("Findings", String(o.total_findings)));
-  for(const [s,n] of Object.entries(o.findings_by_severity||{}))
-    cards.append(card(s, String(n)));
-  main.append(cards);
-  main.append(el("h2",{},"Technology"));
-  if(o.technologies.length){
-    const t=table(["name","category","version","confidence"]);
-    for(const x of o.technologies) t.tbody.append(row([x.name,x.category,x.version||"—",x.confidence]));
-    main.append(t.table);
-  } else main.append(el("div",{class:"muted"},"none detected"));
-  main.append(el("h2",{},"Modules"));
-  const mt=table(["module","status","ms"]);
-  for(const m of o.modules){
-    const dot=el("span",{class:"dot "+(m.status==="success"?"ok":m.status==="failed"?"fail":"")});
-    mt.tbody.append(row([m.module, el("span",{},dot," "+m.status),
-      m.duration_ms?Math.round(m.duration_ms):"—"]));
-  }
-  main.append(mt.table);
+const sevPill=s=>el("span",{class:`pill ${s}`},s);
+const obs=o=>el("span",{class:"obs-"+o},o);
+
+const RENDER = {
+  async Overview(m){
+    const o=await api(`/api/scans/${state.scanId}`);
+    m.innerHTML="";
+    m.append(el("h1",{},o.target.base_url||"—"),
+      el("div",{class:"sub"},`${o.status} · ${o.target.hostname||""} · scan ${o.id.slice(0,8)}`));
+    const risk=o.risk_level||"informational";
+    const hero=el("div",{class:"riskhero"});
+    hero.append(el("div",{class:"riskbadge b-"+risk,style:`background:${riskColor(risk)}`},risk),
+      el("div",{},el("div",{class:"k",style:"color:var(--muted);font-size:11px"},"OVERALL RISK"),
+        el("div",{style:"font-size:15px"},`${o.total_findings} finding(s) across ${o.modules.length} modules`)));
+    m.append(hero);
+    const cards=el("div",{class:"cards"});
+    for(const s of ["critical","high","medium","low","informational"])
+      cards.append(mkcard(s,o.findings_by_severity?.[s]||0));
+    m.append(cards);
+    // screenshot (browser mode)
+    const shot=`/api/scans/${state.scanId}/screenshot`;
+    const img=new Image(); img.className="shot"; img.src=shot;
+    img.onload=()=>{m.append(el("h2",{},"Screenshot"));m.append(img);};
+    m.append(el("h2",{},"Technology"));
+    if(o.technologies.length) m.append(tbl(["name","category","version","confidence"],
+      o.technologies.map(t=>[t.name,t.category,t.version||"—",t.confidence])));
+    else m.append(el("div",{class:"sub"},"none detected"));
+    m.append(el("h2",{},"Modules"));
+    const g=el("div",{class:"modgrid"});
+    for(const r of o.modules){
+      const st=r.status;const dc=st==="success"?"ok":(st==="failed"||st==="timeout")?"fail":"";
+      g.append(el("div",{class:"modcell"},el("span",{class:"dot "+dc}),
+        el("span",{style:"flex:1"},r.module),
+        el("span",{class:"kv"},r.duration_ms?Math.round(r.duration_ms)+"ms":st)));
+    }
+    m.append(g);
+  },
+
+  async Findings(m){
+    const data=await api(`/api/scans/${state.scanId}/findings`);
+    m.innerHTML="";m.append(el("h1",{},"Findings"),el("div",{class:"sub"},`${data.length} total`));
+    const counts={};for(const f of data)counts[f.severity]=(counts[f.severity]||0)+1;
+    const bar=el("div",{class:"toolbar"});
+    const search=el("input",{placeholder:"Search findings…",oninput:apply});
+    bar.append(search);
+    for(const s of ["critical","high","medium","low","informational"]){
+      if(!counts[s])continue;
+      const chip=el("span",{class:`chip ${s}`+(state.sevFilter.has(s)?" on":""),
+        onclick:()=>{state.sevFilter.has(s)?state.sevFilter.delete(s):state.sevFilter.add(s);
+          chip.classList.toggle("on");apply();}},`${s} ${counts[s]}`);
+      bar.append(chip);
+    }
+    m.append(bar);
+    const list=el("div");m.append(list);
+    function apply(){
+      list.innerHTML="";const q=search.value.toLowerCase();
+      const items=data.filter(f=>(!state.sevFilter.size||state.sevFilter.has(f.severity))
+        && (!q||JSON.stringify(f).toLowerCase().includes(q)));
+      if(!items.length){list.append(el("div",{class:"empty"},"No matching findings."));return;}
+      for(const f of items){
+        const card=el("div",{class:"finding"});
+        const head=el("div",{class:"head",onclick:()=>card.classList.toggle("open")},
+          sevPill(f.severity),el("span",{class:"name"},f.name),
+          el("span",{class:"kv"},`· ${f.confidence} · `),obs(f.observation),
+          el("span",{class:"kv",style:"margin-left:auto"},f.check_id));
+        const body=el("div",{class:"body"});
+        body.append(el("p",{},f.description));
+        if(f.impact)body.append(el("div",{},el("b",{},"Impact: "),f.impact));
+        if(f.recommendation)body.append(el("div",{},el("b",{},"Fix: "),f.recommendation));
+        for(const e of f.evidence)
+          body.append(el("div",{class:"evi"},`[${e.source}] ${e.url||""}\n${JSON.stringify(e.data)}`));
+        if(f.references?.length)body.append(el("div",{class:"kv",style:"margin-top:6px"},
+          ...f.references.map(r=>el("a",{href:r,target:"_blank"},r+" "))));
+        card.append(head,body);list.append(card);
+      }
+    }
+    apply();
+  },
+
+  async Endpoints(m){
+    const d=await api(`/api/scans/${state.scanId}/endpoints`);
+    m.innerHTML="";m.append(el("h1",{},"API Endpoints"),el("div",{class:"sub"},`${d.length} total`));
+    searchTable(m,d,["observation","kind","method","url","source"],
+      e=>[obs(e.observation),e.kind,e.method||"—",el("code",{},e.url),el("span",{class:"kv"},e.source||"")]);
+  },
+  async Technologies(m){
+    const d=await api(`/api/scans/${state.scanId}/technologies`);
+    m.innerHTML="";m.append(el("h1",{},"Technologies"));
+    searchTable(m,d,["name","category","version","confidence"],
+      t=>[t.name,t.category,t.version||"—",el("span",{class:"pill "+confClass(t.confidence)},t.confidence)]);
+  },
+  async Pages(m){
+    const d=await api(`/api/scans/${state.scanId}/pages`);
+    m.innerHTML="";m.append(el("h1",{},"Pages"),el("div",{class:"sub"},`${d.length} crawled`));
+    searchTable(m,d,["status","depth","title","url"],
+      p=>[p.status_code||"—",p.depth,p.title||"—",el("code",{},p.url)]);
+  },
+  async Assets(m){
+    const d=await api(`/api/scans/${state.scanId}/assets`);
+    m.innerHTML="";m.append(el("h1",{},"Assets"),el("div",{class:"sub"},`${d.length} discovered`));
+    searchTable(m,d,["type","observation","url"],
+      a=>[a.asset_type,obs(a.observation),el("code",{},a.url)]);
+  },
+  async Forms(m){
+    const d=await api(`/api/scans/${state.scanId}/forms`);
+    m.innerHTML="";m.append(el("h1",{},"Forms"),el("div",{class:"sub"},`${d.length} found`));
+    if(!d.length){m.append(el("div",{class:"empty"},"No forms."));return;}
+    for(const f of d){
+      const sens=(f.inputs||[]).some(i=>/pass|otp|card|credit/i.test((i.name||"")+(i.type||"")));
+      const card=el("div",{class:"finding open"});
+      card.append(el("div",{class:"head"},
+        el("span",{class:"pill "+(sens?"high":"informational")},f.method?.toUpperCase()||"GET"),
+        el("code",{},f.action||f.page_url), sens?el("span",{class:"kv"},"· sensitive"):""));
+      const body=el("div",{class:"body"});
+      body.append(el("div",{class:"kv"},`on ${f.page_url} · enctype ${f.enctype||"—"}`));
+      body.append(tbl(["name","type","required"],
+        (f.inputs||[]).map(i=>[i.name||"—",i.type||"—",i.required?"yes":""])));
+      card.append(body);m.append(card);
+    }
+  },
+  async "DNS / TLS"(m){
+    const [dns,certs]=await Promise.all([api(`/api/scans/${state.scanId}/dns`),
+      api(`/api/scans/${state.scanId}/certificates`)]);
+    m.innerHTML="";m.append(el("h1",{},"DNS / TLS"));
+    m.append(el("h2",{},"DNS records"));
+    if(dns.length)m.append(tbl(["type","name","value"],dns.map(d=>[d.record_type,d.name,el("code",{},d.value)])));
+    else m.append(el("div",{class:"sub"},"none (or IP-literal target)"));
+    m.append(el("h2",{},"Certificates"));
+    if(certs.length)m.append(tbl(["subject","issuer","valid until"],
+      certs.map(c=>[c.subject,c.issuer,c.not_after||"—"])));
+    else m.append(el("div",{class:"sub"},"none"));
+  },
+  async Graph(m){ await renderGraph(m); },
+  async Timeline(m){ await renderTimeline(m); },
+  async Reports(m){ await renderReports(m); },
+};
+
+function mkcard(k,v){return el("div",{class:"card"},el("div",{class:"k"},k),
+  el("div",{class:"v",style:`color:${v?riskColor(k):'var(--faint)'}`},String(v)));}
+function riskColor(s){return {critical:"#ff4d6d",high:"#ff784e",medium:"#f2c14e",
+  low:"#4dd0e1",informational:"#6b7280"}[s]||"#6b7280";}
+function confClass(c){return c==="confirmed"||c==="high"?"low":"informational";}
+function tbl(cols,rows){const t=el("table");const h=el("tr");cols.forEach(c=>h.append(el("th",{},c)));
+  t.append(el("thead",{},h));const b=el("tbody");
+  rows.forEach(r=>{const tr=el("tr");r.forEach(c=>tr.append(el("td",{},c)));b.append(tr);});
+  t.append(b);return t;}
+function searchTable(m,data,cols,mapRow){
+  if(!data.length){m.append(el("div",{class:"empty"},"Nothing here."));return;}
+  const inp=el("input",{placeholder:"Search…",oninput:apply});
+  m.append(el("div",{class:"toolbar"},inp));
+  const wrap=el("div");m.append(wrap);
+  function apply(){const q=inp.value.toLowerCase();
+    const rows=data.filter(d=>!q||JSON.stringify(d).toLowerCase().includes(q)).map(mapRow);
+    wrap.innerHTML="";wrap.append(tbl(cols,rows));
+    if(!rows.length)wrap.append(el("div",{class:"empty"},"No matches."));}
+  apply();
 }
 
-async function renderFindings(main){
-  const data=await api(`/api/scans/${state.scanId}/findings`);
-  main.innerHTML=""; main.append(el("h1",{},"Findings"));
-  if(!data.length){ main.append(el("div",{class:"empty"},"No findings.")); return; }
-  const t=table(["severity","conf","obs","check","name"]);
-  for(const f of data){
-    const tr=row([sevPill(f.severity), f.confidence,
-      el("span",{class:"obs-"+f.observation},f.observation), el("code",{},f.check_id), f.name]);
-    tr.classList.add("row-toggle");
-    const det=el("tr");const td=el("td",{colspan:"5"});det.append(td);det.style.display="none";
-    td.append(el("div",{class:"evidence"},
-      `${f.description}\n\nImpact: ${f.impact}\nFix: ${f.recommendation}\n\n`+
-      f.evidence.map(e=>`• [${e.source}] ${e.url||""}\n  ${JSON.stringify(e.data)}`).join("\n")));
-    tr.onclick=()=>{det.style.display=det.style.display==="none"?"":"none";};
-    t.tbody.append(tr); t.tbody.append(det);
-  }
-  main.append(t.table);
-}
-
-async function renderEndpoints(main){
-  const data=await api(`/api/scans/${state.scanId}/endpoints`);
-  main.innerHTML=""; main.append(el("h1",{},"API Endpoints"));
-  if(!data.length){ main.append(el("div",{class:"empty"},"No endpoints.")); return; }
-  const t=table(["observation","kind","method","url","source"]);
-  for(const e of data) t.tbody.append(row([
-    el("span",{class:"obs-"+e.observation},e.observation), e.kind, e.method||"—",
-    el("code",{},e.url), el("span",{class:"muted"},e.source||"")]));
-  main.append(t.table);
-}
-
-async function renderDnsTls(main){
-  const [dns,certs]=await Promise.all([
-    api(`/api/scans/${state.scanId}/dns`), api(`/api/scans/${state.scanId}/certificates`)]);
-  main.innerHTML=""; main.append(el("h1",{},"DNS / TLS"));
-  main.append(el("h2",{},"DNS records"));
-  if(dns.length){const t=table(["type","name","value"]);
-    for(const d of dns) t.tbody.append(row([d.record_type,d.name,el("code",{},d.value)]));
-    main.append(t.table);} else main.append(el("div",{class:"muted"},"none (or IP-literal target)"));
-  main.append(el("h2",{},"Certificates"));
-  if(certs.length){const t=table(["subject","issuer","not_after"]);
-    for(const c of certs) t.tbody.append(row([c.subject,c.issuer,c.not_after]));
-    main.append(t.table);} else main.append(el("div",{class:"muted"},"none"));
-}
-
-async function renderGraph(main){
+async function renderGraph(m){
   const g=await api(`/api/scans/${state.scanId}/graph`);
-  main.innerHTML=""; main.append(el("h1",{},"Relationship Graph"));
-  if(!g.nodes.length){ main.append(el("div",{class:"empty"},"No graph.")); return; }
-  const W=Math.min(main.clientWidth-20,900),H=560,cx=W/2,cy=H/2;
+  m.innerHTML="";m.append(el("h1",{},"Relationship Graph"));
+  const color={domain:"#4da3ff",technology:"#7c5cff",endpoint:"#3ddc97",dns:"#f2c14e",certificate:"#ff784e"};
+  const legend=el("div",{class:"legend"});
+  for(const[k,v]of Object.entries(color))legend.append(el("span",{},el("b",{style:`background:${v}`}),k));
+  m.append(legend);
+  if(!g.nodes.length){m.append(el("div",{class:"empty"},"No graph data."));return;}
+  const W=Math.min(m.clientWidth-10,980),H=580,cx=W/2,cy=H/2;
   const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
   svg.setAttribute("width",W);svg.setAttribute("height",H);
-  const center=g.nodes[0], others=g.nodes.slice(1);
-  const pos={[center.id]:[cx,cy]};
-  others.forEach((n,i)=>{const a=2*Math.PI*i/others.length,r=Math.min(W,H)/2-60;
+  const others=g.nodes.slice(1),pos={[g.nodes[0].id]:[cx,cy]};
+  others.forEach((n,i)=>{const a=2*Math.PI*i/others.length,r=Math.min(W,H)/2-70;
     pos[n.id]=[cx+r*Math.cos(a),cy+r*Math.sin(a)];});
-  const color={domain:"#4da3ff",technology:"#7c5cff",endpoint:"#3ddc97",dns:"#f2c14e",
-    certificate:"#ff784e"};
-  for(const e of g.edges){const [x1,y1]=pos[e.source]||[cx,cy],[x2,y2]=pos[e.target]||[cx,cy];
-    const l=document.createElementNS("http://www.w3.org/2000/svg","line");
-    l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
-    l.setAttribute("stroke","#2a3140");svg.append(l);}
-  for(const n of g.nodes){const [x,y]=pos[n.id];
-    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",n.type==="domain"?9:5);
-    c.setAttribute("fill",color[n.type]||"#8a93a6");svg.append(c);
-    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-    t.setAttribute("x",x+8);t.setAttribute("y",y+3);t.textContent=(n.label||"").slice(0,40);svg.append(t);}
-  main.append(svg);
+  const NS="http://www.w3.org/2000/svg";
+  for(const e of g.edges){const[x1,y1]=pos[e.source]||[cx,cy],[x2,y2]=pos[e.target]||[cx,cy];
+    const l=document.createElementNS(NS,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);
+    l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("stroke","#2a3140");svg.append(l);}
+  for(const n of g.nodes){const[x,y]=pos[n.id];
+    const c=document.createElementNS(NS,"circle");c.setAttribute("cx",x);c.setAttribute("cy",y);
+    c.setAttribute("r",n.type==="domain"?10:5.5);c.setAttribute("fill",color[n.type]||"#8a93a6");
+    const tt=document.createElementNS(NS,"title");tt.textContent=n.label;c.append(tt);svg.append(c);
+    const t=document.createElementNS(NS,"text");t.setAttribute("x",x+9);t.setAttribute("y",y+3);
+    t.setAttribute("font-size","10");t.textContent=(n.label||"").slice(0,42);svg.append(t);}
+  m.append(svg);
 }
 
-async function renderTable(main,url,cols,title){
-  const data=await api(url); main.innerHTML=""; main.append(el("h1",{},title));
-  if(!data.length){ main.append(el("div",{class:"empty"},"Nothing here.")); return; }
-  const t=table(cols);
-  for(const d of data) t.tbody.append(row(cols.map(c=>{
-    const v=d[c]; return (c==="url")?el("code",{},v??"") : String(v??"—");})));
-  main.append(t.table);
+async function renderTimeline(m){
+  m.innerHTML="";m.append(el("h1",{},"Timeline / Compare"));
+  const scans=await api("/api/scans");
+  const others=scans.filter(s=>s.id!==state.scanId);
+  if(!others.length){m.append(el("div",{class:"empty"},"Need at least two scans to compare."));return;}
+  const sel=el("select",{},el("option",{value:""},"— pick a scan to compare against —"),
+    ...others.map(s=>el("option",{value:s.id},`${s.target} · ${s.created_at.slice(0,16).replace("T"," ")}`)));
+  m.append(el("div",{class:"toolbar"},el("span",{class:"sub"},"Compare current scan against:"),sel));
+  const out=el("div");m.append(out);
+  sel.onchange=async()=>{
+    if(!sel.value){out.innerHTML="";return;}
+    out.innerHTML='<div class="sub">Diffing…</div>';
+    const d=await api(`/api/scans/${state.scanId}/diff?against=${sel.value}`);
+    out.innerHTML="";
+    const grid=el("div",{class:"grid2"});
+    for(const key of ["endpoints","technologies","findings"]){
+      const col=el("div",{class:"diffcol"});col.append(el("h2",{},key));
+      const add=d[key].added,rem=d[key].removed;
+      if(!add.length&&!rem.length)col.append(el("div",{class:"sub"},"no change"));
+      add.forEach(x=>col.append(el("div",{class:"add"},"+ "+x)));
+      rem.forEach(x=>col.append(el("div",{class:"rem"},"− "+x)));
+      grid.append(col);
+    }
+    out.append(grid);
+  };
 }
 
-function card(k,v){const c=el("div",{class:"card"});c.append(el("div",{class:"k"},k));
-  const val=el("div",{class:"v"});val.append(v?.nodeType?v:String(v));c.append(val);return c;}
-function table(cols){const table=el("table");const thead=el("thead");const tr=el("tr");
-  for(const c of cols) tr.append(el("th",{},c));thead.append(tr);const tbody=el("tbody");
-  table.append(thead);table.append(tbody);return {table,tbody};}
-function row(cells){const tr=el("tr");for(const c of cells)
-  tr.append(el("td",{},c?.nodeType?c:String(c??"—")));return tr;}
+async function renderReports(m){
+  m.innerHTML="";m.append(el("h1",{},"Reports"),el("div",{class:"sub"},"Generated from stored scan data"));
+  const base=`/api/scans/${state.scanId}/report`;
+  const row=el("div",{class:"btnrow"});
+  row.append(
+    el("a",{href:`${base}.json`,target:"_blank"},el("button",{class:"ghost"},"Open JSON")),
+    el("a",{href:`${base}.html`,target:"_blank"},el("button",{class:"ghost"},"Open HTML")),
+    el("a",{href:`${base}.pdf`,target:"_blank"},el("button",{class:"primary"},"Open / Download PDF")));
+  m.append(row);
+  m.append(el("h2",{},"HTML preview"));
+  m.append(el("iframe",{class:"preview",src:`${base}.html`}));
+}
 
-// New scan flow
+// ---- New scan + live progress ----
+const MODULES=["target","scope","http","crawler","javascript","browser","api",
+  "cookies","cors","dns","headers","tls","technology","security"];
 $("#newScanBtn").onclick=()=>$("#scanDialog").showModal();
+$("#cancelDialog").onclick=()=>$("#scanDialog").close();
 $("#startScanBtn").onclick=async()=>{
   const body={url:$("#f_url").value.trim(),depth:+$("#f_depth").value,max_pages:+$("#f_pages").value,
     browser:$("#f_browser").checked,allow_private:$("#f_private").checked,scope_mode:$("#f_scope").value};
-  if(!body.url) return;
+  if(!body.url){$("#f_url").focus();return;}
   $("#scanDialog").close();
-  const {scan_id}=await fetch("/api/scans",{method:"POST",headers:{"content-type":"application/json"},
-    body:JSON.stringify(body)}).then(r=>r.json());
-  watchProgress(scan_id);
+  const {scan_id}=await fetch("/api/scans",{method:"POST",
+    headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(r=>r.json());
+  watch(scan_id);
 };
+$("#cancelBtn").onclick=()=>{ if(state.runningId) fetch(`/api/scans/${state.runningId}/cancel`,{method:"POST"}); };
 
-function watchProgress(scanId){
-  if(state.ws) state.ws.close();
-  const prog=$("#progress"); prog.innerHTML="";
-  const ws=new WebSocket(`ws://${location.host}/api/scans/${scanId}/events`);
-  state.ws=ws;
-  ws.onmessage=(m)=>{const ev=JSON.parse(m.data);
-    if(ev.module==="_done"){ prog.innerHTML='<span class="dot ok"></span> done';
-      loadScans().then(()=>{state.scanId=scanId;$("#scanSelect").value=scanId;renderSection();}); return;}
-    prog.innerHTML=`<span class="dot run"></span> ${ev.module} (${ev.index+1}/${ev.total})`;
+function watch(scanId){
+  state.runningId=scanId;state.scanning=true;
+  $("#cancelBtn").style.display="";
+  const prog=$("#progress");
+  const bar=el("i");const wrap=el("span",{class:"bar"},bar);
+  const label=el("span",{},"starting…");
+  prog.innerHTML="";prog.append(el("span",{class:"dot run"}),wrap,label);
+  if(state.ws)state.ws.close();
+  const ws=new WebSocket(`ws://${location.host}/api/scans/${scanId}/events`);state.ws=ws;
+  ws.onmessage=m=>{const ev=JSON.parse(m.data);
+    if(ev.module==="_done"){
+      bar.style.width="100%";label.textContent=ev.status;
+      prog.querySelector(".dot").className="dot "+(ev.status==="done"?"ok":"fail");
+      $("#cancelBtn").style.display="none";state.scanning=false;
+      loadScans().then(()=>{state.scanId=scanId;$("#scanSelect").value=scanId;render();});
+      setTimeout(()=>{prog.innerHTML="";},4000);return;}
+    const pct=ev.total?Math.round((ev.index+1)/ev.total*100):0;
+    bar.style.width=pct+"%";label.textContent=`${ev.module} (${ev.index+1}/${ev.total})`;
   };
-  ws.onerror=()=>{prog.innerHTML='<span class="dot fail"></span> ws error';};
+  ws.onerror=()=>{prog.querySelector(".dot")?.classList.add("fail");};
 }
 
 renderNav();
-loadScans();
+loadScans().then(()=>render());
 </script>
 </body>
 </html>

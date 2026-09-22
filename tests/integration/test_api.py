@@ -59,6 +59,23 @@ def test_api_serves_scan_data(mock_site: str, tmp_path) -> None:
         graph = client.get(f"/api/scans/{sid}/graph").json()
         assert graph["nodes"] and graph["edges"]
 
+        forms = client.get(f"/api/scans/{sid}/forms").json()
+        assert isinstance(forms, list) and forms  # the mock has a search form
+
+        # report formats
+        assert client.get(f"/api/scans/{sid}/report.json").json()["scan_id"] == sid
+        html = client.get(f"/api/scans/{sid}/report.html")
+        assert html.status_code == 200 and "Executive Summary" in html.text
+        pdf = client.get(f"/api/scans/{sid}/report.pdf")
+        assert pdf.status_code == 200 and pdf.content[:4] == b"%PDF"
+
+        # diff a scan against itself → no changes
+        d = client.get(f"/api/scans/{sid}/diff", params={"against": sid}).json()
+        assert d["endpoints"]["added"] == [] and d["endpoints"]["removed"] == []
+
+        # cancel on a finished scan is a no-op (not running)
+        assert client.post(f"/api/scans/{sid}/cancel").json() == {"cancelled": False}
+
         # 404 for unknown scan
         assert client.get("/api/scans/does-not-exist").status_code == 404
 

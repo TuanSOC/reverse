@@ -18,6 +18,7 @@ from ..storage.models import (
     Endpoint,
     EvidenceRecord,
     FindingRecord,
+    Form,
     ModuleRun,
     Page,
     Scan,
@@ -177,6 +178,39 @@ async def get_certificates(db: Database, scan_id: str) -> list[dict]:
     return await _simple_list(
         db, Certificate, scan_id, ["subject", "issuer", "san", "not_before", "not_after", "details"]
     )
+
+
+async def get_forms(db: Database, scan_id: str) -> list[dict]:
+    return await _simple_list(
+        db, Form, scan_id, ["page_url", "action", "method", "enctype", "inputs"]
+    )
+
+
+async def diff_scans(db: Database, scan_id: str, against_id: str) -> dict[str, Any]:
+    """Compare two scans (§26 timeline): what changed between `against` → `scan`."""
+
+    async def _sets(sid: str):
+        eps = {e["url"] for e in await get_endpoints(db, sid)}
+        techs = {
+            f"{t['name']} {t['version'] or ''}".strip()
+            for t in await get_technologies(db, sid)
+        }
+        finds = {f["check_id"] for f in await get_findings(db, sid)}
+        return eps, techs, finds
+
+    new_eps, new_techs, new_finds = await _sets(scan_id)
+    old_eps, old_techs, old_finds = await _sets(against_id)
+
+    def _delta(new: set, old: set) -> dict:
+        return {"added": sorted(new - old), "removed": sorted(old - new)}
+
+    return {
+        "from": against_id,
+        "to": scan_id,
+        "endpoints": _delta(new_eps, old_eps),
+        "technologies": _delta(new_techs, old_techs),
+        "findings": _delta(new_finds, old_finds),
+    }
 
 
 async def get_graph(db: Database, scan_id: str) -> dict[str, Any]:

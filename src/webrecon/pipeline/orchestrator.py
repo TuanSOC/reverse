@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from ..core.config import ScanConfig
-from ..core.context import ScanContext
+from ..core.context import CancellationToken, ScanContext
 from ..core.enums import ModuleStatus
 from ..core.errors import ScanCancelledError
 from ..core.logging import get_logger
@@ -71,11 +71,14 @@ class Pipeline:
         *,
         selected: list[str] | None = None,
         scan_id: str | None = None,
+        cancellation: CancellationToken | None = None,
     ) -> ScanContext:
         """Execute the scan and return the populated context."""
         ctx = ScanContext(config=self.config)
         if scan_id is not None:
             ctx.scan_id = scan_id
+        if cancellation is not None:
+            ctx.cancellation = cancellation
         ctx.shared["input_url"] = input_url
         selected = selected or (self.config.enabled_modules or None)
         order = self.registry.resolution_order(selected)
