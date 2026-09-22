@@ -47,7 +47,17 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = self.path.split("?", 1)[0]
         if path == "/":
-            self._send(200, INDEX_HTML)
+            # Deliberately missing security headers; a bare session cookie and a
+            # wildcard CORS header, so the P4 analysis modules have findings.
+            self._send(
+                200,
+                INDEX_HTML,
+                extra={
+                    "Set-Cookie": "sessionid=secretvalue123; Path=/",
+                    "Access-Control-Allow-Origin": "*",
+                    "Server": "MockServer/1.2.3",
+                },
+            )
         elif path == "/about":
             self._send(200, b'<html><title>About</title><a href="/contact">C</a></html>')
         elif path == "/contact":

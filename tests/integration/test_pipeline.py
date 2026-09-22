@@ -22,11 +22,19 @@ def _lab_config() -> ScanConfig:
     return cfg
 
 
+ALL_MODULES = {
+    "target", "scope", "http", "crawler", "dns", "tls", "headers", "cookies", "cors",
+}
+
+
 async def test_pipeline_runs_all_modules(mock_site: str) -> None:
     ctx = await Pipeline(_lab_config()).run(mock_site)
-    assert set(ctx.results) == {"target", "scope", "http", "crawler"}
-    for name in ("target", "scope", "http", "crawler"):
+    assert set(ctx.results) == ALL_MODULES
+    # Core path always succeeds; dns/tls skip on a loopback IP literal.
+    for name in ("target", "scope", "http", "crawler", "headers", "cookies", "cors"):
         assert ctx.results[name].status == ModuleStatus.SUCCESS, name
+    for name in ("dns", "tls"):
+        assert ctx.results[name].status == ModuleStatus.SKIPPED, name
     assert ctx.target is not None
     assert ctx.target.hostname == "127.0.0.1"
     assert PRIMARY_RESPONSE_KEY in ctx.shared
@@ -56,7 +64,7 @@ async def test_pipeline_persists_to_db(mock_site: str) -> None:
             assert scans[0].id == ctx.scan_id
             assert scans[0].status in {"success", "partial"}
             runs = (await s.execute(select(ModuleRun))).scalars().all()
-            assert {r.module for r in runs} == {"target", "scope", "http", "crawler"}
+            assert {r.module for r in runs} == ALL_MODULES
             findings = (await s.execute(select(FindingRecord))).scalars().all()
             assert any(f.check_id == "transport.https.missing" for f in findings)
     finally:
@@ -67,4 +75,9 @@ async def test_progress_callback_invoked(mock_site: str) -> None:
     seen = []
     pipeline = Pipeline(_lab_config(), progress=lambda p: seen.append((p.module, p.status)))
     await pipeline.run(mock_site)
-    assert [m for m, _ in seen] == ["target", "scope", "http", "crawler"]
+    seen_modules = [m for m, _ in seen]
+    assert set(seen_modules) == ALL_MODULES
+    # Dependencies must precede dependents in the emitted order.
+    assert seen_modules.index("target") < seen_modules.index("scope")
+    assert seen_modules.index("scope") < seen_modules.index("http")
+    assert seen_modules.index("http") < seen_modules.index("crawler")

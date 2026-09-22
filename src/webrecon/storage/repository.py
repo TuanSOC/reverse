@@ -14,6 +14,8 @@ from ..core.models import ModuleResult, TargetInfo
 from .database import Database
 from .models import (
     Asset,
+    Certificate,
+    DnsRecord,
     EvidenceRecord,
     FindingRecord,
     Form,
@@ -25,6 +27,7 @@ from .models import (
 
 if TYPE_CHECKING:
     from ..modules.crawler.models import CrawlInventory
+    from ..modules.tls.analysis import CertInfo
 
 
 class ScanRepository:
@@ -146,6 +149,30 @@ class ScanRepository:
                         inputs=f.inputs,
                     )
                 )
+
+    async def save_dns_records(
+        self, scan_id: str, host: str, records: dict[str, list[str]]
+    ) -> None:
+        async with self.db.session() as s:
+            for rtype, values in records.items():
+                for value in values:
+                    s.add(
+                        DnsRecord(scan_id=scan_id, name=host, record_type=rtype, value=value)
+                    )
+
+    async def save_certificate(self, scan_id: str, info: CertInfo) -> None:
+        async with self.db.session() as s:
+            s.add(
+                Certificate(
+                    scan_id=scan_id,
+                    subject=info.subject,
+                    issuer=info.issuer,
+                    san=info.san,
+                    not_before=info.not_before,
+                    not_after=info.not_after,
+                    details={"self_signed": info.self_signed, "serial": info.serial},
+                )
+            )
 
     async def finalize_scan(self, scan_id: str, status: str) -> None:
         from sqlalchemy import update

@@ -55,6 +55,8 @@ class HttpResponse:
     elapsed_ms: float
     body: bytes
     truncated: bool
+    # Raw multi-valued Set-Cookie headers (a plain dict would collapse them).
+    set_cookie: list[str] = field(default_factory=list)
     redirect_chain: list[RedirectHop] = field(default_factory=list)
 
     @property
@@ -133,6 +135,7 @@ class HttpEngine:
 
             body, truncated = await self._read_capped(resp)
             elapsed = (time.perf_counter() - started) * 1000.0
+            set_cookie = resp.headers.get_list("set-cookie")
             await resp.aclose()
             return HttpResponse(
                 url=str(resp.url),
@@ -145,6 +148,7 @@ class HttpEngine:
                 elapsed_ms=elapsed,
                 body=body,
                 truncated=truncated,
+                set_cookie=list(set_cookie),
                 redirect_chain=chain,
             )
 

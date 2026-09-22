@@ -11,11 +11,11 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 | HTTP | `http` | `scope` | ✅ P2 | Fetch base URL via shared engine; status, timing, redirects, transport findings. |
 | Redirect | (part of `http`) | `http` | ✅ P2 | Redirect chain, cross-domain / HTTPS→HTTP downgrade flags. |
 | Crawler | `crawler` | `http` | ✅ P3 | Bounded BFS crawl; links/assets/forms/metadata; robots + sitemap; crawl graph edges. |
-| DNS | `dns` | `target` | planned P4 | A/AAAA/CNAME/MX/NS/TXT/SOA/CAA, SPF/DMARC, dangling-CNAME flags. |
-| TLS | `tls` | `target` | planned P4 | Certificate, chain, SAN, validity, protocol/HSTS checks. |
-| Headers | `headers` | `http` | planned P4 | Security-header presence + explanation. |
-| Cookies | `cookies` | `http` | planned P4 | Secure/HttpOnly/SameSite/Domain analysis (values masked). |
-| CORS | `cors` | `http` | planned P4 | ACAO/credentials/methods combination flags. |
+| DNS | `dns` | `target` | ✅ P4 | A/AAAA/CNAME/MX/NS/TXT/SOA/CAA, SPF/DMARC posture, dangling-CNAME flags (skips IP literals). |
+| TLS | `tls` | `target` | ✅ P4 | Certificate, SAN, validity, hostname match, self-signed, protocol (SSRF-guarded, skips no-TLS hosts). |
+| Headers | `headers` | `http` | ✅ P4 | Security-header presence + explanation; version-disclosure headers. |
+| Cookies | `cookies` | `http` | ✅ P4 | Secure/HttpOnly/SameSite/Domain analysis (values masked). |
+| CORS | `cors` | `http` | ✅ P4 | ACAO/credentials/null combination flags (passive). |
 | Technology | `technology` | `http`, `crawler` | planned P5 | Fingerprint frontend/backend/infra with confidence + evidence. |
 | JavaScript | `javascript` | `crawler` | planned P6 | Analyze public JS: endpoints/routes/config strings, source maps. |
 | API | `api` | `crawler`, `javascript` | planned P7 | Endpoint discovery classified observed/referenced/potential. |

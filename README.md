@@ -27,6 +27,10 @@ Early development — building module-by-module against a phased plan.
 - **Phase 3 (crawler + asset discovery)** ✅ — bounded scope/robots-gated BFS crawl,
   HTML link/asset/form/metadata extraction, robots.txt + sitemap.xml parsing, crawl
   graph edges, and a page/asset/form inventory persisted to SQLite.
+- **Phase 4 (DNS / TLS / headers / cookies / CORS)** ✅ — five independent analysis
+  modules producing evidence-backed findings: DNS records + SPF/DMARC + dangling-CNAME,
+  TLS cert/validity/hostname/protocol, security-header gaps with explanations, cookie
+  flag analysis (masked values), and CORS misconfiguration flags.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
