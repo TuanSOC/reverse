@@ -31,6 +31,37 @@ _SEVERITY_RANK = {
 }
 
 
+def filter_report_min_severity(rep: dict[str, Any], min_severity: str) -> dict[str, Any]:
+    """Return a copy of a report keeping only findings at/above ``min_severity``.
+
+    Recomputes ``summary`` counts so the filtered report stays internally
+    consistent (HTML/PDF render off the same dict). Unknown severities are
+    treated as the floor (never dropped) so a bad value can't hide findings.
+    """
+    threshold = _SEVERITY_RANK.get(min_severity.lower())
+    if threshold is None:
+        return rep  # unrecognized floor → no filtering (fail-open, keep all)
+
+    kept = [
+        f for f in rep.get("findings", [])
+        if _SEVERITY_RANK.get(str(f.get("severity", "")).lower(), 0) >= threshold
+    ]
+    by_severity = {k: 0 for k in _SEVERITY_RANK}
+    for f in kept:
+        sev = str(f.get("severity", "")).lower()
+        if sev in by_severity:
+            by_severity[sev] += 1
+
+    out = dict(rep)
+    out["findings"] = kept
+    summary = dict(rep.get("summary", {}))
+    summary["total_findings"] = len(kept)
+    summary["by_severity"] = by_severity
+    summary["min_severity"] = min_severity.lower()
+    out["summary"] = summary
+    return out
+
+
 async def list_scans(db: Database) -> list[dict[str, Any]]:
     async with db.session() as s:
         rows = (

@@ -113,11 +113,13 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
         return await queries.diff_scans(db(), scan_id, against)
 
     @app.get("/api/scans/{scan_id}/report.{fmt}")
-    async def report(scan_id: str, fmt: str):
+    async def report(scan_id: str, fmt: str, min_severity: str | None = None):
         built = await build_report_from_db(db(), scan_id)
         if built is None:
             raise HTTPException(404, "scan not found")
         rep, extras = built
+        if min_severity:
+            rep = queries.filter_report_min_severity(rep, min_severity)
         if fmt == "json":
             return JSONResponse(rep)
         html = render_html(rep, extras)

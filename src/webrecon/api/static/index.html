@@ -322,9 +322,27 @@
   </div>
 </dialog>
 
+<!-- custom export dialog -->
+<dialog id="exportDialog">
+  <h1 style="margin:0 0 2px">Custom Export</h1>
+  <div class="sub">Choose a format and an optional minimum severity.</div>
+  <label>Format</label>
+  <select id="x_fmt"><option value="json">JSON</option>
+    <option value="html">HTML</option><option value="pdf">PDF</option></select>
+  <label>Minimum severity</label>
+  <select id="x_sev"><option value="">All severities</option>
+    <option value="informational">Informational +</option>
+    <option value="low">Low +</option><option value="medium">Medium +</option>
+    <option value="high">High +</option><option value="critical">Critical only</option></select>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+    <button class="ghost" id="x_cancel">Cancel</button>
+    <button class="primary" id="x_open">Open in new tab</button>
+  </div>
+</dialog>
+
 <!-- command palette -->
 <div id="palette"><div class="palbox">
-  <input id="palInput" placeholder="Jump to a section or run an action…" autocomplete="off">
+  <input id="palInput" placeholder="Search findings, endpoints, tech… or jump to a section" autocomplete="off">
   <div class="palresults" id="palResults"></div>
 </div></div>
 
@@ -359,7 +377,8 @@ const SECTIONS=[
   ["Output",["Timeline","Reports"]],
 ];
 const FLATSECTIONS=SECTIONS.flatMap(([,items])=>items);
-const state={scanId:null,section:"Overview",ws:null,runningId:null,sevFilter:new Set(),counts:{}};
+const state={scanId:null,section:"Overview",ws:null,runningId:null,
+  sevFilter:new Set(),catFilter:new Set(),confFilter:new Set(),counts:{},searchIndex:[]};
 
 /* ============================ theme ============================ */
 const root=document.documentElement;
@@ -491,17 +510,45 @@ const RENDER={
     const data=await api(`/api/scans/${SID()}/findings`);
     const w=el("div");w.append(el("h1",{},"Findings"),el("div",{class:"sub"},`${data.length} total`));
     if(!data.length){w.append(emptyState("No findings — clean scan.")); return w;}
-    const counts={};for(const f of data)counts[f.severity]=(counts[f.severity]||0)+1;
+    const counts={},catCounts={},confCounts={};
+    for(const f of data){counts[f.severity]=(counts[f.severity]||0)+1;
+      if(f.category)catCounts[f.category]=(catCounts[f.category]||0)+1;
+      if(f.confidence)confCounts[f.confidence]=(confCounts[f.confidence]||0)+1;}
     const bar=el("div",{class:"toolbar"});
     const search=el("input",{placeholder:"Search findings…",oninput:apply});bar.append(search);
     for(const s of ["critical","high","medium","low","informational"]){ if(!counts[s])continue;
       const chip=el("span",{class:`chip ${s}`+(state.sevFilter.has(s)?" on":""),
         onclick:()=>{state.sevFilter.has(s)?state.sevFilter.delete(s):state.sevFilter.add(s);
           chip.classList.toggle("on");apply();}},`${s} ${counts[s]}`);bar.append(chip);}
-    w.append(bar);const list=el("div");w.append(list);
+    w.append(bar);
+    // second filter row: category + confidence facets (plain chips, AND across facets)
+    const bar2=el("div",{class:"toolbar"});
+    function facet(set,key,label,count){
+      const chip=el("span",{class:"chip"+(set.has(key)?" on":""),
+        style:set.has(key)?"background:var(--accent);color:#fff;border-color:transparent":"",
+        onclick:()=>{set.has(key)?set.delete(key):set.add(key);
+          chip.classList.toggle("on");
+          chip.style.cssText=set.has(key)?"background:var(--accent);color:#fff;border-color:transparent":"";
+          apply();}},`${label} ${count}`);return chip;}
+    const cats=Object.keys(catCounts).sort();
+    if(cats.length>1){bar2.append(el("span",{class:"kv"},"category:"));
+      for(const c of cats)bar2.append(facet(state.catFilter,c,c,catCounts[c]));}
+    const confs=Object.keys(confCounts).sort();
+    if(confs.length>1){bar2.append(el("span",{class:"kv",style:"margin-left:8px"},"confidence:"));
+      for(const c of confs)bar2.append(facet(state.confFilter,c,c,confCounts[c]));}
+    if(bar2.childNodes.length)w.append(bar2);
+    const clearRow=el("div",{class:"toolbar"});
+    const summary=el("span",{class:"sub"});clearRow.append(summary,
+      el("button",{class:"ghost",style:"padding:3px 10px;font-size:12px",onclick:()=>{
+        state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();go("Findings");}},"Clear filters"));
+    w.append(clearRow);
+    const list=el("div");w.append(list);
     function apply(){list.innerHTML="";const q=search.value.toLowerCase();
       const items=data.filter(f=>(!state.sevFilter.size||state.sevFilter.has(f.severity))
+        &&(!state.catFilter.size||state.catFilter.has(f.category))
+        &&(!state.confFilter.size||state.confFilter.has(f.confidence))
         &&(!q||JSON.stringify(f).toLowerCase().includes(q)));
+      summary.textContent=`${items.length} of ${data.length} shown`;
       if(!items.length){list.append(emptyState("No matching findings."));return;}
       for(const f of items){
         const card=el("div",{class:"finding"});
@@ -656,19 +703,52 @@ async function graphView(){
   for(const[k,v]of Object.entries(color))legend.append(el("span",{},el("b",{style:`background:${v}`}),k));
   w.append(legend);
   if(!g.nodes.length){w.append(emptyState("No graph data."));return w;}
+  w.append(el("div",{class:"sub",style:"margin:-4px 0 8px"},
+    "Scroll to zoom · drag to pan · click a node for detail"));
   const W=Math.min($("#main").clientWidth-10,980),H=560,cx=W/2,cy=H/2,NS="http://www.w3.org/2000/svg";
   const svg=document.createElementNS(NS,"svg");svg.setAttribute("width",W);svg.setAttribute("height",H);
+  svg.style.cssText="border:1px solid var(--border);border-radius:12px;background:var(--panel);"+
+    "cursor:grab;touch-action:none;display:block;max-width:100%";
+  const root=document.createElementNS(NS,"g");svg.append(root);  // pan/zoom transform target
   const others=g.nodes.slice(1),pos={[g.nodes[0].id]:[cx,cy]};
   others.forEach((n,i)=>{const a=2*Math.PI*i/others.length,r=Math.min(W,H)/2-70;
     pos[n.id]=[cx+r*Math.cos(a),cy+r*Math.sin(a)];});
+  // degree count per node for the detail drawer
+  const deg={};for(const e of g.edges){deg[e.source]=(deg[e.source]||0)+1;deg[e.target]=(deg[e.target]||0)+1;}
   for(const e of g.edges){const[x1,y1]=pos[e.source]||[cx,cy],[x2,y2]=pos[e.target]||[cx,cy];
     const l=document.createElementNS(NS,"line");for(const[a,v]of Object.entries({x1,y1,x2,y2,stroke:"var(--border)"}))
-      l.setAttribute(a,v);svg.append(l);}
+      l.setAttribute(a,v);root.append(l);}
   for(const n of g.nodes){const[x,y]=pos[n.id];const c=document.createElementNS(NS,"circle");
     for(const[a,v]of Object.entries({cx:x,cy:y,r:n.type==="domain"?10:5.5,fill:color[n.type]||"#8a93a6"}))
-      c.setAttribute(a,v);const tt=document.createElementNS(NS,"title");tt.textContent=n.label;c.append(tt);svg.append(c);
+      c.setAttribute(a,v);c.style.cursor="pointer";
+    const tt=document.createElementNS(NS,"title");tt.textContent=n.label;c.append(tt);
+    c.addEventListener("click",ev=>{ev.stopPropagation();
+      const nbrs=g.edges.filter(e=>e.source===n.id||e.target===n.id)
+        .map(e=>e.source===n.id?e.target:e.source);
+      openDrawer(n.label||n.id,[
+        {label:"Node",rows:[["Type",n.type],["Label",n.label||"—"],
+          ["Connections",String(deg[n.id]||0)]]},
+        {label:"Neighbors",tags:[...new Set(nbrs)].slice(0,40)},
+        {label:"Raw",raw:n}]);});
+    root.append(c);
     const t=document.createElementNS(NS,"text");t.setAttribute("x",x+9);t.setAttribute("y",y+3);
-    t.setAttribute("font-size","10");t.textContent=(n.label||"").slice(0,42);svg.append(t);}
+    t.setAttribute("font-size","10");t.style.pointerEvents="none";
+    t.textContent=(n.label||"").slice(0,42);root.append(t);}
+  // pan + zoom via a single transform on the root group
+  const view={x:0,y:0,k:1};
+  function apply(){root.setAttribute("transform",`translate(${view.x} ${view.y}) scale(${view.k})`);}
+  svg.addEventListener("wheel",ev=>{ev.preventDefault();
+    const r=svg.getBoundingClientRect(),mx=ev.clientX-r.left,my=ev.clientY-r.top;
+    const f=ev.deltaY<0?1.12:1/1.12,nk=Math.min(6,Math.max(.3,view.k*f));
+    // zoom toward the cursor
+    view.x=mx-(mx-view.x)*(nk/view.k);view.y=my-(my-view.y)*(nk/view.k);view.k=nk;apply();},{passive:false});
+  let drag=null;
+  svg.addEventListener("pointerdown",ev=>{drag={x:ev.clientX-view.x,y:ev.clientY-view.y};
+    svg.style.cursor="grabbing";svg.setPointerCapture(ev.pointerId);});
+  svg.addEventListener("pointermove",ev=>{if(!drag)return;
+    view.x=ev.clientX-drag.x;view.y=ev.clientY-drag.y;apply();});
+  svg.addEventListener("pointerup",ev=>{drag=null;svg.style.cursor="grab";
+    try{svg.releasePointerCapture(ev.pointerId);}catch{}});
   w.append(svg);return w;
 }
 async function timelineView(){
@@ -698,10 +778,19 @@ function reportsView(){
   w.append(el("div",{class:"btnrow"},
     el("a",{href:`${base}.json`,target:"_blank"},el("button",{class:"ghost"},"Open JSON")),
     el("a",{href:`${base}.html`,target:"_blank"},el("button",{class:"ghost"},"Open HTML")),
-    el("a",{href:`${base}.pdf`,target:"_blank"},el("button",{class:"primary"},"Open / Download PDF"))));
+    el("a",{href:`${base}.pdf`,target:"_blank"},el("button",{class:"primary"},"Open / Download PDF")),
+    el("button",{class:"ghost",onclick:()=>$("#exportDialog").showModal()},"⚙ Custom export…")));
   w.append(el("h2",{},"HTML preview"),el("iframe",{class:"preview",src:`${base}.html`}));
   return w;
 }
+$("#x_cancel").onclick=()=>$("#exportDialog").close();
+$("#x_open").onclick=()=>{
+  if(!SID()){toast("No scan selected","err");return;}
+  const fmt=$("#x_fmt").value,sev=$("#x_sev").value;
+  const q=sev?`?min_severity=${encodeURIComponent(sev)}`:"";
+  window.open(`/api/scans/${SID()}/report.${fmt}${q}`,"_blank");
+  $("#exportDialog").close();
+};
 
 /* ============================ scans + progress ============================ */
 async function loadScans(keep){
@@ -719,6 +808,24 @@ async function refreshCounts(){
     state.counts.Technologies=o.technologies.length;}catch{}
   try{state.counts.Endpoints=(await api(`/api/scans/${SID()}/endpoints`)).length;}catch{}
   renderNav();
+  buildSearchIndex();  // refresh Ctrl+K global search (fire-and-forget)
+}
+/* Build a lightweight cross-section index the command palette searches. */
+async function buildSearchIndex(){
+  const sid=SID();if(!sid){state.searchIndex=[];return;}
+  const idx=[];
+  const grab=async(path,section,map)=>{
+    try{for(const r of await api(`/api/scans/${sid}/${path}`))idx.push({...map(r),section});}catch{}
+  };
+  await Promise.all([
+    grab("findings","Findings",f=>({label:f.name,hint:`finding · ${f.severity}`,
+      text:`${f.name} ${f.check_id} ${f.category||""}`})),
+    grab("endpoints","Endpoints",e=>({label:e.url,hint:`endpoint · ${e.method||"?"}`,text:e.url})),
+    grab("technologies","Technologies",t=>({label:t.name,hint:"technology",
+      text:`${t.name} ${t.category||""}`})),
+    grab("pages","Pages",p=>({label:p.title||p.url,hint:"page",text:`${p.title||""} ${p.url}`})),
+  ]);
+  if(SID()===sid)state.searchIndex=idx;  // ignore stale responses after a scan switch
 }
 $("#newScanBtn").onclick=()=>$("#scanDialog").showModal();
 $("#cancelDialog").onclick=()=>$("#scanDialog").close();
@@ -761,10 +868,20 @@ function buildPalette(q){
   const actions=[
     ...FLATSECTIONS.map(s=>({label:"Go to "+s,hint:"section",run:()=>go(s)})),
     {label:"New Scan",hint:"action",run:()=>$("#scanDialog").showModal()},
+    {label:"Custom export…",hint:"action",run:()=>$("#exportDialog").showModal()},
     {label:"Toggle theme",hint:"action",run:()=>$("#themeBtn").click()},
     {label:"Open Reports",hint:"action",run:()=>go("Reports")},
   ];
-  palItems=actions.filter(a=>a.label.toLowerCase().includes(q.toLowerCase()));palSel=0;drawPalette();
+  const ql=q.toLowerCase();
+  let items=actions.filter(a=>a.label.toLowerCase().includes(ql));
+  if(ql){  // global search across the current scan's data
+    const hits=state.searchIndex
+      .filter(d=>(d.text||d.label||"").toLowerCase().includes(ql))
+      .slice(0,40)
+      .map(d=>({label:d.label,hint:d.hint,run:()=>go(d.section)}));
+    items=items.concat(hits);
+  }
+  palItems=items.slice(0,60);palSel=0;drawPalette();
 }
 function drawPalette(){PALRES.innerHTML="";palItems.forEach((a,i)=>{
   PALRES.append(el("div",{class:"palitem"+(i===palSel?" sel":""),

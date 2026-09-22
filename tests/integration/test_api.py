@@ -69,7 +69,18 @@ def test_api_serves_scan_data(mock_site: str, tmp_path) -> None:
         assert isinstance(forms, list) and forms  # the mock has a search form
 
         # report formats
-        assert client.get(f"/api/scans/{sid}/report.json").json()["scan_id"] == sid
+        full = client.get(f"/api/scans/{sid}/report.json").json()
+        assert full["scan_id"] == sid
+        # min_severity filter keeps only high+ findings and recomputes summary
+        hi = client.get(
+            f"/api/scans/{sid}/report.json", params={"min_severity": "high"}
+        ).json()
+        assert all(
+            f["severity"] in ("high", "critical") for f in hi["findings"]
+        )
+        assert hi["summary"]["total_findings"] == len(hi["findings"])
+        assert hi["summary"]["min_severity"] == "high"
+        assert len(hi["findings"]) <= len(full["findings"])
         html = client.get(f"/api/scans/{sid}/report.html")
         assert html.status_code == 200 and "Executive Summary" in html.text
         pdf = client.get(f"/api/scans/{sid}/report.pdf")
