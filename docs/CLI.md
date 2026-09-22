@@ -21,6 +21,26 @@ description).
 Launch the dashboard (FastAPI) at `http://host:port` (default 127.0.0.1:8000).
 Reads scans from the database and can start new scans with live progress.
 
+### `webrecon scans [--database-url URL]`
+List stored scans (id prefix, target, status, findings, created).
+
+### `webrecon report SCAN_ID [--json P] [--html P] [--pdf P] [--database-url URL]`
+Regenerate a report from a stored scan (accepts an 8-char id prefix). With no
+export flag, prints a one-line risk summary.
+
+## Extra `scan` options
+
+| Option | Meaning |
+|---|---|
+| `--modules a,b` | Run only these modules (+ their deps). |
+| `--allow-private` | Lab mode: permit private/loopback targets. |
+| `--rate N` | Max requests/second. |
+| `--concurrency N` | Max concurrent requests. |
+| `--timeout S` | Per-request timeout. |
+| `--no-robots` | Ignore robots.txt (authorized only). |
+| `--html P` / `--pdf P` | Also write HTML / PDF report. |
+| `--no-db` | Don't persist to the database. |
+
 ### `webrecon scan URL [options]`
 Run a scan against a target you own or are authorized to test. The pipeline is
 wired in the vertical-MVP phase; current options:

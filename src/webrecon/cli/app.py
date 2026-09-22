@@ -85,6 +85,12 @@ def scan(
     allow_private: bool = typer.Option(
         False, "--allow-private", help="Lab mode: permit private/loopback targets (§3)."
     ),
+    rate: float | None = typer.Option(None, "--rate", help="Max requests/second."),
+    concurrency: int | None = typer.Option(None, "--concurrency", help="Max concurrent requests."),
+    timeout: float | None = typer.Option(None, "--timeout", help="Per-request timeout (seconds)."),
+    no_robots: bool = typer.Option(
+        False, "--no-robots", help="Ignore robots.txt (authorized only)."
+    ),
     browser: bool = typer.Option(False, "--browser", help="Use the headless browser engine."),
     no_db: bool = typer.Option(False, "--no-db", help="Do not persist results to the database."),
     database_url: str = typer.Option(
@@ -113,6 +119,14 @@ def scan(
     cfg.scope.max_pages = max_pages
     cfg.scope.allow_private_targets = allow_private
     cfg.browser_mode = browser
+    if rate is not None:
+        cfg.rate.requests_per_second = rate
+    if concurrency is not None:
+        cfg.rate.concurrency = concurrency
+    if timeout is not None:
+        cfg.http.timeout_seconds = timeout
+    if no_robots:
+        cfg.crawl.respect_robots = False
     if modules_opt:
         cfg.enabled_modules = [m.strip() for m in modules_opt.split(",") if m.strip()]
 
@@ -212,6 +226,106 @@ def _print_summary(report: dict) -> None:
                 f["name"],
             )
         console.print(table)
+
+
+@app.command()
+def scans(
+    database_url: str = typer.Option(
+        "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
+    ),
+) -> None:
+    """List stored scans."""
+    from ..api import queries
+    from ..storage import init_db
+
+    async def _run() -> list[dict]:
+        db = await init_db(database_url)
+        try:
+            return await queries.list_scans(db)
+        finally:
+            await db.dispose()
+
+    rows = asyncio.run(_run())
+    if not rows:
+        console.print("[yellow]No scans stored.[/]")
+        raise typer.Exit(0)
+    table = Table(title="Scans")
+    table.add_column("id", style="cyan")
+    table.add_column("target")
+    table.add_column("status")
+    table.add_column("findings", justify="right")
+    table.add_column("created")
+    for r in rows:
+        table.add_row(r["id"][:8], r["target"], r["status"], str(r["findings"]),
+                      r["created_at"][:19])
+    console.print(table)
+
+
+@app.command()
+def report(
+    scan_id: str = typer.Argument(..., help="Scan id (full or 8-char prefix)."),
+    json_out: str | None = typer.Option(None, "--json", help="Write JSON report."),
+    html_out: str | None = typer.Option(None, "--html", help="Write HTML report."),
+    pdf_out: str | None = typer.Option(None, "--pdf", help="Write PDF report."),
+    database_url: str = typer.Option(
+        "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
+    ),
+) -> None:
+    """Regenerate a report from a stored scan (no re-scan)."""
+    import json
+    from pathlib import Path
+
+    from ..api import queries
+    from ..reporting.db_report import build_report_from_db
+    from ..reporting.html_report import render_html
+    from ..storage import init_db
+
+    async def _run() -> tuple[dict, dict] | None:
+        db = await init_db(database_url)
+        try:
+            # Resolve an 8-char prefix to a full id.
+            full = scan_id
+            if len(scan_id) < 36:
+                for s in await queries.list_scans(db):
+                    if s["id"].startswith(scan_id):
+                        full = s["id"]
+                        break
+            return await build_report_from_db(db, full)
+        finally:
+            await db.dispose()
+
+    built = asyncio.run(_run())
+    if built is None:
+        console.print(f"[red]Scan not found:[/] {scan_id}")
+        raise typer.Exit(1)
+    rep, extras = built
+
+    def _write(path: str, data: str | bytes) -> None:
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data) if isinstance(data, bytes) else p.write_text(data, encoding="utf-8")
+
+    if not any([json_out, html_out, pdf_out]):
+        console.print(f"Scan {rep['scan_id'][:8]} — risk [bold]{rep['risk']['level']}[/], "
+                      f"{rep['summary']['total_findings']} finding(s). "
+                      f"Use --json/--html/--pdf to export.")
+        raise typer.Exit(0)
+    if json_out:
+        _write(json_out, json.dumps(rep, indent=2))
+        console.print(f"[green]OK[/] JSON -> {json_out}")
+    if html_out or pdf_out:
+        html = render_html(rep, extras)
+        if html_out:
+            _write(html_out, html)
+            console.print(f"[green]OK[/] HTML -> {html_out}")
+        if pdf_out:
+            from ..reporting.pdf_report import PdfUnavailableError, render_pdf
+
+            try:
+                _write(pdf_out, render_pdf(html))
+                console.print(f"[green]OK[/] PDF -> {pdf_out}")
+            except PdfUnavailableError as exc:
+                console.print(f"[red]PDF unavailable:[/] {exc}")
 
 
 @app.command()
