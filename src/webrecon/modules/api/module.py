@@ -32,7 +32,9 @@ API_INVENTORY_KEY = "api_endpoints"
 class ApiDiscoveryModule(ScannerModule):
     name = "api"
     version = "0.1.0"
-    requires = ("crawler", "javascript")
+    # browser (opt-in) runs first so its network-observed endpoints can upgrade
+    # referenced ones to observed; it skips cheaply when browser_mode is off.
+    requires = ("crawler", "javascript", "browser")
     description = "Consolidate API/GraphQL/WebSocket endpoints (observed/referenced/potential)."
 
     async def run(self, ctx) -> ModuleResult:  # type: ignore[override]
@@ -52,6 +54,7 @@ class ApiDiscoveryModule(ScannerModule):
         self._from_crawler(ctx, agg, base)
         self._from_javascript(ctx, agg, base)
         self._from_sitemap(ctx, agg)
+        self._from_browser(ctx, agg)
 
         endpoints = agg.endpoints()
         ctx.shared[API_INVENTORY_KEY] = endpoints
@@ -119,6 +122,12 @@ class ApiDiscoveryModule(ScannerModule):
         for url in inv.sitemap_urls:
             if looks_like_api(url):
                 agg.add(url, Observation.REFERENCED, "sitemap")
+
+    def _from_browser(self, ctx, agg: EndpointAggregator) -> None:
+        # Endpoints the headless browser actually requested are OBSERVED (§20).
+        for ep in ctx.shared.get("browser_endpoints") or []:
+            method = ep.get("method")
+            agg.add(ep["url"], Observation.OBSERVED, "browser", method=method)
 
     def _sensitive_finding(self, result: ModuleResult, endpoints: list[Endpoint]) -> None:
         sensitive = [e for e in endpoints if e.sensitive and e.in_scope]

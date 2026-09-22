@@ -99,6 +99,19 @@ class JsConfig(BaseSettings):
     scan_secrets: bool = True
 
 
+class BrowserConfig(BaseSettings):
+    """Headless-browser (Playwright) options (§20)."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    # Capture a full-page screenshot of the rendered target.
+    screenshots: bool = True
+    # Where to write screenshots (created on demand); None = skip saving.
+    screenshot_dir: str | None = "scans/screenshots"
+    nav_timeout_ms: int = 15000
+    wait_until: str = "networkidle"  # load | domcontentloaded | networkidle
+
+
 class ScanConfig(BaseSettings):
     """Top-level scan configuration assembled from the sub-configs."""
 
@@ -109,6 +122,7 @@ class ScanConfig(BaseSettings):
     http: HttpConfig = Field(default_factory=HttpConfig)
     crawl: CrawlConfig = Field(default_factory=CrawlConfig)
     js: JsConfig = Field(default_factory=JsConfig)
+    browser: BrowserConfig = Field(default_factory=BrowserConfig)
     # Enabled modules; empty means "all registered modules".
     enabled_modules: list[str] = Field(default_factory=list)
     browser_mode: bool = False
