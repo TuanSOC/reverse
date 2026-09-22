@@ -34,6 +34,10 @@ Early development — building module-by-module against a phased plan.
 - **Phase 5 (technology fingerprinting)** ✅ — signature-based detection across
   headers, cookies, HTML, script URLs, and meta generator, with confidence scoring,
   version extraction, and per-detection evidence.
+- **Phase 6 (JavaScript analysis + source maps)** ✅ — downloads in-scope JS, extracts
+  endpoint/websocket/GraphQL/analytics/cloud references (classified `referenced`, never
+  asserted), scans for masked secret patterns, and flags exposed `.js.map` source maps.
+  Downloaded JS is never executed.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 

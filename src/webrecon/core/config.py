@@ -86,6 +86,19 @@ class CrawlConfig(BaseSettings):
     parse_sitemap: bool = True
 
 
+class JsConfig(BaseSettings):
+    """JavaScript-analysis knobs (§8/§9)."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    # Cap how many in-scope JS files to download and analyze.
+    max_files: int = 50
+    # Follow sourceMappingURL and probe <script>.map for exposed source maps.
+    fetch_source_maps: bool = True
+    # Scan JS bodies for high-signal secret patterns (matches are masked).
+    scan_secrets: bool = True
+
+
 class ScanConfig(BaseSettings):
     """Top-level scan configuration assembled from the sub-configs."""
 
@@ -95,6 +108,7 @@ class ScanConfig(BaseSettings):
     rate: RateLimitConfig = Field(default_factory=RateLimitConfig)
     http: HttpConfig = Field(default_factory=HttpConfig)
     crawl: CrawlConfig = Field(default_factory=CrawlConfig)
+    js: JsConfig = Field(default_factory=JsConfig)
     # Enabled modules; empty means "all registered modules".
     enabled_modules: list[str] = Field(default_factory=list)
     browser_mode: bool = False

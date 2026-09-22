@@ -28,6 +28,21 @@ INDEX_HTML = b"""<!doctype html>
 </body></html>"""
 
 
+APP_JS = b"""
+var API_BASE = "/api/v1/users";
+fetch("/api/admin/settings").then(r => r.json());
+var socket = new WebSocket("wss://127.0.0.1/socket");
+// AKIAIOSFODNN7EXAMPLE is AWS's public documentation example key (not a secret)
+var awsKey = "AKIAIOSFODNN7EXAMPLE";
+//# sourceMappingURL=app.js.map
+"""
+
+APP_JS_MAP = (
+    b'{"version":3,"sources":["src/index.js","src/api/client.js"],'
+    b'"sourceRoot":"","names":[],"mappings":"AAAA"}'
+)
+
+
 class _Handler(BaseHTTPRequestHandler):
     # Silence per-request logging to keep test output clean.
     def log_message(self, *args: object) -> None:  # noqa: D401
@@ -85,6 +100,12 @@ class _Handler(BaseHTTPRequestHandler):
                 "</urlset>"
             ).encode()
             self._send(200, body, ctype="application/xml")
+        elif path == "/static/app.js":
+            self._send(200, APP_JS, ctype="application/javascript")
+        elif path == "/static/app.js.map":
+            self._send(200, APP_JS_MAP, ctype="application/json")
+        elif path == "/wp-content/themes/mock/app.js":
+            self._send(200, b"console.log('wp theme');", ctype="application/javascript")
         elif path == "/redirect":
             self._send(301, b"", extra={"Location": "/"})
         elif path == "/redirect-external":
