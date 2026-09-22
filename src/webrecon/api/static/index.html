@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebRecon</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#11151f; --panel2:#161b26; --border:#232a38;
+    --fg:#d7dce5; --muted:#8a93a6; --accent:#4da3ff; --accent2:#7c5cff;
+    --crit:#ff4d6d; --high:#ff784e; --med:#f2c14e; --low:#4dd0e1; --info:#6b7280;
+    --ok:#3ddc97;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  .app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:52px 1fr;height:100vh}
+  header{grid-column:1/3;display:flex;align-items:center;gap:16px;padding:0 16px;
+    background:var(--panel);border-bottom:1px solid var(--border)}
+  header .brand{font-weight:700;letter-spacing:.5px}
+  header .brand span{color:var(--accent)}
+  header .spacer{flex:1}
+  select,button,input{background:var(--panel2);color:var(--fg);border:1px solid var(--border);
+    border-radius:6px;padding:6px 10px;font:inherit}
+  button{cursor:pointer}
+  button.primary{background:var(--accent);color:#04101f;border-color:var(--accent);font-weight:600}
+  button.primary:hover{filter:brightness(1.1)}
+  nav{background:var(--panel);border-right:1px solid var(--border);padding:10px 8px;overflow:auto}
+  nav a{display:block;padding:8px 12px;border-radius:6px;color:var(--muted);cursor:pointer}
+  nav a.active,nav a:hover{background:var(--panel2);color:var(--fg)}
+  main{overflow:auto;padding:20px 24px}
+  h1{font-size:20px;margin:0 0 4px}
+  h2{font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:24px 0 10px}
+  .cards{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;min-width:130px}
+  .card .k{color:var(--muted);font-size:12px}
+  .card .v{font-size:22px;font-weight:700;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin-top:6px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  tr:hover td{background:var(--panel)}
+  code,.mono{font-family:var(--mono);font-size:12.5px}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600}
+  .sev-critical{background:rgba(255,77,109,.15);color:var(--crit)}
+  .sev-high{background:rgba(255,120,78,.15);color:var(--high)}
+  .sev-medium{background:rgba(242,193,78,.15);color:var(--med)}
+  .sev-low{background:rgba(77,208,225,.15);color:var(--low)}
+  .sev-informational{background:rgba(107,114,128,.2);color:var(--muted)}
+  .obs-observed{color:var(--ok)} .obs-referenced{color:var(--accent)} .obs-potential{color:var(--muted)}
+  .row-toggle{cursor:pointer}
+  .evidence{background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+    padding:10px 12px;margin:6px 0;white-space:pre-wrap}
+  .filters{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+  .muted{color:var(--muted)}
+  .progress{display:flex;gap:6px;align-items:center;font-size:12px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+  .dot.ok{background:var(--ok)} .dot.run{background:var(--med)} .dot.fail{background:var(--crit)}
+  dialog{background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;
+    padding:20px;width:min(460px,92vw)}
+  dialog label{display:block;margin:10px 0 4px;color:var(--muted);font-size:12px}
+  dialog input[type=text],dialog input[type=number],dialog select{width:100%}
+  .risk{font-size:26px;font-weight:800}
+  svg text{fill:var(--fg);font-size:10px}
+  .empty{color:var(--muted);padding:24px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">WEB<span>RECON</span></div>
+    <select id="scanSelect" title="Select a scan"></select>
+    <div id="progress" class="progress"></div>
+    <div class="spacer"></div>
+    <button class="primary" id="newScanBtn">+ New Scan</button>
+  </header>
+  <nav id="nav"></nav>
+  <main id="main"><div class="empty">No scan selected. Start one with “New Scan”.</div></main>
+</div>
+
+<dialog id="scanDialog">
+  <h1>New Scan</h1>
+  <p class="muted" style="margin:.2em 0 0">Only scan assets you own or are authorized to test.</p>
+  <label>Target URL</label>
+  <input type="text" id="f_url" placeholder="https://example.com">
+  <div style="display:flex;gap:10px">
+    <div style="flex:1"><label>Max depth</label><input type="number" id="f_depth" value="3"></div>
+    <div style="flex:1"><label>Max pages</label><input type="number" id="f_pages" value="300"></div>
+  </div>
+  <label>Scope mode</label>
+  <select id="f_scope">
+    <option value="same-domain">same-domain</option>
+    <option value="same-origin">same-origin</option>
+    <option value="include-subdomains">include-subdomains</option>
+  </select>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+    <input type="checkbox" id="f_browser" style="width:auto"> Browser mode (render JS)</label>
+  <label style="display:flex;align-items:center;gap:8px">
+    <input type="checkbox" id="f_private" style="width:auto"> Lab mode (allow private/loopback)</label>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+    <button onclick="document.getElementById('scanDialog').close()">Cancel</button>
+    <button class="primary" id="startScanBtn">Start Scan</button>
+  </div>
+</dialog>
+
+<script type="module">
+const SECTIONS = ["Overview","Findings","Endpoints","Technologies","Pages","Assets","DNS / TLS","Graph"];
+const state = { scanId:null, section:"Overview", ws:null };
+
+const $ = s => document.querySelector(s);
+const el = (tag, attrs={}, ...kids) => {
+  const n = document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(k==="class") n.className=v; else if(k==="html") n.innerHTML=v; else n.setAttribute(k,v);
+  }
+  for(const kid of kids) n.append(kid?.nodeType?kid:document.createTextNode(kid??""));
+  return n;
+};
+const api = (p)=>fetch(p).then(r=>r.ok?r.json():Promise.reject(r.status));
+
+function renderNav(){
+  const nav=$("#nav"); nav.innerHTML="";
+  for(const s of SECTIONS){
+    const a=el("a",{class:s===state.section?"active":""},s);
+    a.onclick=()=>{state.section=s;renderNav();renderSection();};
+    nav.append(a);
+  }
+}
+
+async function loadScans(){
+  const scans=await api("/api/scans");
+  const sel=$("#scanSelect"); sel.innerHTML="";
+  if(!scans.length){ sel.append(el("option",{},"— no scans —")); return; }
+  for(const s of scans){
+    const label=`${s.target}  ·  ${s.status}  ·  ${s.findings} findings`;
+    sel.append(el("option",{value:s.id}, label));
+  }
+  sel.onchange=()=>{state.scanId=sel.value;renderSection();};
+  if(!state.scanId){ state.scanId=scans[0].id; sel.value=scans[0].id; }
+  renderSection();
+}
+
+const sevPill = s => el("span",{class:`pill sev-${s}`},s);
+
+async function renderSection(){
+  const main=$("#main");
+  if(!state.scanId){ main.innerHTML='<div class="empty">No scan selected.</div>'; return; }
+  main.innerHTML='<div class="muted">Loading…</div>';
+  try{
+    if(state.section==="Overview") return renderOverview(main);
+    if(state.section==="Findings") return renderFindings(main);
+    if(state.section==="Endpoints") return renderEndpoints(main);
+    if(state.section==="Technologies") return renderTable(main,`/api/scans/${state.scanId}/technologies`,
+      ["name","category","version","confidence"],"Technologies");
+    if(state.section==="Pages") return renderTable(main,`/api/scans/${state.scanId}/pages`,
+      ["url","title","status_code","depth"],"Pages");
+    if(state.section==="Assets") return renderTable(main,`/api/scans/${state.scanId}/assets`,
+      ["asset_type","observation","url"],"Assets");
+    if(state.section==="DNS / TLS") return renderDnsTls(main);
+    if(state.section==="Graph") return renderGraph(main);
+  }catch(e){ main.innerHTML=`<div class="empty">Error loading: ${e}</div>`; }
+}
+
+async function renderOverview(main){
+  const o=await api(`/api/scans/${state.scanId}`);
+  main.innerHTML="";
+  main.append(el("h1",{},o.target.base_url||"—"),
+    el("div",{class:"muted"},`${o.status} · scan ${o.id.slice(0,8)}`));
+  const risk=o.risk_level||"informational";
+  const cards=el("div",{class:"cards"});
+  cards.append(card("Risk", el("span",{class:`risk sev-${risk}`},risk)));
+  cards.append(card("Findings", String(o.total_findings)));
+  for(const [s,n] of Object.entries(o.findings_by_severity||{}))
+    cards.append(card(s, String(n)));
+  main.append(cards);
+  main.append(el("h2",{},"Technology"));
+  if(o.technologies.length){
+    const t=table(["name","category","version","confidence"]);
+    for(const x of o.technologies) t.tbody.append(row([x.name,x.category,x.version||"—",x.confidence]));
+    main.append(t.table);
+  } else main.append(el("div",{class:"muted"},"none detected"));
+  main.append(el("h2",{},"Modules"));
+  const mt=table(["module","status","ms"]);
+  for(const m of o.modules){
+    const dot=el("span",{class:"dot "+(m.status==="success"?"ok":m.status==="failed"?"fail":"")});
+    mt.tbody.append(row([m.module, el("span",{},dot," "+m.status),
+      m.duration_ms?Math.round(m.duration_ms):"—"]));
+  }
+  main.append(mt.table);
+}
+
+async function renderFindings(main){
+  const data=await api(`/api/scans/${state.scanId}/findings`);
+  main.innerHTML=""; main.append(el("h1",{},"Findings"));
+  if(!data.length){ main.append(el("div",{class:"empty"},"No findings.")); return; }
+  const t=table(["severity","conf","obs","check","name"]);
+  for(const f of data){
+    const tr=row([sevPill(f.severity), f.confidence,
+      el("span",{class:"obs-"+f.observation},f.observation), el("code",{},f.check_id), f.name]);
+    tr.classList.add("row-toggle");
+    const det=el("tr");const td=el("td",{colspan:"5"});det.append(td);det.style.display="none";
+    td.append(el("div",{class:"evidence"},
+      `${f.description}\n\nImpact: ${f.impact}\nFix: ${f.recommendation}\n\n`+
+      f.evidence.map(e=>`• [${e.source}] ${e.url||""}\n  ${JSON.stringify(e.data)}`).join("\n")));
+    tr.onclick=()=>{det.style.display=det.style.display==="none"?"":"none";};
+    t.tbody.append(tr); t.tbody.append(det);
+  }
+  main.append(t.table);
+}
+
+async function renderEndpoints(main){
+  const data=await api(`/api/scans/${state.scanId}/endpoints`);
+  main.innerHTML=""; main.append(el("h1",{},"API Endpoints"));
+  if(!data.length){ main.append(el("div",{class:"empty"},"No endpoints.")); return; }
+  const t=table(["observation","kind","method","url","source"]);
+  for(const e of data) t.tbody.append(row([
+    el("span",{class:"obs-"+e.observation},e.observation), e.kind, e.method||"—",
+    el("code",{},e.url), el("span",{class:"muted"},e.source||"")]));
+  main.append(t.table);
+}
+
+async function renderDnsTls(main){
+  const [dns,certs]=await Promise.all([
+    api(`/api/scans/${state.scanId}/dns`), api(`/api/scans/${state.scanId}/certificates`)]);
+  main.innerHTML=""; main.append(el("h1",{},"DNS / TLS"));
+  main.append(el("h2",{},"DNS records"));
+  if(dns.length){const t=table(["type","name","value"]);
+    for(const d of dns) t.tbody.append(row([d.record_type,d.name,el("code",{},d.value)]));
+    main.append(t.table);} else main.append(el("div",{class:"muted"},"none (or IP-literal target)"));
+  main.append(el("h2",{},"Certificates"));
+  if(certs.length){const t=table(["subject","issuer","not_after"]);
+    for(const c of certs) t.tbody.append(row([c.subject,c.issuer,c.not_after]));
+    main.append(t.table);} else main.append(el("div",{class:"muted"},"none"));
+}
+
+async function renderGraph(main){
+  const g=await api(`/api/scans/${state.scanId}/graph`);
+  main.innerHTML=""; main.append(el("h1",{},"Relationship Graph"));
+  if(!g.nodes.length){ main.append(el("div",{class:"empty"},"No graph.")); return; }
+  const W=Math.min(main.clientWidth-20,900),H=560,cx=W/2,cy=H/2;
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("width",W);svg.setAttribute("height",H);
+  const center=g.nodes[0], others=g.nodes.slice(1);
+  const pos={[center.id]:[cx,cy]};
+  others.forEach((n,i)=>{const a=2*Math.PI*i/others.length,r=Math.min(W,H)/2-60;
+    pos[n.id]=[cx+r*Math.cos(a),cy+r*Math.sin(a)];});
+  const color={domain:"#4da3ff",technology:"#7c5cff",endpoint:"#3ddc97",dns:"#f2c14e",
+    certificate:"#ff784e"};
+  for(const e of g.edges){const [x1,y1]=pos[e.source]||[cx,cy],[x2,y2]=pos[e.target]||[cx,cy];
+    const l=document.createElementNS("http://www.w3.org/2000/svg","line");
+    l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+    l.setAttribute("stroke","#2a3140");svg.append(l);}
+  for(const n of g.nodes){const [x,y]=pos[n.id];
+    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",n.type==="domain"?9:5);
+    c.setAttribute("fill",color[n.type]||"#8a93a6");svg.append(c);
+    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x",x+8);t.setAttribute("y",y+3);t.textContent=(n.label||"").slice(0,40);svg.append(t);}
+  main.append(svg);
+}
+
+async function renderTable(main,url,cols,title){
+  const data=await api(url); main.innerHTML=""; main.append(el("h1",{},title));
+  if(!data.length){ main.append(el("div",{class:"empty"},"Nothing here.")); return; }
+  const t=table(cols);
+  for(const d of data) t.tbody.append(row(cols.map(c=>{
+    const v=d[c]; return (c==="url")?el("code",{},v??"") : String(v??"—");})));
+  main.append(t.table);
+}
+
+function card(k,v){const c=el("div",{class:"card"});c.append(el("div",{class:"k"},k));
+  const val=el("div",{class:"v"});val.append(v?.nodeType?v:String(v));c.append(val);return c;}
+function table(cols){const table=el("table");const thead=el("thead");const tr=el("tr");
+  for(const c of cols) tr.append(el("th",{},c));thead.append(tr);const tbody=el("tbody");
+  table.append(thead);table.append(tbody);return {table,tbody};}
+function row(cells){const tr=el("tr");for(const c of cells)
+  tr.append(el("td",{},c?.nodeType?c:String(c??"—")));return tr;}
+
+// New scan flow
+$("#newScanBtn").onclick=()=>$("#scanDialog").showModal();
+$("#startScanBtn").onclick=async()=>{
+  const body={url:$("#f_url").value.trim(),depth:+$("#f_depth").value,max_pages:+$("#f_pages").value,
+    browser:$("#f_browser").checked,allow_private:$("#f_private").checked,scope_mode:$("#f_scope").value};
+  if(!body.url) return;
+  $("#scanDialog").close();
+  const {scan_id}=await fetch("/api/scans",{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify(body)}).then(r=>r.json());
+  watchProgress(scan_id);
+};
+
+function watchProgress(scanId){
+  if(state.ws) state.ws.close();
+  const prog=$("#progress"); prog.innerHTML="";
+  const ws=new WebSocket(`ws://${location.host}/api/scans/${scanId}/events`);
+  state.ws=ws;
+  ws.onmessage=(m)=>{const ev=JSON.parse(m.data);
+    if(ev.module==="_done"){ prog.innerHTML='<span class="dot ok"></span> done';
+      loadScans().then(()=>{state.scanId=scanId;$("#scanSelect").value=scanId;renderSection();}); return;}
+    prog.innerHTML=`<span class="dot run"></span> ${ev.module} (${ev.index+1}/${ev.total})`;
+  };
+  ws.onerror=()=>{prog.innerHTML='<span class="dot fail"></span> ws error';};
+}
+
+renderNav();
+loadScans();
+</script>
+</body>
+</html>

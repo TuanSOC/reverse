@@ -65,9 +65,17 @@ class Pipeline:
         self.progress = progress
         self.repo = ScanRepository(db) if db is not None else None
 
-    async def run(self, input_url: str, *, selected: list[str] | None = None) -> ScanContext:
+    async def run(
+        self,
+        input_url: str,
+        *,
+        selected: list[str] | None = None,
+        scan_id: str | None = None,
+    ) -> ScanContext:
         """Execute the scan and return the populated context."""
         ctx = ScanContext(config=self.config)
+        if scan_id is not None:
+            ctx.scan_id = scan_id
         ctx.shared["input_url"] = input_url
         selected = selected or (self.config.enabled_modules or None)
         order = self.registry.resolution_order(selected)

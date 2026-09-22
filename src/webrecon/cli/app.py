@@ -191,6 +191,27 @@ def _print_summary(report: dict) -> None:
         console.print(table)
 
 
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", "--host", help="Bind host."),
+    port: int = typer.Option(8000, "--port", help="Bind port."),
+    database_url: str = typer.Option(
+        "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
+    ),
+) -> None:
+    """Launch the dashboard (FastAPI) at http://host:port."""
+    try:
+        import uvicorn
+
+        from ..api.app import create_app
+    except ImportError:
+        console.print("[red]Dashboard deps missing.[/] Install with: pip install -e '.[api]'")
+        raise typer.Exit(1) from None
+
+    console.print(f"[bold]WebRecon dashboard[/] on [cyan]http://{host}:{port}[/]")
+    uvicorn.run(create_app(database_url), host=host, port=port, log_level="info")
+
+
 def _force_utf8_stdio() -> None:
     """Best-effort: make stdout/stderr UTF-8 so rich box-drawing and status
     glyphs never raise ``UnicodeEncodeError`` on legacy Windows consoles."""

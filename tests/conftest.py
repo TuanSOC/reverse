@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+import webrecon.modules  # noqa: F401  register all built-in modules for every test
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from fixtures.mock_site import run_mock_site  # noqa: E402

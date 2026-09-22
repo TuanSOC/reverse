@@ -42,6 +42,13 @@ Early development — building module-by-module against a phased plan.
   and sitemap into one deduplicated inventory with honest `observed / referenced /
   potential` provenance and REST/GraphQL/WebSocket classification. No endpoint is
   probed or replayed.
+- **Phase 8 (security engine)** ✅ — cross-module rules (mixed content, outdated tech,
+  directory listing) + deterministic, confidence-weighted risk classification.
+- **Phase 9 (browser mode)** ✅ — opt-in Playwright render with in-browser scope
+  enforcement, XHR/fetch/WebSocket observation, and screenshots.
+- **Phase 10 (dashboard)** ✅ — FastAPI backend (`webrecon serve`) with a read API,
+  background scans, live-progress WebSocket, and a self-contained dark dashboard
+  (overview, findings, endpoints, technologies, pages, assets, DNS/TLS, graph).
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 

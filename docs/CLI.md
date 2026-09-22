@@ -17,6 +17,10 @@ Create the local scan database schema. Defaults to
 List registered scanner modules in dependency order (name, version, requires,
 description).
 
+### `webrecon serve [--host H] [--port P] [--database-url URL]`
+Launch the dashboard (FastAPI) at `http://host:port` (default 127.0.0.1:8000).
+Reads scans from the database and can start new scans with live progress.
+
 ### `webrecon scan URL [options]`
 Run a scan against a target you own or are authorized to test. The pipeline is
 wired in the vertical-MVP phase; current options:

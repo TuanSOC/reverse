@@ -1,0 +1,185 @@
+"""FastAPI backend for the WebRecon dashboard (§28/§29).
+
+Serves a read API over persisted scans, starts new scans in the background with
+live progress over a WebSocket, and serves the single-file dashboard. It reuses
+the same Pipeline + storage as the CLI, so the dashboard and CLI show identical
+data.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+
+from ..core.config import ScanConfig, ScopeMode
+from ..core.logging import configure_logging
+from ..pipeline import Pipeline, ScanProgress
+from ..storage import init_db
+from ..storage.database import Database
+from . import queries
+
+_STATIC = Path(__file__).parent / "static"
+
+
+class StartScanRequest(BaseModel):
+    url: str
+    depth: int = 3
+    max_pages: int = 300
+    browser: bool = False
+    allow_private: bool = False
+    scope_mode: str = "same-domain"
+
+
+def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        configure_logging()
+        db = await init_db(database_url)
+        app.state.db = db
+        app.state.manager = _SimpleManager(db)
+        yield
+        await db.dispose()
+
+    app = FastAPI(title="WebRecon", version="0.1.0", lifespan=lifespan)
+
+    def db() -> Database:
+        return app.state.db
+
+    @app.get("/api/scans")
+    async def scans() -> list[dict]:
+        return await queries.list_scans(db())
+
+    @app.post("/api/scans")
+    async def start_scan(req: StartScanRequest) -> dict[str, Any]:
+        scan_id = await app.state.manager.start(req)
+        return {"scan_id": scan_id}
+
+    @app.get("/api/scans/{scan_id}")
+    async def overview(scan_id: str) -> dict:
+        data = await queries.get_overview(db(), scan_id)
+        if data is None:
+            raise HTTPException(404, "scan not found")
+        return data
+
+    @app.get("/api/scans/{scan_id}/findings")
+    async def findings(scan_id: str) -> list[dict]:
+        return await queries.get_findings(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/assets")
+    async def assets(scan_id: str) -> list[dict]:
+        return await queries.get_assets(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/endpoints")
+    async def endpoints(scan_id: str) -> list[dict]:
+        return await queries.get_endpoints(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/pages")
+    async def pages(scan_id: str) -> list[dict]:
+        return await queries.get_pages(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/technologies")
+    async def technologies(scan_id: str) -> list[dict]:
+        return await queries.get_technologies(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/dns")
+    async def dns(scan_id: str) -> list[dict]:
+        return await queries.get_dns(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/certificates")
+    async def certificates(scan_id: str) -> list[dict]:
+        return await queries.get_certificates(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/graph")
+    async def graph(scan_id: str) -> dict:
+        return await queries.get_graph(db(), scan_id)
+
+    @app.websocket("/api/scans/{scan_id}/events")
+    async def events(ws: WebSocket, scan_id: str) -> None:
+        await ws.accept()
+        manager = app.state.manager
+        q = manager.subscribe(scan_id)
+        try:
+            for ev in manager.progress(scan_id):  # replay any buffered events
+                await ws.send_json(ev)
+            while True:
+                ev = await q.get()
+                await ws.send_json(ev)
+        except WebSocketDisconnect:
+            pass
+        finally:
+            manager.unsubscribe(scan_id, q)
+
+    @app.get("/")
+    async def index() -> FileResponse:
+        return FileResponse(_STATIC / "index.html")
+
+    return app
+
+
+class _SimpleManager:
+    """Runs scans in the background and streams progress by scan_id.
+
+    Solves the chicken-and-egg (scan_id only known after the context is built)
+    by generating the id up front and injecting it into the pipeline.
+    """
+
+    def __init__(self, db: Database) -> None:
+        self.db = db
+        self._progress: dict[str, list[dict]] = {}
+        self._subscribers: dict[str, list[asyncio.Queue]] = {}
+        self.status: dict[str, str] = {}
+
+    async def start(self, req: StartScanRequest) -> str:
+        import uuid
+
+        scan_id = str(uuid.uuid4())
+        cfg = ScanConfig()
+        cfg.scope.max_depth = req.depth
+        cfg.scope.max_pages = req.max_pages
+        cfg.scope.allow_private_targets = req.allow_private
+        cfg.browser_mode = req.browser
+        try:
+            cfg.scope.mode = ScopeMode(req.scope_mode)
+        except ValueError:
+            pass
+
+        def on_progress(p: ScanProgress) -> None:
+            ev = {"module": p.module, "index": p.index, "total": p.total, "status": str(p.status)}
+            self._progress.setdefault(scan_id, []).append(ev)
+            for q in list(self._subscribers.get(scan_id, [])):
+                q.put_nowait(ev)
+
+        pipeline = Pipeline(cfg, db=self.db, progress=on_progress)
+        self.status[scan_id] = "running"
+        asyncio.create_task(self._run(pipeline, req.url, scan_id))
+        return scan_id
+
+    async def _run(self, pipeline: Pipeline, url: str, scan_id: str) -> None:
+        try:
+            await pipeline.run(url, scan_id=scan_id)
+            self.status[scan_id] = "done"
+        except Exception as exc:  # noqa: BLE001
+            self.status[scan_id] = f"error: {exc}"
+        finally:
+            for q in list(self._subscribers.get(scan_id, [])):
+                q.put_nowait({"module": "_done", "status": self.status.get(scan_id, "done"),
+                              "index": 0, "total": 0})
+
+    def progress(self, scan_id: str) -> list[dict]:
+        return self._progress.get(scan_id, [])
+
+    def subscribe(self, scan_id: str) -> asyncio.Queue:
+        q: asyncio.Queue = asyncio.Queue()
+        self._subscribers.setdefault(scan_id, []).append(q)
+        return q
+
+    def unsubscribe(self, scan_id: str, q: asyncio.Queue) -> None:
+        subs = self._subscribers.get(scan_id, [])
+        if q in subs:
+            subs.remove(q)

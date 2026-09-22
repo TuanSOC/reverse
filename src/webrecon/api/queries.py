@@ -1,0 +1,206 @@
+"""Read queries backing the dashboard API.
+
+Return plain JSON-able dicts so the API layer stays thin. All reads go through
+the SQLAlchemy ORM (bound parameters — threat T6).
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from sqlalchemy import func, select
+
+from ..storage.database import Database
+from ..storage.models import (
+    Asset,
+    Certificate,
+    DnsRecord,
+    Endpoint,
+    EvidenceRecord,
+    FindingRecord,
+    ModuleRun,
+    Page,
+    Scan,
+    Target,
+    Technology,
+)
+
+_SEVERITY_RANK = {
+    "critical": 4, "high": 3, "medium": 2, "low": 1, "informational": 0,
+}
+
+
+async def list_scans(db: Database) -> list[dict[str, Any]]:
+    async with db.session() as s:
+        rows = (
+            await s.execute(select(Scan, Target).join(Target, Scan.target_id == Target.id))
+        ).all()
+        out = []
+        for scan, target in sorted(rows, key=lambda r: r[0].created_at, reverse=True):
+            fcount = await s.scalar(
+                select(func.count()).select_from(FindingRecord).where(
+                    FindingRecord.scan_id == scan.id
+                )
+            )
+            out.append(
+                {
+                    "id": scan.id,
+                    "target": target.base_url,
+                    "status": scan.status,
+                    "created_at": scan.created_at.isoformat(),
+                    "finished_at": scan.finished_at.isoformat() if scan.finished_at else None,
+                    "findings": fcount or 0,
+                }
+            )
+        return out
+
+
+async def get_overview(db: Database, scan_id: str) -> dict[str, Any] | None:
+    async with db.session() as s:
+        scan = await s.get(Scan, scan_id)
+        if scan is None:
+            return None
+        target = await s.get(Target, scan.target_id)
+        runs = (
+            await s.execute(select(ModuleRun).where(ModuleRun.scan_id == scan_id))
+        ).scalars().all()
+        findings = (
+            await s.execute(select(FindingRecord).where(FindingRecord.scan_id == scan_id))
+        ).scalars().all()
+        by_sev: dict[str, int] = {}
+        for f in findings:
+            by_sev[f.severity] = by_sev.get(f.severity, 0) + 1
+        security_run = next((r for r in runs if r.module == "security"), None)
+        risk_level = (security_run.stats or {}).get("risk_level") if security_run else None
+        techs = (
+            await s.execute(select(Technology).where(Technology.scan_id == scan_id))
+        ).scalars().all()
+        return {
+            "id": scan.id,
+            "status": scan.status,
+            "target": {
+                "base_url": target.base_url if target else None,
+                "hostname": target.hostname if target else None,
+                "scheme": target.scheme if target else None,
+            },
+            "created_at": scan.created_at.isoformat(),
+            "finished_at": scan.finished_at.isoformat() if scan.finished_at else None,
+            "risk_level": risk_level,
+            "findings_by_severity": by_sev,
+            "total_findings": len(findings),
+            "modules": [
+                {
+                    "module": r.module,
+                    "status": r.status,
+                    "duration_ms": r.duration_ms,
+                    "error": r.error,
+                }
+                for r in sorted(runs, key=lambda r: r.created_at)
+            ],
+            "technologies": [
+                {"name": t.name, "category": t.category, "version": t.version,
+                 "confidence": t.confidence}
+                for t in techs
+            ],
+        }
+
+
+async def get_findings(db: Database, scan_id: str) -> list[dict[str, Any]]:
+    async with db.session() as s:
+        rows = (
+            await s.execute(select(FindingRecord).where(FindingRecord.scan_id == scan_id))
+        ).scalars().all()
+        out = []
+        for f in sorted(rows, key=lambda f: _SEVERITY_RANK.get(f.severity, 0), reverse=True):
+            evidence = (
+                await s.execute(select(EvidenceRecord).where(EvidenceRecord.finding_id == f.id))
+            ).scalars().all()
+            out.append(
+                {
+                    "id": f.id,
+                    "check_id": f.check_id,
+                    "name": f.name,
+                    "category": f.category,
+                    "severity": f.severity,
+                    "confidence": f.confidence,
+                    "observation": f.observation,
+                    "description": f.description,
+                    "impact": f.impact,
+                    "recommendation": f.recommendation,
+                    "module": f.module,
+                    "references": f.references,
+                    "evidence": [
+                        {"source": e.source, "url": e.url, "description": e.description,
+                         "data": e.data}
+                        for e in evidence
+                    ],
+                }
+            )
+        return out
+
+
+async def _simple_list(db: Database, model, scan_id: str, fields: list[str]) -> list[dict]:
+    async with db.session() as s:
+        rows = (
+            await s.execute(select(model).where(model.scan_id == scan_id))
+        ).scalars().all()
+        return [{f: getattr(r, f) for f in fields} for r in rows]
+
+
+async def get_assets(db: Database, scan_id: str) -> list[dict]:
+    return await _simple_list(db, Asset, scan_id, ["asset_type", "url", "observation"])
+
+
+async def get_endpoints(db: Database, scan_id: str) -> list[dict]:
+    return await _simple_list(
+        db, Endpoint, scan_id, ["url", "method", "kind", "observation", "source"]
+    )
+
+
+async def get_pages(db: Database, scan_id: str) -> list[dict]:
+    return await _simple_list(
+        db, Page, scan_id, ["url", "title", "status_code", "depth", "content_hash"]
+    )
+
+
+async def get_technologies(db: Database, scan_id: str) -> list[dict]:
+    return await _simple_list(
+        db, Technology, scan_id, ["name", "category", "version", "confidence", "evidence"]
+    )
+
+
+async def get_dns(db: Database, scan_id: str) -> list[dict]:
+    return await _simple_list(db, DnsRecord, scan_id, ["name", "record_type", "value"])
+
+
+async def get_certificates(db: Database, scan_id: str) -> list[dict]:
+    return await _simple_list(
+        db, Certificate, scan_id, ["subject", "issuer", "san", "not_before", "not_after", "details"]
+    )
+
+
+async def get_graph(db: Database, scan_id: str) -> dict[str, Any]:
+    """Build a relationship graph from persisted entities (§25)."""
+    overview = await get_overview(db, scan_id)
+    if overview is None:
+        return {"nodes": [], "edges": []}
+    host = overview["target"]["hostname"] or "target"
+    nodes: list[dict] = [{"id": host, "label": host, "type": "domain"}]
+    edges: list[dict] = []
+
+    def add(node_id: str, label: str, ntype: str, parent: str, relation: str) -> None:
+        nodes.append({"id": node_id, "label": label, "type": ntype})
+        edges.append({"source": parent, "target": node_id, "relation": relation})
+
+    for t in overview["technologies"]:
+        add(f"tech:{t['name']}", f"{t['name']} {t['version'] or ''}".strip(), "technology",
+            host, "uses")
+    for e in (await get_endpoints(db, scan_id))[:60]:
+        add(f"ep:{e['url']}", e["url"], "endpoint", host, e["observation"])
+    for d in await get_dns(db, scan_id):
+        add(f"dns:{d['record_type']}:{d['value']}", f"{d['record_type']} {d['value']}",
+            "dns", host, "dns")
+    certs = await get_certificates(db, scan_id)
+    if certs:
+        add("cert", "TLS certificate", "certificate", host, "secured-by")
+    return {"nodes": nodes, "edges": edges}
