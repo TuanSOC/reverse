@@ -47,11 +47,16 @@ misconfiguration with evidence; they never *exploit* it.
 - [x] SSRF guard with resolved-IP recheck on every redirect hop (P2)
 - [x] Scope gate on every request incl. redirect targets (P2)
 - [x] Response-size cap enforced by streamed, capped reads (P2)
-- [ ] Path-traversal-safe export/file writes (P11)
-- [ ] HTML/PDF report output escaping (P11)
-- [ ] Decompression-bomb / zip-bomb limits — content-encoding aware (P3)
-- [ ] SQL parameterization audit (using SQLAlchemy ORM throughout)
-- [ ] Malformed HTML/headers fuzz tests (P13)
+- [x] HTML report output escaping (Jinja2 autoescape) — stored-XSS test
+- [x] SQL parameterization (SQLAlchemy ORM throughout; no string SQL)
+- [x] Malformed / duplicate headers do not crash (hardening test)
+- [x] Malformed HTML does not crash the parser (hardening test)
+- [x] JS is never executed in-process; only inside the sandboxed browser
+- [x] Secrets masked in logs, evidence, API, and reports (leak tests)
+- [x] Failing/timing-out module is isolated (does not abort the scan)
+- [x] Export writes only to an explicit path (never derived from target data)
+- [~] Decompression-bomb: bounded by the decoded-size cap; content-encoding-aware
+      limit still a possible refinement
 
 ## Reporting a vulnerability in WebRecon itself
 

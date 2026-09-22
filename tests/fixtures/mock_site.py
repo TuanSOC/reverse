@@ -116,6 +116,17 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(301, b"", extra={"Location": "/"})
         elif path == "/redirect-external":
             self._send(302, b"", extra={"Location": "https://third-party.example/"})
+        elif path == "/redirect-metadata":
+            # Redirect toward the cloud metadata IP — must be blocked per-hop.
+            self._send(302, b"", extra={"Location": "http://169.254.169.254/latest/"})
+        elif path == "/weird-headers":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("X-Weird", "val\tue")
+            self.send_header("Set-Cookie", "a=1")
+            self.send_header("Set-Cookie", "b=2; Secure")  # duplicate header
+            self.end_headers()
+            self.wfile.write(b"<html><title>ok</title></html>")
         elif path == "/big":
             # 2 MiB body to exercise the response-size cap when configured small.
             self._send(200, b"A" * (2 * 1024 * 1024), ctype="application/octet-stream")
