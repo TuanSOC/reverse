@@ -56,11 +56,17 @@ SECRETS: tuple[tuple[str, re.Pattern[str]], ...] = (
 # Framework/library clues (name -> pattern) for corroboration.
 FRAMEWORK_CLUES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("webpack", re.compile(r"webpackJsonp|__webpack_require__")),
+    ("Vite", re.compile(r"__vitePreload|import\.meta\.env|/@vite/client")),
     ("React", re.compile(
         r"react(?:-dom)?(?:\.production|\.development)?\.min\.js|React\.createElement"
+        # markers that survive production minification:
+        r"|Minified React error|__reactFiber\$|__reactProps\$|react\.dev/errors"
     )),
-    ("Angular", re.compile(r"@angular/|ng\.probe|platformBrowser")),
-    ("Vue.js", re.compile(r"Vue\.config|__vue__|vue\.runtime")),
+    ("Preact", re.compile(r"preact|__preactattr_|_preactCompat")),
+    ("SolidJS", re.compile(r"_\$HY|solid-js|hydrationKey")),
+    ("Svelte", re.compile(r"svelte-|__svelte|\$\$invalidate")),
+    ("Angular", re.compile(r"@angular/|ng\.probe|platformBrowser|ngDevMode")),
+    ("Vue.js", re.compile(r"Vue\.config|__vue__|__vue_app__|vue\.runtime")),
     ("Next.js", re.compile(r"__NEXT_DATA__|/_next/")),
     ("Sentry", re.compile(r"sentry(?:-cdn)?\.io|Sentry\.init")),
 )

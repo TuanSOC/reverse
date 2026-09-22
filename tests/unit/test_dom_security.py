@@ -53,20 +53,42 @@ def test_eval_with_location_flagged() -> None:
     assert "eval" in hits[0].detail
 
 
-def test_prototype_pollution_unguarded_merge_flagged() -> None:
-    js = "for (var k in src) { dst[k] = src[k]; }"
+def test_prototype_pollution_recursive_merge_flagged() -> None:
+    # A genuine recursive deep-merge: isObject branch → nested merge call.
+    js = (
+        "function merge(dst, src){ for (var k in src) {"
+        " if (isObject(src[k])) merge(dst[k], src[k]);"
+        " else dst[k] = src[k]; } }"
+    )
     hits = find_prototype_pollution(js)
     assert len(hits) == 1
     assert hits[0].kind == "prototype_pollution"
     assert hits[0].snippet
 
 
+def test_prototype_pollution_nested_assign_flagged() -> None:
+    js = "for (var k in src) { dst[k][sub] = src[k]; }"
+    assert len(find_prototype_pollution(js)) == 1
+
+
 def test_prototype_pollution_guarded_merge_not_flagged() -> None:
     js = (
         "for (var k in src) {"
         " if (k === '__proto__') continue;"
-        " dst[k] = src[k]; }"
+        " if (isObject(src[k])) merge(dst[k], src[k]); else dst[k] = src[k]; }"
     )
+    assert find_prototype_pollution(js) == []
+
+
+def test_prototype_pollution_shallow_copy_not_flagged() -> None:
+    # A plain shallow copy is not exploitable → must NOT be flagged.
+    js = "for (var k in src) { dst[k] = src[k]; }"
+    assert find_prototype_pollution(js) == []
+
+
+def test_prototype_pollution_react_prop_copy_not_flagged() -> None:
+    # Real false-positive from stealx.fr: React's minified ref-excluding copy.
+    js = "for(var s in r)s!==`ref`&&(o[s]=r[s])"
     assert find_prototype_pollution(js) == []
 
 

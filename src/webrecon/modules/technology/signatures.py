@@ -169,4 +169,8 @@ SIGNATURES: tuple[Signature, ...] = (
     Signature("Axios", "frontend", SCRIPT, r"axios(?:[.-]([\d.]+))?(?:\.min)?\.js", Confidence.MEDIUM,
               None, 1),
     Signature("SvelteKit", "frontend", SCRIPT, r"@sveltejs/kit|/_app/immutable/", Confidence.HIGH),
+    # Vite/Rollup default build output: /assets/<name>-<8+ char base62 hash>.js
+    # (LOW confidence — inferred from the bundling convention, not a named lib).
+    Signature("Vite", "build-tool", SCRIPT, r"/assets/[\w.-]+-[A-Za-z0-9_-]{8,}\.js",
+              Confidence.LOW),
 )

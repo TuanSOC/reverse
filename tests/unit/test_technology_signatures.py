@@ -39,6 +39,28 @@ def test_uvicorn_header() -> None:
     assert "Uvicorn" in _names(headers={"Server": "uvicorn"})
 
 
+def test_vite_asset_url_signature() -> None:
+    # Vite/Rollup default output — the real stealx.fr bundle path.
+    assert "Vite" in _names(script_urls=["https://x/assets/index-ubP3xnxD.js"])
+    # a normal library filename must not be misread as Vite
+    assert "Vite" not in _names(script_urls=["https://x/js/jquery.min.js"])
+
+
+def test_js_content_framework_clues() -> None:
+    # framework recovered from JS *content* (survives minification)
+    names = _names(js_clues=["React", "Vite"])
+    assert "React" in names and "Vite" in names
+    # unknown clue names are ignored, not surfaced
+    assert "Bogus" not in _names(js_clues=["Bogus"])
+
+
+def test_js_clue_confidence_is_medium() -> None:
+    dets = fingerprint(headers={}, cookies=[], html="", script_urls=[],
+                       meta_generator=None, js_clues=["React"])
+    react = next(d for d in dets if d.name == "React")
+    assert str(react.confidence) == "medium"
+
+
 def test_url_version_extraction() -> None:
     assert extract_url_version("https://cdn/lib.js?v=1.2.3") == "1.2.3"
     assert extract_url_version("https://cdn/react@18.2.0/umd/react.js") == "18.2.0"

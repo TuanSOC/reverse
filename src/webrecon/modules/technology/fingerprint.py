@@ -63,6 +63,17 @@ def _match(sig: Signature, text: str) -> tuple[bool, str | None]:
     return True, version
 
 
+# Category for a framework recovered from JS *content* clues (javascript module).
+# Content markers survive minification but not always obfuscation, so these are
+# recorded at MEDIUM — stronger than an HTML-substring guess, weaker than a header.
+_JS_CLUE_CATEGORY: dict[str, str] = {
+    "React": "frontend", "Preact": "frontend", "SolidJS": "frontend",
+    "Svelte": "frontend", "Vue.js": "frontend", "Angular": "frontend",
+    "Next.js": "frontend", "Vite": "build-tool", "webpack": "build-tool",
+    "Sentry": "monitoring",
+}
+
+
 def fingerprint(
     *,
     headers: dict[str, str],
@@ -70,6 +81,7 @@ def fingerprint(
     html: str,
     script_urls: list[str],
     meta_generator: str | None,
+    js_clues: list[str] | None = None,
 ) -> list[TechDetection]:
     """Run all signatures against the observed signals and aggregate results."""
     headers = {k.lower(): v for k, v in headers.items()}
@@ -116,6 +128,19 @@ def fingerprint(
             ok, ver = _match(sig, meta_generator)
             if ok:
                 record(sig, f"meta generator: {meta_generator}", ver)
+
+    # Framework clues recovered from JS content by the javascript module.
+    for clue in js_clues or []:
+        cat = _JS_CLUE_CATEGORY.get(clue)
+        if cat is None:
+            continue
+        det = detections.get(clue)
+        if det is None:
+            det = TechDetection(name=clue, category=cat, confidence=Confidence.MEDIUM)
+            detections[clue] = det
+        det.evidence.append(TechEvidence("js_content", f"clue in JS: {clue}"))
+        if CONFIDENCE_ORDER[Confidence.MEDIUM] > CONFIDENCE_ORDER[det.confidence]:
+            det.confidence = Confidence.MEDIUM
 
     # Post-process: independent-source corroboration + version bonus.
     for det in detections.values():

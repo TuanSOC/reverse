@@ -21,7 +21,7 @@ from .fingerprint import TechDetection, fingerprint
 class TechnologyModule(ScannerModule):
     name = "technology"
     version = "0.1.0"
-    requires = ("http", "crawler")
+    requires = ("http", "crawler", "javascript")
     description = "Fingerprint frontend/backend/infra technologies with confidence + evidence."
 
     async def run(self, ctx) -> ModuleResult:  # type: ignore[override]
@@ -46,12 +46,18 @@ class TechnologyModule(ScannerModule):
                     meta_generator = gen
                     break
 
+        # Framework clues recovered from JS *content* by the javascript module.
+        js_clues: list[str] = []
+        for a in ctx.shared.get("js_analysis") or []:
+            js_clues.extend(getattr(a, "framework_clues", []) or [])
+
         detections = fingerprint(
             headers=resp.headers,
             cookies=resp.set_cookie,
             html=resp.text if not resp.truncated else "",
             script_urls=script_urls,
             meta_generator=meta_generator,
+            js_clues=sorted(set(js_clues)),
         )
 
         await self._persist(ctx, detections)

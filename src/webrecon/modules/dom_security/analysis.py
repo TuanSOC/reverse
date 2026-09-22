@@ -38,6 +38,15 @@ _MERGE_LOOP = re.compile(
 )
 # A guard against pollution keys anywhere in the merge region.
 _PROTO_GUARD = re.compile(r"__proto__|prototype|constructor|hasOwnProperty|Object\.freeze")
+# Prototype pollution needs *depth*: a plain shallow copy (dst[k]=src[k]) is not
+# exploitable, but a recursive/nested merge is. Require one of these signals so
+# that minified prop-copy loops (e.g. React's ref-copy) don't false-positive.
+_DEEP_SIGNAL = re.compile(
+    r"\b(?:merge|extend|deep\w*|mergeDeep|defaultsDeep)\s*\("  # named deep-merge call
+    r"|typeof\s+[\w.$\[\]]+\s*===?\s*[`'\"]object"            # isObject branch
+    r"|\[[^\]]+\]\s*\[[^\]]+\]\s*="                           # nested bracket assign x[a][b]=
+    r"|isObject|isPlainObject",
+)
 
 
 @dataclass
@@ -80,6 +89,8 @@ def find_prototype_pollution(content: str, cap: int = 5) -> list[DomHit]:
         region = content[m.start(): m.end() + 120]
         if _PROTO_GUARD.search(region):
             continue  # appears to filter dangerous keys → not flagged
+        if not _DEEP_SIGNAL.search(region):
+            continue  # shallow prop-copy, not a recursive merge → not exploitable
         hits.append(DomHit("prototype_pollution", "unguarded deep-merge loop",
                            _snippet(content, m.start(), m.end())))
         if len(hits) >= cap:
