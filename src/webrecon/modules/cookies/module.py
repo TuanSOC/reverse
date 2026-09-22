@@ -175,6 +175,28 @@ class CookiesModule(ScannerModule):
                 "Scope the cookie to the exact host or drop the Domain attribute.",
             )
 
+        # Cookie name prefixes (RFC 6265bis) carry binding guarantees; a prefix
+        # without its required attributes is silently ignored by browsers.
+        name = c.name
+        if name.startswith("__Secure-") and not c.secure:
+            add(
+                "cookies.prefix.secure_violation",
+                f"'__Secure-' cookie '{name}' is not Secure",
+                Severity.MEDIUM,
+                "A '__Secure-'-prefixed cookie must set the Secure attribute.",
+                "Browsers reject the cookie, potentially breaking the intended binding.",
+                "Add the Secure attribute (and serve over HTTPS).",
+            )
+        if name.startswith("__Host-") and (not c.secure or c.domain or (c.path or "/") != "/"):
+            add(
+                "cookies.prefix.host_violation",
+                f"'__Host-' cookie '{name}' breaks prefix rules",
+                Severity.MEDIUM,
+                "A '__Host-' cookie must be Secure, have no Domain, and Path=/.",
+                "The binding guarantee is lost; browsers reject the cookie.",
+                "Set Secure, remove Domain, and use Path=/.",
+            )
+
 
 def _domain_too_broad(domain: str, base_host: str) -> bool:
     d = domain.lstrip(".").lower()

@@ -1,0 +1,39 @@
+# Example WebRecon scan configuration.
+#   webrecon scan https://example.com --config webrecon.example.toml
+# CLI flags override values set here. Unknown keys are rejected.
+
+[scope]
+mode = "same-domain"          # same-origin | same-domain | include-subdomains
+max_depth = 3
+max_pages = 300
+max_requests = 2000
+allow_private_targets = false # true only for authorized lab/loopback targets
+# allowed_hosts = ["cdn.example.com"]
+# exclude_paths = ["/logout", "/admin"]
+
+[rate]
+requests_per_second = 3.0
+concurrency = 5
+per_host_concurrency = 3
+respect_429 = true
+
+[http]
+timeout_seconds = 20.0
+max_response_bytes = 10485760 # 10 MiB
+user_agent = "WebRecon/0.1 (+authorized-assessment)"
+verify_tls = true
+
+[crawl]
+respect_robots = true
+parse_sitemap = true
+
+[js]
+max_files = 50
+fetch_source_maps = true
+scan_secrets = true
+
+[browser]
+screenshots = true
+nav_timeout_ms = 15000
+
+# browser_mode = true   # enable headless rendering by default

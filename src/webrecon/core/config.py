@@ -8,6 +8,7 @@ concurrency, a request delay, private targets disabled.
 from __future__ import annotations
 
 from enum import Enum
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -128,3 +129,21 @@ class ScanConfig(BaseSettings):
     browser_mode: bool = False
     database_url: str = "sqlite+aiosqlite:///webrecon.db"
     log_level: str = "INFO"
+
+    @classmethod
+    def from_toml(cls, path: str | Path) -> ScanConfig:
+        """Load a scan config from a TOML file.
+
+        Unknown keys are rejected (``extra='forbid'``) so typos surface early.
+        Example::
+
+            [scope]
+            mode = "same-origin"
+            max_pages = 100
+            [rate]
+            requests_per_second = 2
+        """
+        import tomllib
+
+        data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+        return cls(**data)

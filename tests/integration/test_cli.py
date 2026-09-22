@@ -65,6 +65,22 @@ def test_scans_and_report(mock_site: str, tmp_path) -> None:
     assert "Executive Summary" in html_path.read_text(encoding="utf-8")
 
 
+def test_scan_with_config_file(mock_site: str, tmp_path) -> None:
+    cfg = tmp_path / "w.toml"
+    cfg.write_text(
+        '[scope]\nmode = "same-origin"\nallow_private_targets = true\nmax_pages = 5\n'
+        "[rate]\nrequests_per_second = 100\n[http]\nverify_tls = false\n",
+        encoding="utf-8",
+    )
+    r = runner.invoke(
+        app, ["scan", mock_site, "--config", str(cfg), "--no-db", "--modules", "target,scope,http"]
+    )
+    assert r.exit_code == 0, r.stdout
+    # Config loaded (allow_private_targets=true → lab mode) and the scan ran.
+    assert "lab mode" in r.stdout
+    assert "finding(s)" in r.stdout
+
+
 def test_report_unknown_scan(tmp_path) -> None:
     url = _db_url(tmp_path)
     # empty db

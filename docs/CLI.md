@@ -32,6 +32,7 @@ export flag, prints a one-line risk summary.
 
 | Option | Meaning |
 |---|---|
+| `--config PATH` | Load a base config from a TOML file (flags override). See `webrecon.example.toml`. |
 | `--modules a,b` | Run only these modules (+ their deps). |
 | `--allow-private` | Lab mode: permit private/loopback targets. |
 | `--rate N` | Max requests/second. |

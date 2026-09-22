@@ -77,13 +77,17 @@ def modules() -> None:
 @app.command()
 def scan(
     url: str = typer.Argument(..., help="Target URL you own or are authorized to test."),
-    depth: int = typer.Option(3, "--depth", help="Max crawl depth."),
-    max_pages: int = typer.Option(300, "--max-pages", help="Max pages to crawl."),
+    config_file: str | None = typer.Option(
+        None, "--config", help="Load a base config from a TOML file (flags override it)."
+    ),
+    depth: int | None = typer.Option(None, "--depth", help="Max crawl depth (default 3)."),
+    max_pages: int | None = typer.Option(None, "--max-pages", help="Max pages (default 300)."),
     modules_opt: str | None = typer.Option(
         None, "--modules", help="Comma-separated modules to run (default: all)."
     ),
-    allow_private: bool = typer.Option(
-        False, "--allow-private", help="Lab mode: permit private/loopback targets (§3)."
+    allow_private: bool | None = typer.Option(
+        None, "--allow-private/--no-allow-private",
+        help="Lab mode: permit private/loopback targets (§3).",
     ),
     rate: float | None = typer.Option(None, "--rate", help="Max requests/second."),
     concurrency: int | None = typer.Option(None, "--concurrency", help="Max concurrent requests."),
@@ -91,7 +95,9 @@ def scan(
     no_robots: bool = typer.Option(
         False, "--no-robots", help="Ignore robots.txt (authorized only)."
     ),
-    browser: bool = typer.Option(False, "--browser", help="Use the headless browser engine."),
+    browser: bool | None = typer.Option(
+        None, "--browser/--no-browser", help="Use the headless browser engine."
+    ),
     no_db: bool = typer.Option(False, "--no-db", help="Do not persist results to the database."),
     database_url: str = typer.Option(
         "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
@@ -114,11 +120,19 @@ def scan(
 
     configure_logging(json_output=False)
 
-    cfg = ScanConfig()
-    cfg.scope.max_depth = depth
-    cfg.scope.max_pages = max_pages
-    cfg.scope.allow_private_targets = allow_private
-    cfg.browser_mode = browser
+    if config_file:
+        cfg = ScanConfig.from_toml(config_file)
+    else:
+        cfg = ScanConfig()
+    # Flags override the config only when explicitly provided.
+    if depth is not None:
+        cfg.scope.max_depth = depth
+    if max_pages is not None:
+        cfg.scope.max_pages = max_pages
+    if allow_private is not None:
+        cfg.scope.allow_private_targets = allow_private
+    if browser is not None:
+        cfg.browser_mode = browser
     if rate is not None:
         cfg.rate.requests_per_second = rate
     if concurrency is not None:
@@ -131,7 +145,7 @@ def scan(
         cfg.enabled_modules = [m.strip() for m in modules_opt.split(",") if m.strip()]
 
     console.print(f"[bold]Scanning[/] {url}")
-    if allow_private:
+    if cfg.scope.allow_private_targets:
         console.print("[yellow]lab mode: private/loopback targets permitted[/]")
 
     status_glyph = {
