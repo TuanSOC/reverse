@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from webrecon.modules.dns.analysis import extract_dmarc, extract_spf, spf_is_permissive
+from webrecon.modules.dns.analysis import (
+    extract_dmarc,
+    extract_spf,
+    spf_is_permissive,
+    unquote_txt,
+)
 
 
 def test_extract_spf() -> None:
@@ -11,8 +16,19 @@ def test_extract_spf() -> None:
     assert extract_spf(["nothing here"]) is None
 
 
+def test_extract_spf_from_quoted_txt() -> None:
+    # dnspython to_text() wraps TXT in quotes — must still be recognized.
+    txts = ['"v=spf1 include:spf.efwd.registrar-servers.com ~all"']
+    assert extract_spf(txts) == "v=spf1 include:spf.efwd.registrar-servers.com ~all"
+
+
+def test_unquote_multichunk_txt() -> None:
+    assert unquote_txt('"v=DKIM1; k=rsa; " "p=MIGfMA0"') == "v=DKIM1; k=rsa; p=MIGfMA0"
+    assert unquote_txt("unquoted") == "unquoted"
+
+
 def test_extract_dmarc() -> None:
-    assert extract_dmarc(["v=DMARC1; p=reject"]) == "v=DMARC1; p=reject"
+    assert extract_dmarc(['"v=DMARC1; p=reject"']) == "v=DMARC1; p=reject"
     assert extract_dmarc(["v=spf1 -all"]) is None
 
 
