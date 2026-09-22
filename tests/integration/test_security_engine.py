@@ -34,6 +34,21 @@ async def test_security_flags_outdated_jquery(mock_site: str) -> None:
     assert "technology.outdated.jquery" in checks
 
 
+async def test_known_vulnerable_jquery_flagged(mock_site: str) -> None:
+    ctx = await Pipeline(_lab_config()).run(mock_site)
+    checks = {f.check_id for f in ctx.results["security"].findings}
+    assert "technology.vulnerable.jquery" in checks  # mock serves jQuery 1.12.4
+
+
+async def test_content_disclosure_findings(mock_site: str) -> None:
+    # /about carries an email, internal host, private IP, and a stack trace.
+    ctx = await Pipeline(_lab_config()).run(mock_site)
+    checks = {f.check_id for f in ctx.results["security"].findings}
+    assert "content.disclosure.internal_host" in checks
+    assert "content.disclosure.private_ip" in checks
+    assert "content.disclosure.stack_trace" in checks
+
+
 async def test_report_includes_risk(mock_site: str) -> None:
     ctx = await Pipeline(_lab_config()).run(mock_site)
     report = build_report(ctx)

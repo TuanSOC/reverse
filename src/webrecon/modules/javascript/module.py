@@ -77,6 +77,12 @@ class JavaScriptModule(ScannerModule):
             analysis = analyze_js(url, resp.text, truncated=resp.truncated)
             analyses.append(analysis)
 
+            disc = ctx.shared.get("disclosures")
+            if disc is not None:
+                from ..disclosure import scan_disclosures
+
+                disc.merge(scan_disclosures(resp.text))
+
             if cfg.scan_secrets:
                 self._secret_findings(result, analysis)
             if cfg.fetch_source_maps:

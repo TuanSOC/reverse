@@ -19,6 +19,7 @@ from ...core.models import Evidence, ModuleResult
 from ...core.module import ScannerModule
 from ...core.registry import default_registry
 from ...core.urls import normalize_url, parse_url
+from ..disclosure import Disclosures, scan_disclosures
 from ..http.module import PRIMARY_RESPONSE_KEY
 from .models import CrawledPage, CrawlInventory, DiscoveredAsset
 from .parser import parse_html
@@ -26,6 +27,9 @@ from .robots import RobotsRules, parse_robots
 from .sitemap import parse_sitemap
 
 _HTML_TYPES = ("text/html", "application/xhtml")
+
+# Key under which accumulated content disclosures are published (crawler + js).
+DISCLOSURES_KEY = "disclosures"
 
 
 @default_registry.register
@@ -49,6 +53,7 @@ class CrawlerModule(ScannerModule):
 
         cfg = ctx.config
         inv = CrawlInventory()
+        ctx.shared.setdefault(DISCLOSURES_KEY, Disclosures())
         visited: set[str] = set()
         asset_urls: set[str] = set()
         requests_made = 0
@@ -162,6 +167,9 @@ class CrawlerModule(ScannerModule):
         )
 
         if is_html and not resp.truncated:
+            disc = ctx.shared.get(DISCLOSURES_KEY)
+            if disc is not None:
+                disc.merge(scan_disclosures(resp.text))
             extract = parse_html(resp.url, resp.text)
             page.title = extract.title
             page.canonical = extract.canonical

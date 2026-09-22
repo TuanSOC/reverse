@@ -85,7 +85,13 @@ class _Handler(BaseHTTPRequestHandler):
                 },
             )
         elif path == "/about":
-            self._send(200, b'<html><title>About</title><a href="/contact">C</a></html>')
+            # Deliberate content disclosures for the disclosure detector.
+            self._send(200, (
+                b'<html><title>About</title>'
+                b'Contact admin@mocklab.test - host db.internal - ip 10.0.0.5 - '
+                b'System.NullReferenceException at Foo.Bar(Baz.cs:42) '
+                b'<a href="/contact">C</a></html>'
+            ))
         elif path == "/contact":
             self._send(200, b"<html><title>Contact</title></html>")
         elif path == "/admin":

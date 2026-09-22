@@ -19,7 +19,8 @@ from .risk import classify
 # Modules whose findings/signals this engine correlates. They must have run
 # first (even if some SKIP) so the risk summary covers the whole scan.
 _UPSTREAM = (
-    "headers", "cookies", "cors", "tls", "dns", "technology", "javascript", "api", "exposure",
+    "headers", "cookies", "cors", "tls", "dns", "technology", "javascript",
+    "api", "exposure", "subdomains",
 )
 
 RISK_SUMMARY_KEY = "risk_summary"
@@ -77,15 +78,22 @@ class SecurityModule(ScannerModule):
             asset_urls = [a.url for a in inv.assets]
             findings.extend(rules.mixed_content(resp.url, asset_urls))
 
-        # Outdated technology: from the technology module's detections.
+        # Outdated / known-vulnerable technology: from the technology detections.
         tech_result = ctx.result_of("technology")
         if tech_result is not None:
             detections = tech_result.data.get("technologies", [])
             findings.extend(rules.outdated_technology(detections))
+            findings.extend(rules.known_vulnerable_libraries(detections))
 
         # Directory listing: from crawled page titles.
         if inv is not None:
             titles = [(p.url, p.title or "") for p in inv.pages]
             findings.extend(rules.directory_listing(titles))
+
+        # Content disclosure: emails / internal IPs / stack traces collected by
+        # the crawler + javascript modules.
+        disc = ctx.shared.get("disclosures")
+        if disc is not None:
+            findings.extend(rules.content_disclosure(disc))
 
         return findings
