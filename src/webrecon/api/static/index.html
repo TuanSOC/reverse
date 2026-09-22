@@ -160,6 +160,120 @@
   .add{color:var(--ok)}.rem{color:var(--crit)} .diffcol h2{margin-top:8px}
   .copy{cursor:pointer;color:var(--muted);font-size:11px;margin-left:6px}.copy:hover{color:var(--accent)}
 </style>
+<style id="premium">
+  /* ===================== premium override layer ===================== */
+  :root{
+    --bg:#080b11; --panel:#0f1420; --panel2:#141a28; --panel3:#1b2334; --border:#222c40;
+    --fg:#e6eaf2; --muted:#8b95ac; --faint:#5b6479; --accent:#5aa2ff; --accent2:#9b6bff;
+    --ok:#37e0a6; --shadow:0 18px 50px -12px rgba(0,0,0,.65); --radius:14px;
+    --grad:linear-gradient(120deg,var(--accent),var(--accent2));
+    --ring:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent);
+  }
+  :root[data-theme="light"]{
+    --bg:#eef2f9; --panel:#ffffff; --panel2:#f3f6fc; --panel3:#e9eff8; --border:#dfe6f1;
+    --fg:#0f1729; --muted:#5a6478; --faint:#8a94a8; --accent:#2f6fe0; --accent2:#7a4bff;
+    --shadow:0 18px 50px -14px rgba(30,45,80,.22);
+  }
+  body{background:
+    radial-gradient(1100px 520px at 82% -8%, color-mix(in srgb,var(--accent2) 16%,transparent), transparent 60%),
+    radial-gradient(900px 480px at -6% 4%, color-mix(in srgb,var(--accent) 13%,transparent), transparent 55%),
+    var(--bg);
+    -webkit-font-smoothing:antialiased;letter-spacing:.1px}
+  ::selection{background:color-mix(in srgb,var(--accent) 40%,transparent)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--panel3);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:var(--border)}
+  /* header — glass */
+  header{background:color-mix(in srgb,var(--panel) 78%,transparent);
+    backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);
+    border-bottom:1px solid var(--border);box-shadow:0 1px 0 color-mix(in srgb,#fff 5%,transparent) inset}
+  .brand{font-size:16px}
+  .brand span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header::before{content:"";width:26px;height:26px;border-radius:8px;background:var(--grad);
+    box-shadow:0 6px 18px -6px var(--accent);margin-right:2px;flex:0 0 auto;
+    -webkit-mask:linear-gradient(#000,#000);position:relative}
+  /* buttons + inputs */
+  button,select,input{border-radius:10px;transition:.16s cubic-bezier(.2,.7,.2,1)}
+  button:hover{transform:translateY(-1px)}
+  button.primary{box-shadow:0 8px 22px -8px var(--accent)}
+  button.icon{border:1px solid var(--border);border-radius:10px;font-size:13px;opacity:.9}
+  button.icon:hover{opacity:1;border-color:var(--accent)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+  select#scanSelect{background:var(--panel2);border-radius:10px}
+  /* sidebar */
+  nav{background:color-mix(in srgb,var(--panel) 60%,transparent);backdrop-filter:blur(8px)}
+  nav .grp{font-weight:700}
+  nav a{border-radius:10px;font-weight:500;transition:.15s}
+  nav a svg{width:16px;height:16px;flex:0 0 auto;stroke:currentColor;opacity:.85}
+  nav a.active{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%,transparent),transparent);
+    color:#fff;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 25%,transparent)}
+  nav a.active::before{content:"";position:absolute;left:-2px;top:18%;bottom:18%;width:3px;border-radius:3px;background:var(--grad)}
+  nav a.active svg{opacity:1;color:var(--accent)}
+  nav a .badge{background:var(--panel3);border-radius:999px;padding:1px 8px;font-weight:600}
+  nav a .ic{display:none}
+  /* headings */
+  h1{font-weight:800;letter-spacing:-.02em;font-size:22px}
+  h2{color:var(--faint)}
+  /* cards + risk hero */
+  .card{border-radius:var(--radius);background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 92%,#fff 3%),var(--panel));
+    box-shadow:var(--shadow);transition:.18s} .card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 35%,var(--border))}
+  .card .v{letter-spacing:-.02em}
+  .riskhero{border-radius:18px;background:
+    radial-gradient(120% 160% at 0% 0%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 45%),
+    linear-gradient(180deg,color-mix(in srgb,var(--panel) 90%,#fff 4%),var(--panel));
+    box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .riskbadge{border-radius:12px;box-shadow:0 10px 30px -10px currentColor;position:relative}
+  .riskbadge::after{content:"";position:absolute;inset:0;border-radius:12px;
+    box-shadow:0 0 0 1px color-mix(in srgb,#fff 30%,transparent) inset}
+  /* pills + tags */
+  .pill{border:1px solid color-mix(in srgb,currentColor 22%,transparent);font-weight:700}
+  .tag{background:var(--panel3);border-radius:8px}
+  /* tables */
+  table{border-radius:12px;overflow:hidden;border:1px solid var(--border);background:color-mix(in srgb,var(--panel) 70%,transparent)}
+  th{background:color-mix(in srgb,var(--panel3) 80%,transparent);border-bottom:1px solid var(--border);backdrop-filter:blur(6px)}
+  td{border-bottom:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
+  tbody tr{transition:background .12s} tbody tr:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  tbody tr.clickable:hover td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  code{color:color-mix(in srgb,var(--accent) 78%,var(--fg))}
+  /* finding cards */
+  .finding{background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 94%,#fff 2%),var(--panel));
+    border-radius:12px;box-shadow:0 6px 18px -12px rgba(0,0,0,.6);transition:.15s}
+  .finding:hover{border-color:color-mix(in srgb,var(--accent) 25%,var(--border))}
+  .finding>.head{padding:12px 15px}
+  .evi{border-radius:10px;background:color-mix(in srgb,var(--panel3) 60%,transparent)}
+  /* chips */
+  .chip{border-radius:999px;transition:.14s} .chip:hover{border-color:var(--accent);color:var(--fg)}
+  /* drawer + dialog + palette — glass + spring */
+  .drawer{background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(20px) saturate(1.3);
+    border-left:1px solid color-mix(in srgb,var(--accent) 18%,var(--border))}
+  .drawer .dhead{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 10%,transparent),transparent)}
+  .drawer .dhead .t{font-weight:800;letter-spacing:-.01em}
+  .drow{grid-template-columns:120px 1fr} .drow .dk{font-weight:600}
+  dialog{border-radius:18px;box-shadow:var(--shadow);backdrop-filter:blur(6px)}
+  dialog::backdrop{backdrop-filter:blur(4px)}
+  .palbox{border-radius:16px;box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 20%,var(--border))}
+  .palitem.sel{box-shadow:inset 2px 0 0 var(--accent)}
+  .toast{border-radius:12px;backdrop-filter:blur(10px)}
+  /* progress */
+  .bar{height:7px;border-radius:6px;box-shadow:inset 0 0 0 1px color-mix(in srgb,#fff 6%,transparent)}
+  .bar>i{box-shadow:0 0 12px -2px var(--accent)}
+  /* screenshot + iframe */
+  .shot{border-radius:12px;box-shadow:var(--shadow)}
+  iframe.preview{border-radius:12px;box-shadow:var(--shadow)}
+  /* fancy empty */
+  .empty .big{font-size:40px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:.6}
+  /* entrance animation */
+  .fade{animation:rise .32s cubic-bezier(.2,.8,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  /* responsive: collapse sidebar labels on narrow screens */
+  @media (max-width:860px){
+    .app{grid-template-columns:60px 1fr}
+    nav a span:not(.badge):not(.ic){display:none} nav .grp{text-align:center;font-size:9px}
+    nav a{justify-content:center;padding:10px 0} select#scanSelect{max-width:150px}
+    .grid2{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -254,13 +368,30 @@ $("#themeBtn").onclick=()=>{const t=root.dataset.theme==="dark"?"light":"dark";
   root.dataset.theme=t;localStorage.setItem("wr-theme",t);};
 
 /* ============================ nav ============================ */
+const ICONS={
+  "Overview":'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+  "Findings":'<path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M12 8v4"/>',
+  "Endpoints":'<path d="M9 2v4M15 2v4M7 6h10v4a5 5 0 0 1-10 0z"/><path d="M12 15v6"/>',
+  "Technologies":'<rect x="7" y="7" width="10" height="10" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
+  "Pages":'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  "Assets":'<path d="M12 3l8 4v10l-8 4-8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/>',
+  "Forms":'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h4"/>',
+  "DNS / TLS":'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  "Graph":'<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 11l8-4M8 13l8 4"/>',
+  "Timeline":'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4M12 8v4l3 2"/>',
+  "Reports":'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+};
+function iconEl(name){
+  const inner=ICONS[name]||'<circle cx="12" cy="12" r="3"/>';
+  return el("span",{html:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`});
+}
 function renderNav(){
   const nav=$("#nav");nav.innerHTML="";
   for(const[grp,items] of SECTIONS){
-    nav.append(el("div",{class:"grp"},grp));
+    nav.append(el("div",{class:"grp"},el("span",{},grp)));
     for(const s of items){
       const a=el("a",{class:s===state.section?"active":"",onclick:()=>go(s)},
-        el("span",{class:"ic"}),s);
+        iconEl(s),el("span",{},s));
       const c=state.counts[s]; if(c!=null) a.append(el("span",{class:"badge"},String(c)));
       nav.append(a);
     }

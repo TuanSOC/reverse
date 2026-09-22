@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: Dashboard + Docs + gnddt.com run
-status: in-progress
+status: completed
 priority: P2
 effort: 0.5d
 dependencies:
