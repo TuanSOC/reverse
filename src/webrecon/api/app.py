@@ -37,6 +37,7 @@ class StartScanRequest(BaseModel):
     max_pages: int = 300
     browser: bool = False
     allow_private: bool = False
+    active: bool = False
     scope_mode: str = "same-domain"
 
 
@@ -209,6 +210,7 @@ class _SimpleManager:
         cfg.scope.max_pages = req.max_pages
         cfg.scope.allow_private_targets = req.allow_private
         cfg.browser_mode = req.browser
+        cfg.active = req.active
         try:
             cfg.scope.mode = ScopeMode(req.scope_mode)
         except ValueError:

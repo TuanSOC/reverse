@@ -21,6 +21,7 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 | API | `api` | `crawler`, `javascript` | ✅ P7 | Consolidate endpoints (crawler/JS/sitemap) → observed/referenced/potential; REST/GraphQL/WebSocket; no probing. |
 | Exposure | `exposure` | `http` | ✅ | security.txt (RFC 9116), risky HTTP methods (OPTIONS), opt-in sensitive-file probes (.git/.env/… — `--probe`, content-verified). |
 | Subdomains | `subdomains` | target/tls/crawler/javascript/api | ✅ | Passive subdomain discovery from cert SAN + links + JS + endpoints, then resolve; flags unresolvable/dangling. No brute force. |
+| API test | `apitest` | `api` | ✅ (opt-in `--active`) | Safe active API/DB assessment: DB-error leakage, error-based SQLi susceptibility, sensitive-data exposure, unauth access, GraphQL introspection. GET-only, observed-endpoints-only, budget-capped, detection-level (no exploitation). |
 | Security | `security` | headers/cookies/cors/tls/dns/technology/javascript/api/exposure | ✅ P8 | Cross-module rules (mixed content, outdated tech, dir listing) + deterministic risk classification. |
 | Browser | `browser` | `scope` | ✅ P9 | Opt-in Playwright render; XHR/fetch/WebSocket observation; scope-enforced in-browser; screenshots. |
 

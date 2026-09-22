@@ -81,6 +81,16 @@ def test_scan_with_config_file(mock_site: str, tmp_path) -> None:
     assert "finding(s)" in r.stdout
 
 
+def test_scan_active_prints_authorized_banner(mock_site: str) -> None:
+    r = runner.invoke(
+        app, ["scan", mock_site, "--allow-private", "--active", "--no-db",
+              "--modules", "target,scope,http,crawler,api,apitest"]
+    )
+    assert r.exit_code == 0, r.stdout
+    assert "Active checks enabled" in r.stdout
+    assert "authorized" in r.stdout.lower()
+
+
 def test_report_unknown_scan(tmp_path) -> None:
     url = _db_url(tmp_path)
     # empty db

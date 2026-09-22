@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: GraphQL Introspection (GET)
-status: in-progress
+status: completed
 priority: P2
 effort: 0.5d
 dependencies:

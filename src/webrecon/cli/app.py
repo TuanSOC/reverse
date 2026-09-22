@@ -98,6 +98,9 @@ def scan(
     probe: bool = typer.Option(
         False, "--probe", help="Probe curated sensitive files (.git/.env/...); authorized only."
     ),
+    active: bool = typer.Option(
+        False, "--active", help="Active API/DB assessment (GET-only, detection); authorized only."
+    ),
     browser: bool | None = typer.Option(
         None, "--browser/--no-browser", help="Use the headless browser engine."
     ),
@@ -146,12 +149,19 @@ def scan(
         cfg.crawl.respect_robots = False
     if probe:
         cfg.probe = True
+    if active:
+        cfg.active = True
     if modules_opt:
         cfg.enabled_modules = [m.strip() for m in modules_opt.split(",") if m.strip()]
 
     console.print(f"[bold]Scanning[/] {url}")
     if cfg.scope.allow_private_targets:
         console.print("[yellow]lab mode: private/loopback targets permitted[/]")
+    if cfg.active or cfg.probe:
+        console.print(
+            "[red]Active checks enabled[/] — run only on assets you own or are "
+            "explicitly authorized to test."
+        )
 
     status_glyph = {
         ModuleStatus.SUCCESS: "[green]ok[/]",

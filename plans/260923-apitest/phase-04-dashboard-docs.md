@@ -1,10 +1,13 @@
 ---
 phase: 4
-title: "Dashboard + Docs + gnddt.com run"
-status: pending
+title: Dashboard + Docs + gnddt.com run
+status: in-progress
 priority: P2
-effort: "0.5d"
-dependencies: [1, 2, 3]
+effort: 0.5d
+dependencies:
+  - 1
+  - 2
+  - 3
 ---
 
 # Phase 4: Surface it (dashboard + CLI + docs) + validate on gnddt.com

@@ -40,6 +40,7 @@ export flag, prints a one-line risk summary.
 | `--timeout S` | Per-request timeout. |
 | `--no-robots` | Ignore robots.txt (authorized only). |
 | `--probe` | Probe curated sensitive files (.git/.env/…), content-verified, GET-only. Authorized targets only. |
+| `--active` | Active API/DB assessment (`apitest`): DB errors, error-based SQLi susceptibility, data exposure, unauth access, GraphQL introspection. GET-only, observed endpoints only, detection-level. Authorized targets only. |
 | `--html P` / `--pdf P` | Also write HTML / PDF report. |
 | `--no-db` | Don't persist to the database. |
 

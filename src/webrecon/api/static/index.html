@@ -200,6 +200,7 @@
     <option value="same-origin">same-origin</option>
     <option value="include-subdomains">include-subdomains</option></select>
   <label class="check"><input type="checkbox" id="f_browser"> Browser mode (render JS, screenshot)</label>
+  <label class="check"><input type="checkbox" id="f_active"> Active API testing (authorized only)</label>
   <label class="check"><input type="checkbox" id="f_private"> Lab mode (allow private/loopback)</label>
   <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
     <button class="ghost" id="cancelDialog">Cancel</button>
@@ -592,7 +593,8 @@ $("#newScanBtn").onclick=()=>$("#scanDialog").showModal();
 $("#cancelDialog").onclick=()=>$("#scanDialog").close();
 $("#startScanBtn").onclick=async()=>{
   const body={url:$("#f_url").value.trim(),depth:+$("#f_depth").value,max_pages:+$("#f_pages").value,
-    browser:$("#f_browser").checked,allow_private:$("#f_private").checked,scope_mode:$("#f_scope").value};
+    browser:$("#f_browser").checked,allow_private:$("#f_private").checked,
+    active:$("#f_active").checked,scope_mode:$("#f_scope").value};
   if(!body.url){$("#f_url").focus();return;}
   $("#scanDialog").close();
   try{const {scan_id}=await fetch("/api/scans",{method:"POST",headers:{"content-type":"application/json"},

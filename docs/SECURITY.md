@@ -27,6 +27,25 @@ Dual-use capabilities are intentionally kept at the **detection / assessment /
 evidence** level. For example, CORS and source-map checks *report* a
 misconfiguration with evidence; they never *exploit* it.
 
+### Opt-in active checks (`--probe`, `--active`)
+
+Two opt-in flags perform limited, non-destructive **active** checks — **off by
+default**, for **authorized targets only**:
+
+- `--probe` — GETs a curated list of commonly-exposed files (`.git`, `.env`, …)
+  and reports one only if the response content matches that file's signature.
+- `--active` — the `apitest` module. Detection-level API/DB assessment via a
+  **GET-only** engine (`SafeGetEngine` physically refuses any other method),
+  probing **only endpoints that were actually observed** (never guessed ones)
+  and **never action-verb endpoints** (`/delete`, `/logout`, …). SQLi is
+  reported as *susceptibility* from an error-based signal (an unbalanced quote
+  triggers a DB error a balanced one does not) — it **never** extracts data
+  (no UNION), mutates state, or runs time-based probes. A module-side budget
+  caps total requests. Findings are evidence + recommendations, never exploits.
+
+These remain within the boundary: they detect and evidence issues; they do not
+weaponize them.
+
 ## Safety controls built into the tool
 
 | Control | Where | Purpose |
