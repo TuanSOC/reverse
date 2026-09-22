@@ -43,9 +43,17 @@ class ResolvedTarget:
     addresses: tuple[str, ...]
 
 
+def is_metadata(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """True if ``ip`` is a cloud metadata endpoint (unwrapping IPv4-mapped IPv6)."""
+    if str(ip) in _METADATA_IPS:
+        return True
+    mapped = getattr(ip, "ipv4_mapped", None)
+    return mapped is not None and str(mapped) in _METADATA_IPS
+
+
 def _classify_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> str | None:
     """Return a rejection reason for an unsafe IP, or ``None`` if it is public."""
-    if str(ip) in _METADATA_IPS:
+    if is_metadata(ip):
         return "cloud metadata address"
     if ip.is_loopback:
         return "loopback address"
@@ -107,7 +115,8 @@ class SsrfGuard:
             # dead host fails fast. Metadata IPs stay blocked even in lab mode.
             addrs = await self._safe_resolve(hostname, port)
             for a in addrs:
-                if a in _METADATA_IPS:
+                ip = _as_ip(a)
+                if ip is not None and is_metadata(ip):
                     raise SsrfBlockedError(url, "cloud metadata address (blocked even in lab mode)")
             return ResolvedTarget(hostname, port, tuple(addrs))
 

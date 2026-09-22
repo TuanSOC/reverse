@@ -73,6 +73,24 @@ async def test_pipeline_persists_to_db(mock_site: str) -> None:
         await db.dispose()
 
 
+async def test_persistence_failure_does_not_abort_scan(mock_site: str, monkeypatch) -> None:
+    from webrecon.storage.repository import ScanRepository
+
+    async def _boom(self, *a, **k):
+        raise RuntimeError("db write failed")
+
+    # Every module-result write fails, but the scan must still complete.
+    monkeypatch.setattr(ScanRepository, "save_module_result", _boom)
+    db = Database("sqlite+aiosqlite:///:memory:")
+    await db.create_all()
+    try:
+        ctx = await Pipeline(_lab_config(), db=db).run(mock_site)
+        assert set(ctx.results) == ALL_MODULES  # all modules still ran
+        assert ctx.results["security"].status == ModuleStatus.SUCCESS
+    finally:
+        await db.dispose()
+
+
 async def test_progress_callback_invoked(mock_site: str) -> None:
     seen = []
     pipeline = Pipeline(_lab_config(), progress=lambda p: seen.append((p.module, p.status)))

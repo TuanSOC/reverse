@@ -93,7 +93,21 @@ class HttpEngine:
             verify=self.config.verify_tls,
             max_redirects=0,
         )
+        # Pin DNS at connect time to close the SSRF rebinding/TOCTOU window: the
+        # socket connects only to a guard-validated IP, not a freshly re-resolved
+        # (possibly rebound) one. TLS SNI/verification still use the origin host.
+        self._install_guarded_backend()
         return self
+
+    def _install_guarded_backend(self) -> None:
+        from .guarded_backend import GuardedBackend
+
+        transport = getattr(self._client, "_transport", None)
+        pool = getattr(transport, "_pool", None)
+        if pool is not None and hasattr(pool, "_network_backend"):
+            pool._network_backend = GuardedBackend(
+                allow_private=self.guard.allow_private_targets
+            )
 
     async def __aexit__(self, *exc: object) -> None:
         if self._client is not None:

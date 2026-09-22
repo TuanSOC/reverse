@@ -46,3 +46,12 @@ def test_registrable_and_subdomain() -> None:
     assert not is_subdomain_of("evil-example.com", "example.com")
     assert same_registrable_domain("api.example.com", "www.example.com")
     assert not same_registrable_domain("example.com", "example.org")
+
+
+def test_registrable_domain_handles_multi_label_suffix() -> None:
+    # co.uk-style suffixes must not collapse siblings into one registrable domain.
+    assert registrable_domain("victim.co.uk") == "victim.co.uk"
+    assert registrable_domain("www.victim.co.uk") == "victim.co.uk"
+    assert same_registrable_domain("www.victim.co.uk", "api.victim.co.uk")
+    assert not same_registrable_domain("victim.co.uk", "attacker.co.uk")
+    assert not same_registrable_domain("victim.com.au", "attacker.com.au")

@@ -105,23 +105,30 @@ class Pipeline:
                     http.scope = ctx.scope
 
                 # Persist: create the scan row as soon as we have a valid target.
+                # A storage error here must NOT abort the scan (§33) — log and
+                # continue so remaining modules still run and finalize is reached.
                 if self.repo is not None:
-                    if not scan_persisted and ctx.target is not None:
-                        await self.repo.create_target_and_scan(
-                            ctx.target, ctx.scan_id, self.config.model_dump(mode="json")
-                        )
-                        scan_persisted = True
-                        # Expose the repository to modules for domain persistence
-                        # (crawler pages/assets/forms, etc.) now the scan row exists.
-                        ctx.storage = self.repo
-                    if scan_persisted:
-                        await self.repo.save_module_result(ctx.scan_id, result)
+                    try:
+                        if not scan_persisted and ctx.target is not None:
+                            await self.repo.create_target_and_scan(
+                                ctx.target, ctx.scan_id, self.config.model_dump(mode="json")
+                            )
+                            scan_persisted = True
+                            # Expose the repository to modules for domain
+                            # persistence now the scan row exists.
+                            ctx.storage = self.repo
+                        if scan_persisted:
+                            await self.repo.save_module_result(ctx.scan_id, result)
+                    except Exception as exc:  # noqa: BLE001 - persistence is best-effort
+                        log.error("persistence failed", module=name, error=str(exc))
 
                 self._emit(ScanProgress(name, index, total, result.status))
 
         if self.repo is not None and scan_persisted:
-            final = self._overall_status(ctx)
-            await self.repo.finalize_scan(ctx.scan_id, final)
+            try:
+                await self.repo.finalize_scan(ctx.scan_id, self._overall_status(ctx))
+            except Exception as exc:  # noqa: BLE001 - never fail the scan on finalize
+                log.error("finalize failed", scan_id=ctx.scan_id, error=str(exc))
         log.info("scan finished", scan_id=ctx.scan_id, findings=len(ctx.all_findings()))
         return ctx
 

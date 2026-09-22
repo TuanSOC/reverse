@@ -53,7 +53,8 @@ class CrawlerModule(ScannerModule):
         asset_urls: set[str] = set()
         requests_made = 0
 
-        robots = await self._load_robots(ctx, target.base_url, inv, log)
+        robots, robots_reqs = await self._load_robots(ctx, target.base_url, inv, log)
+        requests_made += robots_reqs
 
         # Seed the queue from the already-fetched base page.
         queue: list[tuple[str, int, str | None]] = []
@@ -102,7 +103,7 @@ class CrawlerModule(ScannerModule):
 
             self._ingest_response(ctx, inv, visited, asset_urls, queue, resp, depth, src)
 
-        await self._load_sitemap(ctx, target.base_url, robots, inv, log)
+        requests_made += await self._load_sitemap(ctx, target.base_url, robots, inv, log)
 
         # Publish + persist.
         ctx.shared["inventory"] = inv
@@ -195,30 +196,34 @@ class CrawlerModule(ScannerModule):
             return False
         return robots.is_disallowed(path)
 
-    async def _load_robots(self, ctx, base_url, inv, log) -> RobotsRules | None:
+    async def _load_robots(self, ctx, base_url, inv, log) -> tuple[RobotsRules | None, int]:
+        """Fetch + parse robots.txt. Returns (rules, requests_made)."""
         robots_url = base_url.rstrip("/") + "/robots.txt"
         try:
             resp = await ctx.http.get(robots_url)
         except Exception as exc:  # noqa: BLE001
             log.debug("robots fetch failed", error=str(exc))
-            return None
+            return None, 0
         if resp.status_code != 200:
-            return None
+            return None, 1
         ua = ctx.config.http.user_agent
         rules = parse_robots(resp.text, user_agent=ua)
         inv.robots_sitemaps = list(rules.sitemaps)
-        return rules
+        return rules, 1
 
-    async def _load_sitemap(self, ctx, base_url, robots, inv, log) -> None:
+    async def _load_sitemap(self, ctx, base_url, robots, inv, log) -> int:
+        """Fetch + parse sitemaps. Returns the number of requests made."""
         if not ctx.config.crawl.parse_sitemap:
-            return
+            return 0
         candidates = list(inv.robots_sitemaps) or [base_url.rstrip("/") + "/sitemap.xml"]
         seen_urls: set[str] = set()
+        requests = 0
         for sm_url in candidates[:5]:  # bound recursion breadth
             if not ctx.scope.is_allowed(sm_url):
                 continue
             try:
                 resp = await ctx.http.get(sm_url)
+                requests += 1
             except Exception as exc:  # noqa: BLE001
                 log.debug("sitemap fetch failed", url=sm_url, error=str(exc))
                 continue
@@ -231,6 +236,7 @@ class CrawlerModule(ScannerModule):
                     inv.sitemap_urls.append(u)
         # Cap to avoid unbounded growth from a huge sitemap.
         inv.sitemap_urls = inv.sitemap_urls[:10000]
+        return requests
 
     def _sitemap_findings(self, ctx, result, inv, visited) -> None:
         """Informational: URLs in the sitemap the crawl did not reach (§17)."""

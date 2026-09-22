@@ -61,17 +61,38 @@ def normalize_url(url: str, *, keep_fragment: bool = False, keep_query: bool = T
     return urlunsplit((p.scheme, netloc, p.path or "/", query, fragment))
 
 
-def registrable_domain(hostname: str) -> str:
-    """Best-effort registrable domain (last two labels).
+# Common multi-label public suffixes. Not the full PSL, but enough to stop the
+# most common "sibling under a public suffix" scope-broadening (e.g. treating
+# attacker.co.uk as same-domain as victim.co.uk). Extend as needed.
+_MULTI_LABEL_SUFFIXES = frozenset(
+    {
+        "co.uk", "org.uk", "gov.uk", "ac.uk", "me.uk", "net.uk", "ltd.uk", "plc.uk",
+        "com.au", "net.au", "org.au", "edu.au", "gov.au", "id.au",
+        "co.nz", "net.nz", "org.nz", "govt.nz", "ac.nz",
+        "co.jp", "or.jp", "ne.jp", "ac.jp", "go.jp", "com.cn", "net.cn", "org.cn",
+        "gov.cn", "com.br", "net.br", "org.br", "gov.br", "co.in", "net.in", "org.in",
+        "gen.in", "firm.in", "com.sg", "com.hk", "com.tw", "co.za", "org.za", "co.kr",
+        "com.mx", "com.tr", "com.ar", "co.id", "com.my", "com.ph", "com.vn", "net.vn",
+        "org.vn", "gov.vn", "edu.vn",
+    }
+)
 
-    NOTE: this is a heuristic, not a Public Suffix List lookup, so multi-label
-    TLDs like ``co.uk`` are approximated. Documented limitation; PSL support can
-    be added later without changing callers.
+
+def registrable_domain(hostname: str) -> str:
+    """Best-effort registrable domain.
+
+    Uses a curated multi-label public-suffix set so ``co.uk``-style suffixes take
+    three labels; otherwise the last two. Still a heuristic (not the full Public
+    Suffix List) but closes the common sibling-under-public-suffix case.
     """
-    labels = hostname.strip(".").split(".")
+    host = hostname.strip(".").lower()
+    labels = host.split(".")
     if len(labels) <= 2:
-        return hostname.strip(".")
-    return ".".join(labels[-2:])
+        return host
+    last_two = ".".join(labels[-2:])
+    if last_two in _MULTI_LABEL_SUFFIXES and len(labels) >= 3:
+        return ".".join(labels[-3:])
+    return last_two
 
 
 def is_subdomain_of(candidate: str, base: str) -> bool:
