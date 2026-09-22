@@ -23,6 +23,7 @@ INDEX_HTML = b"""<!doctype html>
 <a href="/about">About</a>
 <a href="/contact">Contact</a>
 <a href="/admin">Admin</a>
+<a href="/api/status">Status</a>
 <a href="https://third-party.example/out">External</a>
 <form action="/search" method="get"><input name="q"></form>
 </body></html>"""
@@ -100,6 +101,8 @@ class _Handler(BaseHTTPRequestHandler):
                 "</urlset>"
             ).encode()
             self._send(200, body, ctype="application/xml")
+        elif path == "/api/status":
+            self._send(200, b'{"ok":true,"version":"1"}', ctype="application/json")
         elif path == "/static/app.js":
             self._send(200, APP_JS, ctype="application/javascript")
         elif path == "/static/app.js.map":

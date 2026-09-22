@@ -16,6 +16,7 @@ from .models import (
     Asset,
     Certificate,
     DnsRecord,
+    Endpoint,
     EvidenceRecord,
     FindingRecord,
     Form,
@@ -27,6 +28,7 @@ from .models import (
 )
 
 if TYPE_CHECKING:
+    from ..modules.api.classify import Endpoint as EndpointDTO
     from ..modules.crawler.models import CrawlInventory
     from ..modules.technology.fingerprint import TechDetection
     from ..modules.tls.analysis import CertInfo
@@ -190,6 +192,21 @@ class ScanRepository:
                             {"source": e.source, "detail": e.detail, "version": e.version}
                             for e in d.evidence
                         ],
+                    )
+                )
+
+    async def save_endpoints(self, scan_id: str, endpoints: list[EndpointDTO]) -> None:
+        async with self.db.session() as s:
+            for e in endpoints:
+                s.add(
+                    Endpoint(
+                        scan_id=scan_id,
+                        url=e.url,
+                        method=next(iter(sorted(e.methods)), None),
+                        kind=e.kind,
+                        observation=str(e.observation),
+                        source=",".join(sorted(e.sources)),
+                        meta={"in_scope": e.in_scope, "sources": sorted(e.sources)},
                     )
                 )
 

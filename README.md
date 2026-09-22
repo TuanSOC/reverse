@@ -38,6 +38,10 @@ Early development — building module-by-module against a phased plan.
   endpoint/websocket/GraphQL/analytics/cloud references (classified `referenced`, never
   asserted), scans for masked secret patterns, and flags exposed `.js.map` source maps.
   Downloaded JS is never executed.
+- **Phase 7 (API discovery)** ✅ — consolidates endpoints from the crawler, JavaScript,
+  and sitemap into one deduplicated inventory with honest `observed / referenced /
+  potential` provenance and REST/GraphQL/WebSocket classification. No endpoint is
+  probed or replayed.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
