@@ -61,9 +61,17 @@ KNOWN_VULNS: dict[str, tuple[KnownVuln, ...]] = {
                   "https://docs.angularjs.org/misc/version-support-status"),
     ),
     "Vue.js": (
-        KnownVuln((2, 6, 11), Severity.MEDIUM,
-                  "Vue 2 ReDoS / older 2.x XSS in template compiler",
+        KnownVuln((2, 7, 0), Severity.MEDIUM,
+                  "Vue 2 < 2.7 ReDoS / XSS in template compiler; 2.x is EOL",
                   "https://github.com/vuejs/vue"),
+    ),
+    "Axios": (
+        KnownVuln((1, 6, 0), Severity.HIGH,
+                  "SSRF / credential leak on redirect (CVE-2023-45857)",
+                  "https://nvd.nist.gov/vuln/detail/CVE-2023-45857"),
+        KnownVuln((0, 21, 1), Severity.HIGH,
+                  "SSRF via follow-redirects (CVE-2020-28168)",
+                  "https://nvd.nist.gov/vuln/detail/CVE-2020-28168"),
     ),
     "PHP": (
         KnownVuln((7, 4, 0), Severity.MEDIUM,

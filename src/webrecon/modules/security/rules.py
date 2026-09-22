@@ -183,7 +183,8 @@ def known_vulnerable_libraries(detections: list[dict]) -> list[Finding]:
                 check_id="technology.vulnerable."
                 + str(name).lower().replace(" ", "_").replace(".", ""),
                 name=f"Known-vulnerable {name} {version}",
-                category=FindingCategory.TECHNOLOGY, severity=hit.severity, confidence=finding_conf,
+                category=FindingCategory.VULNERABILITY, severity=hit.severity,
+                confidence=finding_conf,
                 observation=Observation.REFERENCED, module="security",
                 description=(f"{name} {version} is below "
                             f"{'.'.join(map(str, hit.fixed_in))}: {hit.summary}"),

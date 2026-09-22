@@ -35,6 +35,21 @@ class TechDetection:
         return {e.source for e in self.evidence}
 
 
+_URL_VERSION = re.compile(
+    r"[?&]v(?:er|ersion)?=(\d+\.\d[\w.]*)"     # ?v=1.2.3 / ?ver=1.2
+    r"|@(\d+\.\d[\w.]*)"                        # /pkg@1.2.3/
+    r"|[-.](\d+\.\d+(?:\.\d+)?)(?:\.min)?\.js"  # lib-1.2.3.min.js
+)
+
+
+def extract_url_version(url: str) -> str | None:
+    """Best-effort version pulled from an asset URL (?v=, @ver/, -1.2.3.min.js)."""
+    m = _URL_VERSION.search(url)
+    if not m:
+        return None
+    return next((g for g in m.groups() if g), None)
+
+
 def _match(sig: Signature, text: str) -> tuple[bool, str | None]:
     m = re.search(sig.pattern, text, re.IGNORECASE)
     if not m:
@@ -92,7 +107,10 @@ def fingerprint(
             for url in script_urls:
                 ok, ver = _match(sig, url)
                 if ok:
-                    record(sig, f"script {url}", ver)
+                    # Fall back to a version embedded in the asset URL itself
+                    # (?v=1.2.3, @1.2.3/, -1.2.3.min.js) when the signature's own
+                    # pattern did not capture one.
+                    record(sig, f"script {url}", ver or extract_url_version(url))
                     break
         elif sig.source == META and meta_generator:
             ok, ver = _match(sig, meta_generator)

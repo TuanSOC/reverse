@@ -92,6 +92,7 @@ class FindingCategory(StrEnum):
     DNS = "dns"
     EXPOSURE = "exposure"  # source maps, robots leaks, debug endpoints
     TECHNOLOGY = "technology"  # outdated/vulnerable fingerprint
+    VULNERABILITY = "vulnerability"  # known-CVE library versions, DOM sinks
     CONFIGURATION = "configuration"
     INFORMATIONAL = "informational"
 
