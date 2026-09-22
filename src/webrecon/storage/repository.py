@@ -23,10 +23,12 @@ from .models import (
     Page,
     Scan,
     Target,
+    Technology,
 )
 
 if TYPE_CHECKING:
     from ..modules.crawler.models import CrawlInventory
+    from ..modules.technology.fingerprint import TechDetection
     from ..modules.tls.analysis import CertInfo
 
 
@@ -173,6 +175,23 @@ class ScanRepository:
                     details={"self_signed": info.self_signed, "serial": info.serial},
                 )
             )
+
+    async def save_technologies(self, scan_id: str, detections: list[TechDetection]) -> None:
+        async with self.db.session() as s:
+            for d in detections:
+                s.add(
+                    Technology(
+                        scan_id=scan_id,
+                        name=d.name,
+                        category=d.category,
+                        version=d.version,
+                        confidence=str(d.confidence),
+                        evidence=[
+                            {"source": e.source, "detail": e.detail, "version": e.version}
+                            for e in d.evidence
+                        ],
+                    )
+                )
 
     async def finalize_scan(self, scan_id: str, status: str) -> None:
         from sqlalchemy import update

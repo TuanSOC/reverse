@@ -31,6 +31,9 @@ Early development — building module-by-module against a phased plan.
   modules producing evidence-backed findings: DNS records + SPF/DMARC + dangling-CNAME,
   TLS cert/validity/hostname/protocol, security-header gaps with explanations, cookie
   flag analysis (masked values), and CORS misconfiguration flags.
+- **Phase 5 (technology fingerprinting)** ✅ — signature-based detection across
+  headers, cookies, HTML, script URLs, and meta generator, with confidence scoring,
+  version extraction, and per-detection evidence.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 

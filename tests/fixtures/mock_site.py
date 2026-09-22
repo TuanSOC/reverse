@@ -14,8 +14,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 INDEX_HTML = b"""<!doctype html>
 <html><head><title>Mock Site</title>
+<meta name="generator" content="WordPress 6.4.2">
 <link rel="canonical" href="/">
 <script src="/static/app.js"></script>
+<script src="/wp-content/themes/mock/app.js"></script>
 </head>
 <body>
 <a href="/about">About</a>
@@ -55,7 +57,8 @@ class _Handler(BaseHTTPRequestHandler):
                 extra={
                     "Set-Cookie": "sessionid=secretvalue123; Path=/",
                     "Access-Control-Allow-Origin": "*",
-                    "Server": "MockServer/1.2.3",
+                    "Server": "nginx/1.25.3",
+                    "X-Powered-By": "PHP/8.1.2",
                 },
             )
         elif path == "/about":

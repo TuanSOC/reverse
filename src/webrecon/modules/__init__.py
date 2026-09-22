@@ -15,6 +15,7 @@ from . import (  # noqa: F401  (import side-effect: registration)
     http,
     scope,
     target,
+    technology,
     tls,
 )
 
@@ -28,4 +29,5 @@ __all__ = [
     "headers",
     "cookies",
     "cors",
+    "technology",
 ]

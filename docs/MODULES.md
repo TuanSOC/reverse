@@ -16,7 +16,7 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 | Headers | `headers` | `http` | ✅ P4 | Security-header presence + explanation; version-disclosure headers. |
 | Cookies | `cookies` | `http` | ✅ P4 | Secure/HttpOnly/SameSite/Domain analysis (values masked). |
 | CORS | `cors` | `http` | ✅ P4 | ACAO/credentials/null combination flags (passive). |
-| Technology | `technology` | `http`, `crawler` | planned P5 | Fingerprint frontend/backend/infra with confidence + evidence. |
+| Technology | `technology` | `http`, `crawler` | ✅ P5 | Signature-based fingerprint (headers/cookies/HTML/scripts/meta) with confidence + version + evidence. |
 | JavaScript | `javascript` | `crawler` | planned P6 | Analyze public JS: endpoints/routes/config strings, source maps. |
 | API | `api` | `crawler`, `javascript` | planned P7 | Endpoint discovery classified observed/referenced/potential. |
 | Security | `security` | P4–P7 | planned P8 | Aggregate checks into findings with severity/confidence. |
