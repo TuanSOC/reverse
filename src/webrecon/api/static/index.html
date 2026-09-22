@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WebRecon</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Ctext x='16' y='22' font-size='18' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%234da3ff'%3EW%3C/text%3E%3C/svg%3E">
 <style>
   /* ---- design tokens (dark default, light override) ---- */
   :root{
@@ -340,11 +341,11 @@ const RENDER={
         el("div",{class:"v",style:`color:${(o.findings_by_severity?.[s])?riskColor(s):"var(--faint)"}`},
           String(o.findings_by_severity?.[s]||0))));
     w.append(cards);
-    // screenshot
+    // screenshot (click opens full image in a new tab)
     const img=new Image();img.className="shot";img.src=`/api/scans/${SID()}/screenshot`;
-    img.onload=()=>{w.append(el("h2",{},"Screenshot"));
-      img.onclick=()=>openDrawer("Screenshot",[{label:"Rendered page",rows:[]}]) ||
-        window.open(img.src,"_blank");w.append(img);};
+    img.title="Open full screenshot";
+    img.onclick=()=>window.open(img.src,"_blank");
+    img.onload=()=>{w.append(el("h2",{},"Screenshot"));w.append(img);};
     w.append(el("h2",{},"Technology"));
     if(o.technologies.length)w.append(tbl(["name","category","version","confidence"],
       o.technologies.map(t=>({cells:[t.name,t.category,t.version||"—",
@@ -473,7 +474,7 @@ const RENDER={
         {label:"Subject / Issuer",rows:[["Subject",c.subject],["Issuer",c.issuer]]},
         {label:"Validity",rows:[["Not before",c.not_before||"—"],["Not after",c.not_after||"—"]]},
         {label:"SAN",tags:c.san||[]},
-        {label:"Details",raw:c.details||{}},{label:"Raw",raw:c}])})));
+        {label:"Details",raw:c.details||{}},{label:"Raw",raw:c}])}))));
     else w.append(el("div",{class:"sub"},"none"));
     return w;
   },
