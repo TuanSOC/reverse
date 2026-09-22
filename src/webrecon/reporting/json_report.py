@@ -12,6 +12,24 @@ from ..core.context import ScanContext
 from ..core.enums import SEVERITY_ORDER, Severity
 
 
+def collect_extras(ctx: ScanContext) -> dict[str, Any]:
+    """Pull endpoints/technologies/counts off the context for the HTML report."""
+    endpoints = []
+    for e in ctx.shared.get("api_endpoints", []) or []:
+        endpoints.append(
+            {"url": e.url, "kind": e.kind, "observation": str(e.observation)}
+        )
+    tech_result = ctx.result_of("technology")
+    technologies = tech_result.data.get("technologies", []) if tech_result else []
+    inv = ctx.shared.get("inventory")
+    return {
+        "endpoints": endpoints,
+        "technologies": technologies,
+        "pages_count": len(inv.pages) if inv else 0,
+        "assets_count": len(inv.assets) if inv else 0,
+    }
+
+
 def build_report(ctx: ScanContext) -> dict[str, Any]:
     """Serialize a finished scan context into a plain, JSON-safe dict."""
     findings = ctx.all_findings()

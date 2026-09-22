@@ -49,6 +49,9 @@ Early development — building module-by-module against a phased plan.
 - **Phase 10 (dashboard)** ✅ — FastAPI backend (`webrecon serve`) with a read API,
   background scans, live-progress WebSocket, and a self-contained dark dashboard
   (overview, findings, endpoints, technologies, pages, assets, DNS/TLS, graph).
+- **Phase 11 (reports)** ✅ — JSON, autoescaped HTML (executive summary, scope,
+  methodology, findings + evidence, technology, endpoints), and PDF via headless
+  Chromium. `webrecon scan … --json --html --pdf`.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 

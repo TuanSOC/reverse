@@ -91,6 +91,8 @@ def scan(
         "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
     ),
     json_out: str | None = typer.Option(None, "--json", help="Write JSON report to this path."),
+    html_out: str | None = typer.Option(None, "--html", help="Write HTML report to this path."),
+    pdf_out: str | None = typer.Option(None, "--pdf", help="Write PDF report to this path."),
 ) -> None:
     """Run a scan against a target you own or are authorized to test."""
     import json
@@ -100,7 +102,8 @@ def scan(
     from ..core.enums import ModuleStatus
     from ..core.registry import default_registry
     from ..pipeline import Pipeline, ScanProgress
-    from ..reporting.json_report import build_report
+    from ..reporting.html_report import render_html
+    from ..reporting.json_report import build_report, collect_extras
     from ..storage import init_db
 
     configure_logging(json_output=False)
@@ -130,24 +133,44 @@ def scan(
         glyph = status_glyph.get(p.status, str(p.status))
         console.print(f"  [{p.index + 1}/{p.total}] {p.module:<12} {glyph}")
 
-    async def _run() -> dict:
+    async def _run() -> tuple[dict, dict]:
         db = None if no_db else await init_db(database_url)
         try:
             pipeline = Pipeline(cfg, registry=default_registry, db=db, progress=on_progress)
             ctx = await pipeline.run(url)
-            return build_report(ctx)
+            return build_report(ctx), collect_extras(ctx)
         finally:
             if db is not None:
                 await db.dispose()
 
-    report = asyncio.run(_run())
+    report, extras = asyncio.run(_run())
 
     _print_summary(report)
 
+    def _write(path: str, data: str | bytes) -> None:
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if isinstance(data, bytes):
+            p.write_bytes(data)
+        else:
+            p.write_text(data, encoding="utf-8")
+
     if json_out:
-        Path(json_out).parent.mkdir(parents=True, exist_ok=True)
-        Path(json_out).write_text(json.dumps(report, indent=2), encoding="utf-8")
+        _write(json_out, json.dumps(report, indent=2))
         console.print(f"[green]OK[/] JSON report written to [bold]{json_out}[/]")
+    if html_out or pdf_out:
+        html = render_html(report, extras)
+        if html_out:
+            _write(html_out, html)
+            console.print(f"[green]OK[/] HTML report written to [bold]{html_out}[/]")
+        if pdf_out:
+            from ..reporting.pdf_report import PdfUnavailableError, render_pdf
+
+            try:
+                _write(pdf_out, render_pdf(html))
+                console.print(f"[green]OK[/] PDF report written to [bold]{pdf_out}[/]")
+            except PdfUnavailableError as exc:
+                console.print(f"[red]PDF unavailable:[/] {exc}")
 
 
 def _print_summary(report: dict) -> None:

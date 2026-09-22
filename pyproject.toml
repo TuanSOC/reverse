@@ -71,6 +71,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106"]
+# The HTML report is one big embedded template string; long CSS/markup lines are fine.
+"src/webrecon/reporting/html_report.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
