@@ -155,6 +155,15 @@ class DnsRecord(IdMixin, Base):
     ttl: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
+class IpIntelRecord(IdMixin, Base):
+    __tablename__ = "ip_intel"
+
+    scan_id: Mapped[str] = mapped_column(String(36), ForeignKey("scans.id"), index=True)
+    edge_cdn: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    origin_exposed: Mapped[bool] = mapped_column(default=False)
+    ips: Mapped[list] = mapped_column(JSON, default=list)  # list of IpIntel dicts
+
+
 class Certificate(IdMixin, Base):
     __tablename__ = "certificates"
 

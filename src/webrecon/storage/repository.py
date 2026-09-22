@@ -20,6 +20,7 @@ from .models import (
     EvidenceRecord,
     FindingRecord,
     Form,
+    IpIntelRecord,
     ModuleRun,
     Page,
     Scan,
@@ -163,6 +164,17 @@ class ScanRepository:
                     s.add(
                         DnsRecord(scan_id=scan_id, name=host, record_type=rtype, value=value)
                     )
+
+    async def save_ip_intel(
+        self, scan_id: str, *, edge_cdn: str | None, origin_exposed: bool, ips: list[dict]
+    ) -> None:
+        async with self.db.session() as s:
+            s.add(
+                IpIntelRecord(
+                    scan_id=scan_id, edge_cdn=edge_cdn,
+                    origin_exposed=origin_exposed, ips=ips,
+                )
+            )
 
     async def save_certificate(self, scan_id: str, info: CertInfo) -> None:
         async with self.db.session() as s:
