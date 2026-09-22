@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Core + DB-error + Data-exposure + Unauth
-status: in-progress
+status: completed
 priority: P1
 effort: 1.5d
 dependencies: []

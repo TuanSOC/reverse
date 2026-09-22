@@ -86,8 +86,8 @@ guarantees and detection logic before implementation.
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Core+DBError+DataExposure+Unauth](./phase-01-core-dberror-dataexposure-unauth.md) | In Progress |
-| 2 | [SQLi Susceptibility](./phase-02-sqli-susceptibility.md) | Pending |
+| 1 | [Core+DBError+DataExposure+Unauth](./phase-01-core-dberror-dataexposure-unauth.md) | Completed |
+| 2 | [SQLi Susceptibility](./phase-02-sqli-susceptibility.md) | In Progress |
 | 3 | [GraphQL Introspection](./phase-03-graphql-introspection.md) | Pending |
 | 4 | [Dashboard+Docs](./phase-04-dashboard-docs.md) | Pending |
 

@@ -59,6 +59,30 @@ async def test_db_error_body_yields_single_primary_finding(mock_site: str) -> No
         )
 
 
+async def test_sqli_susceptible_on_injectable_param(mock_site: str) -> None:
+    # /api/search?q=1 was observed with param q; ' triggers a DB error, '' does not.
+    ctx = await Pipeline(_cfg(active=True)).run(mock_site)
+    sqli = [f for f in ctx.results["apitest"].findings if f.check_id == "apitest.sqli.susceptible"]
+    assert sqli, "expected a SQLi-susceptible finding on /api/search"
+    f = sqli[0]
+    assert str(f.severity) == "high" and str(f.confidence) == "medium"
+    assert str(f.observation) == "potential"
+    assert f.evidence[0].data.get("param") == "q"
+    # Evidence carries the signal type, not extracted rows.
+    assert f.evidence[0].data.get("signal") == "error_based"
+
+
+async def test_sqli_not_flagged_without_params(mock_site: str) -> None:
+    ctx = await Pipeline(_cfg(active=True)).run(mock_site)
+    sqli_urls = {
+        f.evidence[0].data.get("url")
+        for f in ctx.results["apitest"].findings
+        if f.check_id == "apitest.sqli.susceptible"
+    }
+    # /api/users has no query params -> never a SQLi finding.
+    assert not any((u or "").endswith("/api/users") for u in sqli_urls)
+
+
 async def test_no_raw_secret_in_evidence(mock_site: str) -> None:
     ctx = await Pipeline(_cfg(active=True)).run(mock_site)
     blob = str([f.model_dump() for f in ctx.results["apitest"].findings])

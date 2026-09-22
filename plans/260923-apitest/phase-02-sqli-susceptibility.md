@@ -1,10 +1,11 @@
 ---
 phase: 2
-title: "SQLi Susceptibility (error-based, detection-only)"
-status: pending
+title: 'SQLi Susceptibility (error-based, detection-only)'
+status: in-progress
 priority: P1
-effort: "0.5d"
-dependencies: [1]
+effort: 0.5d
+dependencies:
+  - 1
 ---
 
 # Phase 2: SQLi susceptibility — error-based only (detection-only)

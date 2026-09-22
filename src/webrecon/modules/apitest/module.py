@@ -19,6 +19,7 @@ from ...core.enums import (
 from ...core.models import Evidence, Finding, ModuleResult
 from ...core.module import ScannerModule
 from ...core.registry import default_registry
+from . import probes
 from . import signatures as sig
 from .safe_engine import SafeGetEngine
 
@@ -162,8 +163,40 @@ class ApiTestModule(ScannerModule):
         ))
 
     async def _check_sqli(self, engine, result, ep, baseline, probes_used) -> None:
-        """Phase 2 extends this; no-op in Phase 1."""
-        return
+        """Error-based SQLi susceptibility on captured query params (P2).
+
+        For up to 3 params (staying within the per-endpoint probe budget), send
+        `param='` then `param=''` and flag susceptibility only when the
+        unbalanced quote triggers a DB error the balanced/baseline do not.
+        """
+        params = sorted(getattr(ep, "params", set()))
+        if not params:
+            return
+        baseline_hit = sig.has_db_error(baseline.text)
+        for param in params[:3]:
+            if probes_used + 2 > MAX_PROBES_PER_ENDPOINT or self._budget + 2 > MAX_REQUESTS:
+                return
+            single_url, balanced_url = probes.quote_variants(ep.url, param)
+            single = await self._get(engine, single_url)
+            balanced = await self._get(engine, balanced_url)
+            probes_used += 2
+            if single is None or balanced is None:
+                continue
+            single_hit = sig.has_db_error(single.text)
+            balanced_hit = sig.has_db_error(balanced.text)
+            if probes.error_based_signal(baseline_hit, single_hit, balanced_hit):
+                result.findings.append(self._f(
+                    "apitest.sqli.susceptible",
+                    f"Possible SQL injection ({param})",
+                    FindingCategory.EXPOSURE, Severity.HIGH, Confidence.MEDIUM,
+                    Observation.POTENTIAL, ep.url,
+                    f"An unbalanced quote in '{param}' triggered a DB error that a "
+                    "balanced quote did not — an error-based SQLi indicator.",
+                    "If injectable, an attacker may read/alter database data. NOT confirmed.",
+                    "Use parameterized queries/ORM bindings; verify this endpoint manually.",
+                    {"url": ep.url, "param": param, "signal": "error_based"},
+                ))
+                return  # one finding per endpoint is enough
 
     # -- helpers -----------------------------------------------------------
 
