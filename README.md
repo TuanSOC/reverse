@@ -102,16 +102,31 @@ webrecon serve                         # open the dashboard at http://127.0.0.1:
 For local lab targets (loopback/private), add `--allow-private`.
 Full CLI reference: [`docs/CLI.md`](docs/CLI.md).
 
+## Docker
+
+```bash
+docker build -t webrecon .
+docker run --rm -p 8000:8000 -v webrecon_data:/data webrecon   # dashboard
+docker run --rm -v webrecon_data:/data webrecon scan https://example.com --json /data/r.json
+```
+
+The image is based on the official Playwright Python image, so browser mode and
+PDF export work out of the box. Scans persist in the `/data` volume.
+
 ## Development
 
 ```bash
-pytest            # run the test suite
-ruff check .      # lint
-mypy src          # type-check
+pip install -e ".[dev,engine,browser,api,report]"
+pytest                                  # run the test suite (157 tests)
+pytest --cov=webrecon --cov-report=term-missing   # with coverage (~84%)
+ruff check .                            # lint
+mypy src                                # type-check
+pre-commit install                      # optional: run lint/type on commit
 ```
 
-See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and
-[`docs/MODULES.md`](docs/MODULES.md).
+CI (`.github/workflows/ci.yml`) runs lint + type-check + tests with a coverage
+gate on Python 3.11–3.13. See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md),
+[`docs/MODULES.md`](docs/MODULES.md), and [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 
