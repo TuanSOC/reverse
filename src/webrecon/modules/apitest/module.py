@@ -60,9 +60,8 @@ class ApiTestModule(ScannerModule):
                 result.data = result.data or {}
                 result.data["budget_exhausted"] = True
                 break
-            probes = 0
+            probes_used = 1  # the baseline GET below counts as the first probe
             resp = await self._get(engine, ep.url)
-            probes += 1
             if resp is None:
                 continue
             tested += 1
@@ -70,7 +69,7 @@ class ApiTestModule(ScannerModule):
             exposed = self._check_data_exposure(result, ep, resp, db_error)
             self._check_unauth(result, ep, resp, exposed)
             # Phase 2 hook: SQLi susceptibility uses the remaining probe budget.
-            await self._check_sqli(engine, result, ep, resp, probes)
+            await self._check_sqli(engine, result, ep, resp, probes_used)
 
         # GraphQL introspection (read-only, GET) on graphql endpoints.
         await self._check_graphql(engine, result, endpoints)
@@ -89,17 +88,19 @@ class ApiTestModule(ScannerModule):
 
     # -- worklist ----------------------------------------------------------
 
+    def _eligible(self, ep, kind: str) -> bool:
+        """Shared probe gate: observed + in-scope + matching kind, and (for REST)
+        not an action-verb endpoint. Used by both the REST loop and GraphQL pass."""
+        if str(getattr(ep, "observation", "")) != str(Observation.OBSERVED):
+            return False
+        if not getattr(ep, "in_scope", False) or getattr(ep, "kind", "rest") != kind:
+            return False
+        if kind == "rest" and sig.is_action_verb(ep.url):
+            return False
+        return True
+
     def _worklist(self, endpoints) -> list:
-        out = []
-        for e in endpoints:
-            if str(getattr(e, "observation", "")) != str(Observation.OBSERVED):
-                continue
-            if not getattr(e, "in_scope", False) or getattr(e, "kind", "rest") != "rest":
-                continue
-            if sig.is_action_verb(e.url):
-                continue
-            out.append(e)
-        return out
+        return [e for e in endpoints if self._eligible(e, "rest")]
 
     async def _get(self, engine, url):
         if self._budget >= MAX_REQUESTS:
@@ -205,9 +206,7 @@ class ApiTestModule(ScannerModule):
         from urllib.parse import quote
 
         for ep in endpoints:
-            if getattr(ep, "kind", "") != "graphql" or not getattr(ep, "in_scope", False):
-                continue
-            if str(getattr(ep, "observation", "")) != str(Observation.OBSERVED):
+            if not self._eligible(ep, "graphql"):
                 continue
             url = f"{ep.url}?query={quote(sig.INTROSPECTION_QUERY)}"
             resp = await self._get(engine, url)

@@ -268,7 +268,7 @@
   /* responsive: collapse sidebar labels on narrow screens */
   @media (max-width:860px){
     .app{grid-template-columns:60px 1fr}
-    nav a span:not(.badge):not(.ic){display:none} nav .grp{text-align:center;font-size:9px}
+    nav a span:not(.badge):not(.navic){display:none} nav .grp{text-align:center;font-size:9px}
     nav a{justify-content:center;padding:10px 0} select#scanSelect{max-width:150px}
     .grid2{grid-template-columns:1fr}
   }
@@ -383,7 +383,7 @@ const ICONS={
 };
 function iconEl(name){
   const inner=ICONS[name]||'<circle cx="12" cy="12" r="3"/>';
-  return el("span",{html:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`});
+  return el("span",{class:"navic",html:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`});
 }
 function renderNav(){
   const nav=$("#nav");nav.innerHTML="";

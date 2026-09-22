@@ -51,9 +51,11 @@ def is_sensitive_path(url: str) -> bool:
 def looks_substantive_json(body: str, content_type: str | None) -> bool:
     """True if the body is a non-trivial JSON payload (array len >= 5 or object
     with >= 5 keys) — used to avoid flagging empty/login responses."""
-    if content_type and "json" not in content_type.lower():
-        # Still try to parse; some servers omit the header.
-        pass
+    # An HTML response (e.g. a login/landing page) is never a substantive API
+    # payload; bail early. Other/missing content-types still fall through to a
+    # parse attempt, since some JSON APIs omit or mislabel the header.
+    if content_type and "html" in content_type.lower():
+        return False
     try:
         doc = json.loads(body)
     except (json.JSONDecodeError, ValueError):
