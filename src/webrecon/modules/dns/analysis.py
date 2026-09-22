@@ -20,6 +20,12 @@ def unquote_txt(txt: str) -> str:
     return "".join(c.replace('\\"', '"').replace("\\\\", "\\") for c in chunks)
 
 
+# Selectors probed when hunting for a published DKIM key (the common defaults).
+COMMON_DKIM_SELECTORS: tuple[str, ...] = (
+    "default", "google", "k1", "mail", "selector1", "selector2",
+)
+
+
 @dataclass
 class DnsData:
     records: dict[str, list[str]] = field(default_factory=dict)  # type -> values
@@ -27,6 +33,7 @@ class DnsData:
     dmarc: str | None = None
     caa: list[str] = field(default_factory=list)
     dangling_cnames: list[str] = field(default_factory=list)
+    dkim_selectors: list[str] = field(default_factory=list)  # selectors that resolved
 
 
 def extract_spf(txt_records: list[str]) -> str | None:
@@ -50,3 +57,23 @@ def spf_is_permissive(spf: str) -> bool:
     """A trailing ``+all`` (or bare ``all``) makes SPF effectively useless."""
     tokens = spf.lower().split()
     return "+all" in tokens or "all" in tokens
+
+
+def dmarc_policy(dmarc: str) -> str | None:
+    """Extract the ``p=`` policy value (none|quarantine|reject) from a DMARC record."""
+    for tag in dmarc.split(";"):
+        k, _, v = tag.strip().partition("=")
+        if k.strip().lower() == "p":
+            return v.strip().lower() or None
+    return None
+
+
+def dmarc_is_none(dmarc: str) -> bool:
+    """True when DMARC is published but its policy is ``p=none`` (monitor only)."""
+    return dmarc_policy(dmarc) == "none"
+
+
+def is_dkim_record(txt: str) -> bool:
+    """True when a TXT looks like a DKIM key record (v=DKIM1 or a p= public key)."""
+    clean = unquote_txt(txt).lower()
+    return "v=dkim1" in clean or "p=" in clean

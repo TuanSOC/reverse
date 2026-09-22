@@ -23,6 +23,7 @@ from ...core.module import ScannerModule
 from ...core.registry import default_registry
 from ..javascript.module import JS_ANALYSIS_KEY
 from .classify import Endpoint, EndpointAggregator, looks_like_api
+from .security_checks import find_open_redirect_params, insecure_websockets
 
 # Key under which the endpoint inventory is published.
 API_INVENTORY_KEY = "api_endpoints"
@@ -85,6 +86,8 @@ class ApiDiscoveryModule(ScannerModule):
         }
         result.stats = by_obs
         self._sensitive_finding(result, endpoints)
+        self._open_redirect_findings(ctx, result, endpoints, base)
+        self._websocket_findings(ctx, result, target)
         result.mark_finished(ModuleStatus.SUCCESS)
         log.info("api discovery complete", **by_obs)
         return result
@@ -157,6 +160,79 @@ class ApiDiscoveryModule(ScannerModule):
                               "sources": sorted(e.sources)},
                     )
                     for e in sensitive[:20]
+                ],
+            )
+        )
+
+    def _open_redirect_findings(
+        self, ctx, result: ModuleResult, endpoints: list[Endpoint], base: str
+    ) -> None:
+        # Collect every URL we know about that could carry a query string.
+        urls: list[str] = [e.url for e in endpoints]
+        inv = ctx.shared.get("inventory")
+        if inv is not None:
+            for page in inv.pages:
+                urls.append(page.url)
+                urls.extend(page.links)
+        for a in ctx.shared.get(JS_ANALYSIS_KEY) or []:
+            urls.extend(getattr(a, "urls", []))
+        hits = find_open_redirect_params(urls)
+        if not hits:
+            return
+        result.findings.append(
+            Finding(
+                check_id="api.open_redirect.candidate",
+                name="Open-redirect parameter candidate",
+                category=FindingCategory.CONFIGURATION, severity=Severity.LOW,
+                confidence=Confidence.LOW, observation=Observation.POTENTIAL,
+                module=self.name,
+                description=(
+                    "URLs expose redirect-like parameters (redirect/url/next/...) "
+                    "that, if unvalidated, enable open redirects."
+                ),
+                impact="Attackers can craft links that bounce users to malicious sites.",
+                recommendation=(
+                    "Validate redirect targets against an allowlist of internal paths; "
+                    "never redirect to a raw user-supplied URL."
+                ),
+                evidence=[
+                    Evidence(source=self.name, url=url,
+                             description=f"redirect-like param {param!r}",
+                             data={"url": url, "param": param})
+                    for url, param in hits[:20]
+                ],
+            )
+        )
+
+    def _websocket_findings(self, ctx, result: ModuleResult, target) -> None:
+        ws_urls: list[str] = []
+        for a in ctx.shared.get(JS_ANALYSIS_KEY) or []:
+            ws_urls.extend(getattr(a, "websockets", []))
+        insecure = insecure_websockets(ws_urls, target.scheme == "https")
+        if not insecure:
+            return
+        result.findings.append(
+            Finding(
+                check_id="websocket.insecure_transport",
+                name="Insecure WebSocket (ws://) on an HTTPS page",
+                category=FindingCategory.TRANSPORT, severity=Severity.MEDIUM,
+                confidence=Confidence.HIGH, observation=Observation.OBSERVED,
+                module=self.name,
+                description=(
+                    "An HTTPS page references a cleartext ws:// WebSocket endpoint."
+                ),
+                impact=(
+                    "WebSocket traffic is unencrypted and can be read/modified on the "
+                    "wire; it also enables mixed-content and CSWSH exposure."
+                ),
+                recommendation=(
+                    "Use wss:// and validate the Origin header server-side on the "
+                    "WebSocket handshake to prevent cross-site hijacking (CSWSH)."
+                ),
+                evidence=[
+                    Evidence(source=self.name, url=url, description="cleartext ws:// endpoint",
+                             data={"url": url})
+                    for url in insecure[:20]
                 ],
             )
         )

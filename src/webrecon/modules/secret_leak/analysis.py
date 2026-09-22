@@ -35,6 +35,14 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str], Severity, str], ...] = (
 )
 
 
+# Well-known example/placeholder values that appear throughout documentation and
+# are NOT real secrets — flagging them is a false positive.
+_KNOWN_EXAMPLES: frozenset[str] = frozenset({
+    "AKIAIOSFODNN7EXAMPLE",   # AWS docs canonical example access key
+    "AKIAI44QH8DHBEXAMPLE",   # AWS docs example
+})
+
+
 def mask_secret(value: str) -> str:
     """Keep only the first 4 and last 4 characters; hide the middle."""
     if len(value) <= 8:
@@ -59,6 +67,8 @@ def find_secrets(text: str, cap_per_kind: int = 20) -> list[SecretHit]:
         found = 0
         for m in pat.finditer(text):
             raw = m.group(0)
+            if raw in _KNOWN_EXAMPLES:
+                continue  # documented example key, not a real secret
             masked = mask_secret(raw)
             key = (kind, masked)
             if key in seen:

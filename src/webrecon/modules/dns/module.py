@@ -26,7 +26,15 @@ from ...core.enums import (
 from ...core.models import Evidence, Finding, ModuleResult
 from ...core.module import ScannerModule
 from ...core.registry import default_registry
-from .analysis import DnsData, extract_dmarc, extract_spf, spf_is_permissive
+from .analysis import (
+    COMMON_DKIM_SELECTORS,
+    DnsData,
+    dmarc_is_none,
+    extract_dmarc,
+    extract_spf,
+    is_dkim_record,
+    spf_is_permissive,
+)
 
 _RECORD_TYPES = ("A", "AAAA", "CNAME", "MX", "NS", "TXT", "SOA", "CAA")
 
@@ -68,6 +76,13 @@ class DnsModule(ScannerModule):
         data.caa = data.records.get("CAA", [])
         data.dmarc = extract_dmarc(await self._query(resolver, f"_dmarc.{host}", "TXT"))
 
+        # DKIM: probe common selectors for a published key (mail domains only).
+        if data.records.get("MX"):
+            for sel in COMMON_DKIM_SELECTORS:
+                txts = await self._query(resolver, f"{sel}._domainkey.{host}", "TXT")
+                if any(is_dkim_record(t) for t in txts):
+                    data.dkim_selectors.append(sel)
+
         # Dangling CNAME: a CNAME target that fails to resolve.
         for cname in data.records.get("CNAME", []):
             tgt = cname.rstrip(".")
@@ -83,6 +98,7 @@ class DnsModule(ScannerModule):
             "dmarc": data.dmarc,
             "caa": data.caa,
             "dangling_cnames": data.dangling_cnames,
+            "dkim_selectors": data.dkim_selectors,
         }
         result.stats = {rtype: len(v) for rtype, v in data.records.items()}
         result.mark_finished(ModuleStatus.SUCCESS)
@@ -142,6 +158,36 @@ class DnsModule(ScannerModule):
                     impact="No policy for handling spoofed mail; weakens anti-phishing.",
                     recommendation="Publish a DMARC record (start with p=none for monitoring).",
                     evidence=[ev("No _dmarc TXT", {"host": host})],
+                )
+            )
+        elif data.dmarc and dmarc_is_none(data.dmarc):
+            result.findings.append(
+                Finding(
+                    check_id="dns.dmarc.policy_none", name="DMARC policy is p=none",
+                    category=FindingCategory.DNS, severity=Severity.LOW,
+                    confidence=Confidence.HIGH, observation=Observation.OBSERVED, module=self.name,
+                    description="DMARC is published but its policy is p=none (monitor only).",
+                    impact="Spoofed mail is not quarantined or rejected — only reported.",
+                    recommendation="Move to p=quarantine then p=reject once reports look clean.",
+                    evidence=[ev("DMARC p=none", {"dmarc": data.dmarc})],
+                )
+            )
+        if data.records.get("MX") and not data.dkim_selectors:
+            result.findings.append(
+                Finding(
+                    check_id="dns.dkim.missing", name="No DKIM key on common selectors",
+                    category=FindingCategory.DNS, severity=Severity.LOW,
+                    confidence=Confidence.LOW, observation=Observation.OBSERVED, module=self.name,
+                    description=(
+                        "No DKIM key found on common selectors "
+                        f"({', '.join(COMMON_DKIM_SELECTORS)})."
+                    ),
+                    impact="Receivers cannot cryptographically verify this domain's mail.",
+                    recommendation=(
+                        "Publish a DKIM key and sign outbound mail. A custom selector "
+                        "may exist — verify manually."
+                    ),
+                    evidence=[ev("No DKIM on common selectors", {"host": host})],
                 )
             )
         for tgt in data.dangling_cnames:

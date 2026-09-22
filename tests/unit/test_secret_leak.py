@@ -16,7 +16,7 @@ def test_mask_secret_keeps_only_ends() -> None:
 
 
 def test_aws_key_detected_and_masked() -> None:
-    raw = "AKIAIOSFODNN7EXAMPLE"
+    raw = "AKIA1234567890ABCDEF"
     hits = find_secrets(f"const k = '{raw}';")
     assert len(hits) == 1
     h = hits[0]
@@ -24,7 +24,7 @@ def test_aws_key_detected_and_masked() -> None:
     assert h.severity == Severity.CRITICAL
     # the raw secret must never survive in the masked form
     assert raw not in h.masked
-    assert h.masked.startswith("AKIA") and h.masked.endswith("MPLE")
+    assert h.masked.startswith("AKIA") and h.masked.endswith("CDEF")
 
 
 def test_google_api_key_detected() -> None:
@@ -71,7 +71,12 @@ def test_no_false_positive_on_clean_text() -> None:
     assert find_secrets("const greeting = 'hello world'; let x = 42;") == []
 
 
+def test_known_example_key_not_flagged() -> None:
+    # AWS's public documentation example key must not be a finding.
+    assert find_secrets('var k = "AKIAIOSFODNN7EXAMPLE";') == []
+
+
 def test_dedup_repeated_secret() -> None:
-    raw = "AKIAIOSFODNN7EXAMPLE"
+    raw = "AKIA1234567890ABCDEF"
     hits = find_secrets(f"{raw} ... {raw} ... {raw}")
     assert len(hits) == 1  # same masked value collapses
