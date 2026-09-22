@@ -24,6 +24,9 @@ Early development — building module-by-module against a phased plan.
 - **Phase 2 (safety spine + HTTP engine)** ✅ — target validation, SSRF guard, scope
   engine, rate-limited/size-capped HTTP engine, pipeline orchestrator, and a working
   end-to-end `webrecon scan` against a local mock site.
+- **Phase 3 (crawler + asset discovery)** ✅ — bounded scope/robots-gated BFS crawl,
+  HTML link/asset/form/metadata extraction, robots.txt + sitemap.xml parsing, crawl
+  graph edges, and a page/asset/form inventory persisted to SQLite.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 

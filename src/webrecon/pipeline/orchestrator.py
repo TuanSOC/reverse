@@ -103,6 +103,9 @@ class Pipeline:
                             ctx.target, ctx.scan_id, self.config.model_dump(mode="json")
                         )
                         scan_persisted = True
+                        # Expose the repository to modules for domain persistence
+                        # (crawler pages/assets/forms, etc.) now the scan row exists.
+                        ctx.storage = self.repo
                     if scan_persisted:
                         await self.repo.save_module_result(ctx.scan_id, result)
 

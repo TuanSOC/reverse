@@ -6,6 +6,6 @@ Importing this package registers all built-in modules onto
 their phases land.
 """
 
-from . import http, scope, target  # noqa: F401  (import side-effect: registration)
+from . import crawler, http, scope, target  # noqa: F401  (import side-effect: registration)
 
-__all__ = ["target", "scope", "http"]
+__all__ = ["target", "scope", "http", "crawler"]

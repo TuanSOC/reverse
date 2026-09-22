@@ -8,15 +8,23 @@ SQL), addressing threat T6.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ..core.models import ModuleResult, TargetInfo
 from .database import Database
 from .models import (
+    Asset,
     EvidenceRecord,
     FindingRecord,
+    Form,
     ModuleRun,
+    Page,
     Scan,
     Target,
 )
+
+if TYPE_CHECKING:
+    from ..modules.crawler.models import CrawlInventory
 
 
 class ScanRepository:
@@ -99,6 +107,43 @@ class ScanRepository:
                         url=ev.url,
                         description=ev.description,
                         data=ev.data,
+                    )
+                )
+
+    async def save_crawl(self, scan_id: str, inv: CrawlInventory) -> None:
+        """Persist crawled pages, discovered assets, and forms."""
+        async with self.db.session() as s:
+            for p in inv.pages:
+                s.add(
+                    Page(
+                        scan_id=scan_id,
+                        url=p.url,
+                        title=p.title,
+                        status_code=p.status_code,
+                        depth=p.depth,
+                        content_hash=p.content_hash,
+                        discovered_from=p.discovered_from,
+                    )
+                )
+            for a in inv.assets:
+                s.add(
+                    Asset(
+                        scan_id=scan_id,
+                        asset_type=str(a.asset_type),
+                        url=a.url,
+                        observation=str(a.observation),
+                        meta=a.attrs,
+                    )
+                )
+            for f in inv.forms:
+                s.add(
+                    Form(
+                        scan_id=scan_id,
+                        page_url=f.page_url,
+                        action=f.action,
+                        method=f.method,
+                        enctype=f.enctype,
+                        inputs=f.inputs,
                     )
                 )
 

@@ -24,8 +24,8 @@ def _lab_config() -> ScanConfig:
 
 async def test_pipeline_runs_all_modules(mock_site: str) -> None:
     ctx = await Pipeline(_lab_config()).run(mock_site)
-    assert set(ctx.results) == {"target", "scope", "http"}
-    for name in ("target", "scope", "http"):
+    assert set(ctx.results) == {"target", "scope", "http", "crawler"}
+    for name in ("target", "scope", "http", "crawler"):
         assert ctx.results[name].status == ModuleStatus.SUCCESS, name
     assert ctx.target is not None
     assert ctx.target.hostname == "127.0.0.1"
@@ -56,7 +56,7 @@ async def test_pipeline_persists_to_db(mock_site: str) -> None:
             assert scans[0].id == ctx.scan_id
             assert scans[0].status in {"success", "partial"}
             runs = (await s.execute(select(ModuleRun))).scalars().all()
-            assert {r.module for r in runs} == {"target", "scope", "http"}
+            assert {r.module for r in runs} == {"target", "scope", "http", "crawler"}
             findings = (await s.execute(select(FindingRecord))).scalars().all()
             assert any(f.check_id == "transport.https.missing" for f in findings)
     finally:
@@ -67,4 +67,4 @@ async def test_progress_callback_invoked(mock_site: str) -> None:
     seen = []
     pipeline = Pipeline(_lab_config(), progress=lambda p: seen.append((p.module, p.status)))
     await pipeline.run(mock_site)
-    assert [m for m, _ in seen] == ["target", "scope", "http"]
+    assert [m for m, _ in seen] == ["target", "scope", "http", "crawler"]

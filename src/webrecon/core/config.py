@@ -68,6 +68,24 @@ class HttpConfig(BaseSettings):
     verify_tls: bool = True
 
 
+class CrawlConfig(BaseSettings):
+    """Crawler behavior knobs (§7)."""
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    # Politely honor robots.txt disallow rules by default (§16).
+    respect_robots: bool = True
+    # Record referenced sub-resources (scripts/styles/images) without fetching
+    # their bodies during the crawl; later modules decide what to download.
+    record_assets: bool = True
+    # Cap on distinct assets recorded, to bound memory on large sites.
+    max_assets: int = 5000
+    # Treat URLs that differ only by query string as distinct pages.
+    distinct_query: bool = True
+    # Also parse sitemap.xml and compare against crawled URLs (§17).
+    parse_sitemap: bool = True
+
+
 class ScanConfig(BaseSettings):
     """Top-level scan configuration assembled from the sub-configs."""
 
@@ -76,6 +94,7 @@ class ScanConfig(BaseSettings):
     scope: ScopeConfig = Field(default_factory=ScopeConfig)
     rate: RateLimitConfig = Field(default_factory=RateLimitConfig)
     http: HttpConfig = Field(default_factory=HttpConfig)
+    crawl: CrawlConfig = Field(default_factory=CrawlConfig)
     # Enabled modules; empty means "all registered modules".
     enabled_modules: list[str] = Field(default_factory=list)
     browser_mode: bool = False

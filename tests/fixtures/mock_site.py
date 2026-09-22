@@ -20,6 +20,7 @@ INDEX_HTML = b"""<!doctype html>
 <body>
 <a href="/about">About</a>
 <a href="/contact">Contact</a>
+<a href="/admin">Admin</a>
 <a href="https://third-party.example/out">External</a>
 <form action="/search" method="get"><input name="q"></form>
 </body></html>"""
@@ -48,7 +49,29 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/":
             self._send(200, INDEX_HTML)
         elif path == "/about":
-            self._send(200, b"<html><title>About</title></html>")
+            self._send(200, b'<html><title>About</title><a href="/contact">C</a></html>')
+        elif path == "/contact":
+            self._send(200, b"<html><title>Contact</title></html>")
+        elif path == "/admin":
+            # Disallowed by robots.txt; the crawler should not fetch it.
+            self._send(200, b"<html><title>Admin</title></html>")
+        elif path == "/robots.txt":
+            body = (
+                "User-agent: *\nDisallow: /admin\n"
+                f"Sitemap: http://{self.headers.get('Host', '127.0.0.1')}/sitemap.xml\n"
+            ).encode()
+            self._send(200, body, ctype="text/plain")
+        elif path == "/sitemap.xml":
+            host = self.headers.get("Host", "127.0.0.1")
+            body = (
+                '<?xml version="1.0"?>'
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                f"<url><loc>http://{host}/</loc></url>"
+                f"<url><loc>http://{host}/about</loc></url>"
+                f"<url><loc>http://{host}/only-in-sitemap</loc></url>"
+                "</urlset>"
+            ).encode()
+            self._send(200, body, ctype="application/xml")
         elif path == "/redirect":
             self._send(301, b"", extra={"Location": "/"})
         elif path == "/redirect-external":

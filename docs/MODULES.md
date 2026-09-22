@@ -10,7 +10,7 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 | Scope | `scope` | `target` | ✅ P2 | Initialize scope boundary from config + target. |
 | HTTP | `http` | `scope` | ✅ P2 | Fetch base URL via shared engine; status, timing, redirects, transport findings. |
 | Redirect | (part of `http`) | `http` | ✅ P2 | Redirect chain, cross-domain / HTTPS→HTTP downgrade flags. |
-| Crawler | `crawler` | `http` | planned P3 | Bounded BFS crawl, link/asset extraction, robots/sitemap. |
+| Crawler | `crawler` | `http` | ✅ P3 | Bounded BFS crawl; links/assets/forms/metadata; robots + sitemap; crawl graph edges. |
 | DNS | `dns` | `target` | planned P4 | A/AAAA/CNAME/MX/NS/TXT/SOA/CAA, SPF/DMARC, dangling-CNAME flags. |
 | TLS | `tls` | `target` | planned P4 | Certificate, chain, SAN, validity, protocol/HSTS checks. |
 | Headers | `headers` | `http` | planned P4 | Security-header presence + explanation. |
