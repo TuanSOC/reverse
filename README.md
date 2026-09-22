@@ -19,8 +19,13 @@ report.
 ## Status
 
 Early development — building module-by-module against a phased plan.
-**Phase 1 (core foundation)** is complete: schemas, storage, module registry,
-config, logging, CLI wiring, and tests. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+- **Phase 1 (core foundation)** ✅ — schemas, storage, module registry, config, logging, CLI.
+- **Phase 2 (safety spine + HTTP engine)** ✅ — target validation, SSRF guard, scope
+  engine, rate-limited/size-capped HTTP engine, pipeline orchestrator, and a working
+  end-to-end `webrecon scan` against a local mock site.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Architecture at a glance
 

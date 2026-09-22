@@ -1,6 +1,11 @@
 """Scanner modules.
 
-Each module registers itself onto ``core.registry.default_registry`` at import
-time. As modules land (Phase 2+) they are imported here so the CLI/pipeline can
-discover them. Empty for now.
+Importing this package registers all built-in modules onto
+``core.registry.default_registry`` (each module module calls
+``@default_registry.register``). New modules are added to this import list as
+their phases land.
 """
+
+from . import http, scope, target  # noqa: F401  (import side-effect: registration)
+
+__all__ = ["target", "scope", "http"]

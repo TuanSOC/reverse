@@ -44,6 +44,22 @@ class WebReconModel(BaseModel):
     )
 
 
+class TargetInfo(WebReconModel):
+    """Normalized target produced by the target module (§3) and shared via ctx."""
+
+    input_url: str
+    scheme: str
+    hostname: str
+    port: int
+    base_url: str
+    origin: str
+    path: str = "/"
+    query: str = ""
+    fragment: str = ""
+    canonical_url: str | None = None
+    resolved_ips: list[str] = Field(default_factory=list)
+
+
 class Evidence(WebReconModel):
     """A concrete, inspectable proof backing a finding or asset (§22).
 

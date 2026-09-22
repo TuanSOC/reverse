@@ -6,10 +6,10 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 
 | Module | name | requires | Status | Purpose |
 |---|---|---|---|---|
-| Target | `target` | — | planned P2 | Normalize URL, parse parts, canonical URL, build `Target`. |
-| Scope | `scope` | `target` | planned P2 | Initialize scope boundary from config + target. |
-| HTTP | `http` | `scope` | planned P2 | Fetch base URL(s) via shared engine; headers, status, timing, redirects. |
-| Redirect | (part of http) | `http` | planned P2 | Redirect chain, cross-domain / HTTPS→HTTP downgrade flags. |
+| Target | `target` | — | ✅ P2 | Normalize URL, parse parts, SSRF pre-check, build `TargetInfo`. |
+| Scope | `scope` | `target` | ✅ P2 | Initialize scope boundary from config + target. |
+| HTTP | `http` | `scope` | ✅ P2 | Fetch base URL via shared engine; status, timing, redirects, transport findings. |
+| Redirect | (part of `http`) | `http` | ✅ P2 | Redirect chain, cross-domain / HTTPS→HTTP downgrade flags. |
 | Crawler | `crawler` | `http` | planned P3 | Bounded BFS crawl, link/asset extraction, robots/sitemap. |
 | DNS | `dns` | `target` | planned P4 | A/AAAA/CNAME/MX/NS/TXT/SOA/CAA, SPF/DMARC, dangling-CNAME flags. |
 | TLS | `tls` | `target` | planned P4 | Certificate, chain, SAN, validity, protocol/HSTS checks. |

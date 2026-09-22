@@ -42,12 +42,14 @@ misconfiguration with evidence; they never *exploit* it.
 
 ## Tool-hardening checklist (tracked to Phase P13)
 
-- [x] Response size + timeout caps
+- [x] Response size + timeout caps (HTTP engine)
 - [x] Secret redaction in logs
-- [ ] SSRF guard with resolved-IP recheck (P2)
+- [x] SSRF guard with resolved-IP recheck on every redirect hop (P2)
+- [x] Scope gate on every request incl. redirect targets (P2)
+- [x] Response-size cap enforced by streamed, capped reads (P2)
 - [ ] Path-traversal-safe export/file writes (P11)
 - [ ] HTML/PDF report output escaping (P11)
-- [ ] Decompression-bomb / zip-bomb limits (P3)
+- [ ] Decompression-bomb / zip-bomb limits — content-encoding aware (P3)
 - [ ] SQL parameterization audit (using SQLAlchemy ORM throughout)
 - [ ] Malformed HTML/headers fuzz tests (P13)
 
