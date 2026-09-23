@@ -22,7 +22,12 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 | Exposure | `exposure` | `http` | ✅ | security.txt (RFC 9116), risky HTTP methods (OPTIONS), opt-in sensitive-file probes (.git/.env/… — `--probe`, content-verified). |
 | Subdomains | `subdomains` | target/tls/crawler/javascript/api | ✅ | Passive subdomain discovery from cert SAN + links + JS + endpoints, then resolve; flags unresolvable/dangling. No brute force. |
 | API test | `apitest` | `api` | ✅ (opt-in `--active`) | Safe active API/DB assessment: DB-error leakage, error-based SQLi susceptibility, sensitive-data exposure, unauth access, GraphQL introspection. GET-only, observed-endpoints-only, budget-capped, detection-level (no exploitation). |
-| Security | `security` | headers/cookies/cors/tls/dns/technology/javascript/api/exposure | ✅ P8 | Cross-module rules (mixed content, outdated tech, dir listing) + deterministic risk classification. |
+| DOM security | `dom_security` | `javascript` | ✅ v0.2 | Static client-side heuristics over retained JS: DOM XSS source→sink patterns + unguarded prototype-pollution deep-merge loops (POTENTIAL, code-snippet evidence). |
+| Forms & auth | `forms_auth` | `crawler` | ✅ v0.2 | Classify forms (login/register/reset/search/contact/payment); flag missing CSRF token, password over cleartext transport, autocomplete hygiene. |
+| IP intelligence | `ip_intel` | `target`, `dns` | ✅ v0.3 | Reverse DNS (PTR), ASN/AS-name/registry (Team Cymru DNS), geolocation (public API via `ctx.http`), cloud/CDN classification, and CDN origin-IP exposure. Skips private/lab IPs. |
+| Secret leak | `secret_leak` | `javascript`, `crawler` | ✅ v0.3 | Scan JS + all crawled HTML for hardcoded AWS/Google/GitHub/Stripe/Slack/PEM/JWT credentials. Evidence is always **masked** (first-4/last-4); example keys excluded. |
+| Active verify | `active_verify` | `api` | ✅ (opt-in `--active`) | Confirms open-redirect & reflected-XSS candidates with **benign canaries** (unresolvable `.invalid` redirect target; inert `<xss>` marker). GET-only, budget-capped, no payload execution / data extraction. Upgrades findings potential→observed. |
+| Security | `security` | headers/cookies/cors/tls/dns/technology/javascript/api/exposure/apitest/dom_security/forms_auth/ip_intel/secret_leak/active_verify | ✅ P8 | Cross-module rules (mixed content, outdated tech, dir listing) + deterministic risk classification. |
 | Browser | `browser` | `scope` | ✅ P9 | Opt-in Playwright render; XHR/fetch/WebSocket observation; scope-enforced in-browser; screenshots. |
 
 ## Result contract (every module)

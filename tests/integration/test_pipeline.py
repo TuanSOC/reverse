@@ -26,7 +26,7 @@ ALL_MODULES = {
     "target", "scope", "http", "crawler", "dns", "tls", "headers", "cookies",
     "cors", "technology", "javascript", "browser", "exposure", "subdomains",
     "api", "apitest", "dom_security", "forms_auth", "ip_intel", "secret_leak",
-    "security",
+    "active_verify", "security",
 }
 
 
@@ -37,7 +37,7 @@ async def test_pipeline_runs_all_modules(mock_site: str) -> None:
     # literal; browser + apitest skip because they are off by default.
     for name in ("target", "scope", "http", "crawler", "headers", "cookies", "cors", "exposure"):
         assert ctx.results[name].status == ModuleStatus.SUCCESS, name
-    for name in ("dns", "tls", "browser", "subdomains", "apitest"):
+    for name in ("dns", "tls", "browser", "subdomains", "apitest", "active_verify"):
         assert ctx.results[name].status == ModuleStatus.SKIPPED, name
     assert ctx.target is not None
     assert ctx.target.hostname == "127.0.0.1"

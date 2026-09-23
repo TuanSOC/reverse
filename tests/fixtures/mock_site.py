@@ -30,6 +30,8 @@ INDEX_HTML = b"""<!doctype html>
 <a href="/api/db-error">DbErr</a>
 <a href="/api/search?q=1">Search</a>
 <a href="/graphql">GraphQL</a>
+<a href="/redir?url=/home">Redir</a>
+<a href="/echo?q=hi">Echo</a>
 <a href="https://third-party.example/out">External</a>
 <form action="/search" method="get"><input name="q"></form>
 </body></html>"""
@@ -173,6 +175,19 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, b"console.log('wp theme');", ctype="application/javascript")
         elif path == "/static/jquery-1.12.4.min.js":
             self._send(200, b"/*! jQuery v1.12.4 */", ctype="application/javascript")
+        elif path == "/redir":
+            # Vulnerable open redirect: reflects the ?url= param into Location
+            # (for active_verify's canary-based confirmation).
+            from urllib.parse import parse_qs, unquote
+            qs = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+            dest = unquote(qs.get("url", ["/"])[0])
+            self._send(302, b"", extra={"Location": dest})
+        elif path == "/echo":
+            # Reflects the ?q= param unencoded into the HTML body (reflected XSS).
+            from urllib.parse import parse_qs, unquote
+            qs = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+            val = unquote(qs.get("q", [""])[0])
+            self._send(200, f"<html><body><div>{val}</div></body></html>".encode())
         elif path == "/redirect":
             self._send(301, b"", extra={"Location": "/"})
         elif path == "/redirect-external":

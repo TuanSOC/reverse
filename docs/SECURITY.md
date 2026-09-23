@@ -42,6 +42,22 @@ default**, for **authorized targets only**:
   triggers a DB error a balanced one does not) — it **never** extracts data
   (no UNION), mutates state, or runs time-based probes. A module-side budget
   caps total requests. Findings are evidence + recommendations, never exploits.
+- `--active` also enables the `active_verify` module, which **confirms**
+  passive *candidates* (open redirect, reflected XSS) by sending **benign
+  canary probes** through the same GET-only, scope-checked, SSRF-guarded,
+  budget-capped engine, and inspecting the response:
+  - **Open redirect** — sets the redirect parameter to an *unresolvable*
+    `*.invalid` URL and, **without following it**, checks whether the response
+    is a 3xx whose `Location` points to that off-origin canary.
+  - **Reflected XSS** — injects an inert `<xss>` marker and checks whether it
+    is reflected **unencoded** in an HTML response (encoded reflection is not
+    flagged). No script is executed.
+
+  This proves *that a vulnerability class exists* (upgrading the finding from
+  `potential` to `observed`); it does **not** weaponize it — no payload runs,
+  no data is read, no state changes. The hard exclusions above (no
+  exploitation, no data extraction, no DoS, no auth bypass) remain in force
+  even under `--active`.
 
 These remain within the boundary: they detect and evidence issues; they do not
 weaponize them.

@@ -114,8 +114,15 @@ class HttpEngine:
             await self._client.aclose()
             self._client = None
 
-    async def request(self, method: str, url: str) -> HttpResponse:
-        """Perform a guarded, scope-checked, size-capped request."""
+    async def request(
+        self, method: str, url: str, *, follow_redirects: bool | None = None
+    ) -> HttpResponse:
+        """Perform a guarded, scope-checked, size-capped request.
+
+        ``follow_redirects`` overrides the configured default for this call only
+        (used by active_verify to inspect a raw ``Location`` header without
+        actually following an off-origin redirect).
+        """
         if self._client is None:
             raise HttpEngineError("HttpEngine used outside its context manager")
 
@@ -123,6 +130,7 @@ class HttpEngine:
             decision = self.scope.evaluate(url)
             raise ScopeError(f"out of scope: {url} ({decision.reason})")
 
+        follow = self.config.follow_redirects if follow_redirects is None else follow_redirects
         requested_url = url
         chain: list[RedirectHop] = []
         current = url
@@ -134,7 +142,7 @@ class HttpEngine:
             host = parse_url(current).hostname
             resp = await self._send_with_retry(method, host, current)
 
-            if resp.is_redirect and self.config.follow_redirects:
+            if resp.is_redirect and follow:
                 location = resp.headers.get("location")
                 chain.append(RedirectHop(current, resp.status_code, location))
                 await resp.aclose()
@@ -168,8 +176,8 @@ class HttpEngine:
 
         raise HttpEngineError(f"too many redirects for {requested_url}")
 
-    async def get(self, url: str) -> HttpResponse:
-        return await self.request("GET", url)
+    async def get(self, url: str, *, follow_redirects: bool | None = None) -> HttpResponse:
+        return await self.request("GET", url, follow_redirects=follow_redirects)
 
     async def head(self, url: str) -> HttpResponse:
         return await self.request("HEAD", url)

@@ -7,6 +7,7 @@ their phases land.
 """
 
 from . import (  # noqa: F401  (import side-effect: registration)
+    active_verify,
     api,
     apitest,
     browser,
@@ -51,5 +52,6 @@ __all__ = [
     "secret_leak",
     "api",
     "apitest",
+    "active_verify",
     "security",
 ]

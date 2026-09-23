@@ -4,6 +4,29 @@ All notable changes to WebRecon are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/) and this project adheres to
 semantic versioning.
 
+## [0.3.0] — 2026-09-23
+
+IP intelligence & deep security assessment.
+
+### Added
+- `ip_intel` module — reverse DNS, ASN/AS-name (Team Cymru DNS), geolocation,
+  cloud/CDN classification, and CDN origin-IP exposure detection.
+- `secret_leak` module — hardcoded AWS/Google/GitHub/Stripe/Slack/PEM/JWT
+  detection across JS + all crawled HTML, with mandatory masking.
+- `active_verify` module (opt-in `--active`) — canary-based **confirmation** of
+  open-redirect and reflected-XSS candidates (GET-only, inert canaries, no
+  payload execution or data extraction).
+- Email deep checks (DKIM selector probing, DMARC `p=none`), open-redirect
+  parameter candidates, insecure-WebSocket (`ws://` on HTTPS) detection.
+- Dashboard: IP & Infrastructure widget, "Secrets & Leaks" quick filter; report
+  IP Intelligence section; `report.{fmt}?min_severity=` filtering.
+
+### Changed / fixed
+- SPA framework detection (React/Vite) from bundle content + asset URLs.
+- Browser navigation robustness (drop `networkidle`, survive goto timeout).
+- Removed false positives: prototype-pollution shallow-copy, AWS example keys,
+  origin-exposure on unknown provider.
+
 ## [0.1.0] — 2026-09-22
 
 First MVP. A local-first, passive, scope-enforced website intelligence and

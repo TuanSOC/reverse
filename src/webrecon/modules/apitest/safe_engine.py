@@ -21,8 +21,10 @@ class SafeGetEngine:
     def __init__(self, engine: HttpEngine) -> None:
         self._engine = engine
 
-    async def get(self, url: str) -> HttpResponse:
-        return await self._engine.get(url)
+    async def get(self, url: str, *, follow_redirects: bool | None = None) -> HttpResponse:
+        if follow_redirects is None:
+            return await self._engine.get(url)
+        return await self._engine.get(url, follow_redirects=follow_redirects)
 
     async def request(self, method: str, url: str) -> HttpResponse:
         if method.upper() != "GET":
