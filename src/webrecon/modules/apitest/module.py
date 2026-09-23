@@ -19,12 +19,14 @@ from ...core.enums import (
 from ...core.models import Evidence, Finding, ModuleResult
 from ...core.module import ScannerModule
 from ...core.registry import default_registry
+from . import differential as diff
 from . import probes
 from . import signatures as sig
 from .safe_engine import SafeGetEngine
 
 MAX_REQUESTS = 200
-MAX_PROBES_PER_ENDPOINT = 6
+MAX_PROBES_PER_ENDPOINT = 9
+MAX_DIFF_PROBES = 3  # structured input-validation probes per endpoint
 
 
 @default_registry.register
@@ -68,6 +70,8 @@ class ApiTestModule(ScannerModule):
             db_error = self._check_db_error(result, ep, resp)
             exposed = self._check_data_exposure(result, ep, resp, db_error)
             self._check_unauth(result, ep, resp, exposed)
+            # Differential input-validation testing (structured inputs).
+            probes_used = await self._check_input_validation(engine, result, ep, resp, probes_used)
             # Phase 2 hook: SQLi susceptibility uses the remaining probe budget.
             await self._check_sqli(engine, result, ep, resp, probes_used)
 
@@ -166,6 +170,46 @@ class ApiTestModule(ScannerModule):
             {"url": ep.url, "status": resp.status_code},
         ))
 
+    async def _check_input_validation(self, engine, result, ep, baseline, probes_used) -> int:
+        """Send structured inputs and flag non-DB divergences (weak validation)."""
+        params = sorted(getattr(ep, "params", set()))
+        if not params:
+            return probes_used
+        param = params[0]  # one representative param keeps the request budget sane
+        base = diff.ProbeResult(
+            "baseline", baseline.status_code, baseline.elapsed_ms,
+            len(baseline.body), sig.has_db_error(baseline.text),
+        )
+        results: list[diff.ProbeResult] = []
+        for label, value in diff.DIFFERENTIAL_INPUTS[:MAX_DIFF_PROBES]:
+            if probes_used + 1 > MAX_PROBES_PER_ENDPOINT or self._budget + 1 > MAX_REQUESTS:
+                break
+            resp = await self._get(engine, diff.build_probe_url(ep.url, param, value))
+            probes_used += 1
+            if resp is None:
+                continue
+            results.append(diff.ProbeResult(
+                label, resp.status_code, resp.elapsed_ms, len(resp.body),
+                sig.has_db_error(resp.text),
+            ))
+        anomalies = diff.analyze_differential(base, results)
+        if anomalies:
+            result.findings.append(self._f(
+                "apitest.input_validation.weak",
+                f"Weak input validation ({param})",
+                FindingCategory.CONFIGURATION, Severity.LOW, Confidence.MEDIUM,
+                Observation.POTENTIAL, ep.url,
+                f"Structured inputs on '{param}' produced divergent responses "
+                "(status/size/timing) versus the baseline, without a DB error — "
+                "the endpoint does not appear to validate input types/bounds.",
+                "Unvalidated input can cause errors, resource abuse, or feed other bugs.",
+                "Validate type, length, and range server-side; reject malformed input "
+                "with a consistent 400. Example (Python/pydantic): "
+                "`class Q(BaseModel): id: int = Field(ge=1, le=10_000)`.",
+                {"url": ep.url, "param": param, "anomalies": anomalies[:10]},
+            ))
+        return probes_used
+
     async def _check_sqli(self, engine, result, ep, baseline, probes_used) -> None:
         """Error-based SQLi susceptibility on captured query params (P2).
 
@@ -197,7 +241,9 @@ class ApiTestModule(ScannerModule):
                     f"An unbalanced quote in '{param}' triggered a DB error that a "
                     "balanced quote did not — an error-based SQLi indicator.",
                     "If injectable, an attacker may read/alter database data. NOT confirmed.",
-                    "Use parameterized queries/ORM bindings; verify this endpoint manually.",
+                    "Use parameterized queries / ORM bindings — never string-concat "
+                    "SQL. Example (Python): "
+                    "`cur.execute('SELECT * FROM t WHERE id=%s', (id,))`; verify manually.",
                     {"url": ep.url, "param": param, "signal": "error_based"},
                 ))
                 return  # one finding per endpoint is enough

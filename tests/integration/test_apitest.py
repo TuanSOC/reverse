@@ -32,6 +32,9 @@ async def test_active_finds_db_error_and_data_exposure(mock_site: str) -> None:
     assert "apitest.db_error" in checks       # /api/db-error
     assert "apitest.data_exposure" in checks  # /api/users (token fields)
     assert "apitest.auth.unauth_access" in checks  # /api/users sensitive+data
+    assert "apitest.input_validation.weak" in checks  # /api/item 500s on bad input
+    iv = next(f for f in r.findings if f.check_id == "apitest.input_validation.weak")
+    assert iv.evidence[0].data["anomalies"]  # concrete divergence evidence
 
 
 async def test_public_benign_endpoint_not_flagged_unauth(mock_site: str) -> None:

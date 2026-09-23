@@ -32,6 +32,7 @@ INDEX_HTML = b"""<!doctype html>
 <a href="/graphql">GraphQL</a>
 <a href="/redir?url=/home">Redir</a>
 <a href="/echo?q=hi">Echo</a>
+<a href="/api/item?id=1">Item</a>
 <a href="https://third-party.example/out">External</a>
 <form action="/search" method="get"><input name="q"></form>
 </body></html>"""
@@ -142,6 +143,25 @@ class _Handler(BaseHTTPRequestHandler):
                 b'{"id":5,"email":"e@corp.io","token":"tok_efghij567890","role":"user"}]'
             )
             self._send(200, body, ctype="application/json")
+        elif path == "/api/item":
+            # Weak input validation: a well-formed small int → 200; any other
+            # shape (oversized/non-numeric/array) crashes to 500 with a NON-DB
+            # error body. Drives differential input-validation detection.
+            from urllib.parse import parse_qs
+            qstr = self.path.split("?", 1)[1] if "?" in self.path else ""
+            raw = parse_qs(qstr).get("id", [""])[0]
+            if raw == "":
+                ok = True  # missing param → default listing (baseline is 200)
+            else:
+                try:
+                    n = int(raw)
+                    ok = 0 < n < 1000
+                except ValueError:
+                    ok = False
+            if ok:
+                self._send(200, b'{"id":1,"name":"widget"}', ctype="application/json")
+            else:
+                self._send(500, b'{"error":"internal server error"}', ctype="application/json")
         elif path == "/api/config":
             # Public, small, benign JSON -> must NOT trip unauth (low-FP control).
             self._send(200, b'{"version":"1","env":"prod"}', ctype="application/json")

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from webrecon.modules.active_verify.analysis import (
     REDIRECT_CANARY_HOST,
+    REDIRECT_VARIANTS,
     build_redirect_probe,
     build_xss_probe,
+    effective_redirect_host,
     redirect_confirmed,
     xss_canary,
     xss_reflected,
@@ -23,14 +25,31 @@ def test_build_redirect_probe_adds_missing_param() -> None:
     assert "url=" in probe and REDIRECT_CANARY_HOST in probe
 
 
+def test_variants_cover_bypass_families() -> None:
+    labels = {label for label, _ in REDIRECT_VARIANTS}
+    assert {"absolute", "scheme_relative", "backslash", "userinfo",
+            "double_encoded"} <= labels
+
+
+def test_effective_redirect_host_bypass_forms() -> None:
+    c = REDIRECT_CANARY_HOST
+    assert effective_redirect_host(f"https://{c}/") == c
+    assert effective_redirect_host(f"//{c}/path") == c          # scheme-relative
+    assert effective_redirect_host(f"/\\{c}/") == c             # backslash → slash
+    assert effective_redirect_host(f"https://trusted@{c}/") == c  # userinfo trick
+    assert effective_redirect_host(f"%2f%2f{c}%2f") == c        # encoded //
+    assert effective_redirect_host("/home") is None             # same-site relative
+
+
 def test_redirect_confirmed_true_on_3xx_to_canary() -> None:
     assert redirect_confirmed(302, f"https://{REDIRECT_CANARY_HOST}/") is True
-    assert redirect_confirmed(301, f"http://{REDIRECT_CANARY_HOST}/x") is True
+    assert redirect_confirmed(301, f"//{REDIRECT_CANARY_HOST}/x") is True
 
 
 def test_redirect_not_confirmed() -> None:
     assert redirect_confirmed(200, f"https://{REDIRECT_CANARY_HOST}/") is False  # not 3xx
     assert redirect_confirmed(302, "https://x.com/home") is False  # own site
+    assert redirect_confirmed(302, "/home") is False  # same-site relative path
     assert redirect_confirmed(302, None) is False
 
 

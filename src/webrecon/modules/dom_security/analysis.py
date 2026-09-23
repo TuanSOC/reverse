@@ -49,11 +49,27 @@ _DEEP_SIGNAL = re.compile(
 )
 
 
+# A variable assigned directly from a taint source: `var x = location.hash…`.
+# Captures the variable name so we can follow it into a sink (1-hop taint).
+_TAINT_ASSIGN = re.compile(
+    r"(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*[^;\n]*?(?:"
+    r"location\.(?:search|hash|href|pathname)|document\.(?:URL|documentURI|referrer|cookie)"
+    r"|window\.name|URLSearchParams)",
+    re.IGNORECASE,
+)
+
+
 @dataclass
 class DomHit:
     kind: str            # "dom_xss" | "prototype_pollution"
     detail: str
     snippet: str
+    line: int = 0        # 1-based line of the sink in the source
+    flow: str = ""       # source → [var] → sink taint path
+
+
+def _line_of(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
 
 
 def _snippet(text: str, start: int, end: int, pad: int = 70) -> str:
@@ -63,20 +79,50 @@ def _snippet(text: str, start: int, end: int, pad: int = 70) -> str:
 
 
 def find_dom_xss(content: str, cap: int = 10) -> list[DomHit]:
-    """Flag sinks that have a taint source within the same ~200-char window."""
+    """Trace URL/DOM taint sources into dangerous sinks, with line + flow.
+
+    Two flow shapes are reported:
+    - *direct*: a source appears in the sink's own expression window, and
+    - *via-variable*: a variable assigned from a source (1-hop) is used at the
+      sink — a lightweight taint trace that catches ``var q = location.hash; …;
+      el.innerHTML = q``.
+    """
+    # Map tainted variable name → (source expression, assignment line).
+    tainted: dict[str, tuple[str, int]] = {}
+    for a in _TAINT_ASSIGN.finditer(content):
+        src_expr = SOURCES.search(a.group(0))
+        tainted.setdefault(a.group(1), (
+            src_expr.group(0) if src_expr else "url-source", _line_of(content, a.start()),
+        ))
+
     hits: list[DomHit] = []
     seen: set[str] = set()
     for m in SINKS.finditer(content):
-        window = content[max(0, m.start() - 160): m.end() + 40]
-        src = SOURCES.search(window)
-        if not src:
-            continue
+        window = content[max(0, m.start() - 160): m.end() + 60]
         sink = m.group(0).strip()
-        key = f"{src.group(0)}→{sink}"
-        if key in seen:
+        line = _line_of(content, m.start())
+
+        src = SOURCES.search(window)
+        flow: str | None = None
+        if src:
+            flow = f"{src.group(0)} → {sink}"
+            detail = f"{src.group(0)}→{sink}"
+        else:
+            # via-variable: a tainted var used within the sink window.
+            for var, (src_txt, src_line) in tainted.items():
+                if re.search(rf"\b{re.escape(var)}\b", window):
+                    flow = f"{src_txt} → var {var} (line {src_line}) → {sink}"
+                    detail = f"{src_txt}→{var}→{sink}"
+                    break
+        if flow is None:
             continue
-        seen.add(key)
-        hits.append(DomHit("dom_xss", key, _snippet(content, m.start(), m.end())))
+        if detail in seen:
+            continue
+        seen.add(detail)
+        hits.append(DomHit(
+            "dom_xss", detail, _snippet(content, m.start(), m.end()),
+            line=line, flow=flow,
+        ))
         if len(hits) >= cap:
             break
     return hits
@@ -92,7 +138,8 @@ def find_prototype_pollution(content: str, cap: int = 5) -> list[DomHit]:
         if not _DEEP_SIGNAL.search(region):
             continue  # shallow prop-copy, not a recursive merge → not exploitable
         hits.append(DomHit("prototype_pollution", "unguarded deep-merge loop",
-                           _snippet(content, m.start(), m.end())))
+                           _snippet(content, m.start(), m.end()),
+                           line=_line_of(content, m.start())))
         if len(hits) >= cap:
             break
     return hits

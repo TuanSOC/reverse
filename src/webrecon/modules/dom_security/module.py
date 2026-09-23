@@ -47,25 +47,33 @@ class DomSecurityModule(ScannerModule):
             for hit in find_dom_xss(a.content):
                 xss += 1
                 result.findings.append(self._f(
-                    "dom.xss.source_to_sink", f"Potential DOM XSS ({hit.detail})",
+                    "dom.xss.source_to_sink",
+                    f"Potential DOM XSS at line {hit.line} ({hit.detail})",
                     Severity.MEDIUM, a.url,
-                    "A DOM XSS taint source flows into a dangerous sink in the same scope.",
+                    "A URL/DOM taint source flows into a dangerous sink: "
+                    f"{hit.flow} (line {hit.line}).",
                     "If the source is attacker-controlled and unsanitized, this enables DOM XSS.",
-                    "Sanitize/encode before writing to the sink; avoid innerHTML/eval "
-                    "with untrusted input.",
+                    "Never write untrusted input into innerHTML/document.write/eval. "
+                    "Use textContent for text, or sanitize markup with a vetted "
+                    "library, e.g. `el.innerHTML = DOMPurify.sanitize(userInput)`; "
+                    "and deploy a strict CSP (e.g. `script-src 'self'; "
+                    "object-src 'none'; base-uri 'none'`).",
                     hit,
                 ))
             for hit in find_prototype_pollution(a.content):
                 proto += 1
                 result.findings.append(self._f(
-                    "dom.prototype_pollution", "Potential client-side prototype pollution",
+                    "dom.prototype_pollution",
+                    f"Potential client-side prototype pollution (line {hit.line})",
                     Severity.MEDIUM, a.url,
                     "A recursive/deep-merge loop assigns keys without "
-                    "filtering __proto__.",
+                    f"filtering __proto__ (line {hit.line}).",
                     "Attacker-controlled keys could pollute Object.prototype, "
                     "altering app behavior.",
-                    "Reject __proto__/constructor/prototype keys; use a "
-                    "null-prototype target or Map.",
+                    "Reject __proto__/constructor/prototype keys and use a "
+                    "null-prototype target or Map, e.g. "
+                    "`if (['__proto__','constructor','prototype'].includes(k)) "
+                    "continue;` or `Object.create(null)`.",
                     hit,
                 ))
 
@@ -81,5 +89,6 @@ class DomSecurityModule(ScannerModule):
             severity=sev, confidence=Confidence.LOW, observation=Observation.POTENTIAL,
             module=self.name, description=desc, impact=impact, recommendation=rec,
             evidence=[Evidence(source=self.name, url=url, description=hit.detail,
-                               data={"snippet": hit.snippet, "kind": hit.kind})],
+                               data={"snippet": hit.snippet, "kind": hit.kind,
+                                     "line": hit.line, "flow": hit.flow})],
         )

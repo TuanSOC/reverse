@@ -16,6 +16,18 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 REDIRECT_CANARY_HOST = "webrecon-oredir-canary.invalid"
 _REDIRECT_CANARY_URL = f"https://{REDIRECT_CANARY_HOST}/"
 
+# Redirect bypass techniques — each payload, if reflected into Location, resolves
+# (in a browser) to the off-origin canary host. Testing the whole family catches
+# validators that block "http://evil" but miss scheme-relative / userinfo /
+# backslash / double-encoded forms.
+REDIRECT_VARIANTS: tuple[tuple[str, str], ...] = (
+    ("absolute", _REDIRECT_CANARY_URL),                       # https://canary/
+    ("scheme_relative", f"//{REDIRECT_CANARY_HOST}/"),        # //canary/
+    ("backslash", f"/\\{REDIRECT_CANARY_HOST}/"),             # /\canary/  (\ → /)
+    ("userinfo", f"https://trusted.example@{REDIRECT_CANARY_HOST}/"),  # user@canary
+    ("double_encoded", f"%252f%252f{REDIRECT_CANARY_HOST}%252f"),  # //canary/ (2x enc)
+)
+
 
 def _token(url: str, param: str) -> str:
     """A short, deterministic marker unique to one (url, param) probe."""
@@ -33,17 +45,40 @@ def _set_param(url: str, param: str, value: str) -> str:
 
 # ---- open redirect -------------------------------------------------------
 
-def build_redirect_probe(url: str, param: str) -> str:
-    """Return ``url`` with ``param`` set to the off-origin canary URL."""
-    return _set_param(url, param, _REDIRECT_CANARY_URL)
+def build_redirect_probe(url: str, param: str, payload: str = _REDIRECT_CANARY_URL) -> str:
+    """Return ``url`` with ``param`` set to a redirect canary payload."""
+    return _set_param(url, param, payload)
+
+
+def effective_redirect_host(location: str) -> str | None:
+    """The host a browser would actually navigate to for a Location value.
+
+    Normalizes the bypass forms we probe: backslashes → slashes, scheme-relative
+    ``//host``, and ``user@host`` userinfo. Percent-decodes once so a
+    double-encoded payload that the server decoded once still resolves.
+    """
+    from urllib.parse import unquote
+
+    loc = unquote(location.strip()).replace("\\", "/")
+    # Drop a leading scheme ("https:") so scheme-relative and absolute align.
+    if "://" in loc:
+        loc = loc.split("://", 1)[1]
+    elif loc.startswith("//"):
+        loc = loc[2:]
+    else:
+        return None  # a same-site relative path ("/home") — not off-origin
+    authority = loc.split("/", 1)[0]
+    host = authority.rsplit("@", 1)[-1]      # strip userinfo
+    host = host.split(":", 1)[0]             # strip port
+    return host.lower() or None
 
 
 def redirect_confirmed(status_code: int, location: str | None) -> bool:
-    """True when a 3xx response redirects to our canary host (off-origin)."""
+    """True when a 3xx response redirects off-origin to our canary host."""
     if location is None or not (300 <= status_code < 400):
         return False
-    loc = location.lower()
-    return REDIRECT_CANARY_HOST in loc
+    host = effective_redirect_host(location)
+    return host is not None and REDIRECT_CANARY_HOST in host
 
 
 # ---- reflected XSS -------------------------------------------------------

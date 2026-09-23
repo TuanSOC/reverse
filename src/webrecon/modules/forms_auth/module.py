@@ -57,8 +57,10 @@ class FormsAuthModule(ScannerModule):
                     Severity.MEDIUM, Confidence.MEDIUM, form, rep,
                     "A form that mutates state exposes no hidden anti-CSRF token.",
                     "Without a per-session token, the form may be forgeable via CSRF.",
-                    "Add a synchronizer token (or SameSite cookies) to state-changing "
-                    "forms and verify it server-side.",
+                    "Add a synchronizer token to state-changing forms and verify it "
+                    "server-side, plus set SameSite cookies. Example (HTML): "
+                    "`<input type=\"hidden\" name=\"csrf_token\" value=\"{{ csrf }}\">`; "
+                    "cookie: `Set-Cookie: session=…; SameSite=Lax; Secure; HttpOnly`.",
                 ))
             if rep.insecure_password_transport:
                 insecure += 1
@@ -68,7 +70,9 @@ class FormsAuthModule(ScannerModule):
                     Severity.HIGH, Confidence.HIGH, form, rep,
                     "A form containing a password field posts to an http:// action.",
                     "Credentials travel in cleartext and can be intercepted on the wire.",
-                    "Submit credentials only over HTTPS; set the form action to https://.",
+                    "Submit credentials only over HTTPS (set the form action to "
+                    "https://), redirect all HTTP→HTTPS, and send HSTS: "
+                    "`Strict-Transport-Security: max-age=31536000; includeSubDomains`.",
                 ))
             if rep.password_autocomplete_on:
                 autoc += 1

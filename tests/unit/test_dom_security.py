@@ -13,9 +13,29 @@ def test_dom_xss_source_to_sink_flagged() -> None:
     hits = find_dom_xss(js)
     assert len(hits) == 1
     assert hits[0].kind == "dom_xss"
-    assert "location.hash" in hits[0].detail
     assert "innerHTML" in hits[0].detail
     assert hits[0].snippet  # evidence snippet present
+    assert hits[0].line == 1
+    # via-variable taint flow: location.hash → var q → innerHTML
+    assert "location.hash" in hits[0].flow and "innerHTML" in hits[0].flow
+
+
+def test_dom_xss_reports_correct_line() -> None:
+    js = "\n\nfunction f(){\n  var t = document.URL;\n  node.innerHTML = t;\n}"
+    hits = find_dom_xss(js)
+    assert len(hits) == 1
+    assert hits[0].line == 5  # the sink line
+    assert "document.URL" in hits[0].flow and "innerHTML" in hits[0].flow
+
+
+def test_dom_xss_via_variable_far_apart() -> None:
+    # Source and sink >160 chars apart → the 1-hop taint trace (not the window)
+    # is what connects them: location.search → var u → innerHTML.
+    js = "var u = location.search;\n" + ("var pad = 0;\n" * 30) + "box.innerHTML = u;"
+    hits = find_dom_xss(js)
+    assert hits
+    assert "var u" in hits[0].flow  # names the tainting variable
+    assert "location.search" in hits[0].flow and hits[0].line >= 30
 
 
 def test_dom_xss_document_write_referrer() -> None:

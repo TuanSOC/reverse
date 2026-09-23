@@ -31,6 +31,7 @@ from ..apitest.safe_engine import SafeGetEngine
 from ..javascript.module import JS_ANALYSIS_KEY
 from .analysis import (
     REDIRECT_CANARY_HOST,
+    REDIRECT_VARIANTS,
     build_redirect_probe,
     build_xss_probe,
     redirect_confirmed,
@@ -125,37 +126,48 @@ class ActiveVerifyModule(ScannerModule):
         return out
 
     async def _check_redirect(self, engine, url: str, param: str, result) -> bool:
-        probe = build_redirect_probe(url, param)
-        try:
-            self._budget += 1
-            resp = await engine.get(probe, follow_redirects=False)
-        except Exception:  # noqa: BLE001 - probe failures must not crash the scan
-            return False
-        location = resp.headers.get("location") or resp.headers.get("Location")
-        if not redirect_confirmed(resp.status_code, location):
-            return False
-        result.findings.append(Finding(
-            check_id="active.open_redirect.confirmed",
-            name="Confirmed open redirect", category=FindingCategory.CONFIGURATION,
-            severity=Severity.MEDIUM, confidence=Confidence.HIGH,
-            observation=Observation.OBSERVED, module=self.name,
-            description=(
-                f"Parameter {param!r} redirects off-origin to an attacker-controlled "
-                "URL (verified with a benign canary target)."
-            ),
-            impact="Enables phishing/redirect attacks that abuse this domain's trust.",
-            recommendation=(
-                "Validate redirect targets against an allowlist of internal paths; "
-                "reject absolute/off-origin URLs."
-            ),
-            evidence=[Evidence(
-                source=self.name, url=url,
-                description=f"canary redirect via {param!r}",
-                data={"param": param, "status": resp.status_code,
-                      "location": location, "canary": REDIRECT_CANARY_HOST},
-            )],
-        ))
-        return True
+        """Try each redirect-bypass variant; report the first that reaches canary."""
+        for label, payload in REDIRECT_VARIANTS:
+            if self._budget >= MAX_REQUESTS:
+                return False
+            probe = build_redirect_probe(url, param, payload)
+            try:
+                self._budget += 1
+                resp = await engine.get(probe, follow_redirects=False)
+            except Exception:  # noqa: BLE001, S112 - a failed probe is skipped
+                continue
+            location = resp.headers.get("location") or resp.headers.get("Location")
+            if not redirect_confirmed(resp.status_code, location):
+                continue
+            result.findings.append(Finding(
+                check_id="active.open_redirect.confirmed",
+                name=f"Confirmed open redirect ({label})",
+                category=FindingCategory.CONFIGURATION,
+                severity=Severity.MEDIUM, confidence=Confidence.HIGH,
+                observation=Observation.OBSERVED, module=self.name,
+                description=(
+                    f"Parameter {param!r} redirects off-origin to an attacker-"
+                    f"controlled host via the {label!r} bypass (benign canary)."
+                ),
+                impact="Enables phishing/redirect attacks that abuse this domain's trust.",
+                recommendation=(
+                    "Validate redirect targets against an allowlist of internal "
+                    "paths; reject absolute, scheme-relative (//host), backslash, "
+                    "userinfo (user@host), and encoded off-origin URLs. Resolve the "
+                    "candidate and require its host to equal your own before "
+                    "redirecting. Example (Python): "
+                    "`urlsplit(target).netloc in {'', 'yourdomain.com'}`."
+                ),
+                evidence=[Evidence(
+                    source=self.name, url=url,
+                    description=f"{label} canary redirect via {param!r}",
+                    data={"param": param, "variant": label, "status": resp.status_code,
+                          "location": location, "payload": payload,
+                          "canary": REDIRECT_CANARY_HOST},
+                )],
+            ))
+            return True
+        return False
 
     async def _check_xss(self, engine, url: str, param: str, result) -> bool:
         if self._budget >= MAX_REQUESTS:
@@ -179,8 +191,12 @@ class ActiveVerifyModule(ScannerModule):
             ),
             impact="Attacker-controlled markup may execute in a victim's browser.",
             recommendation=(
-                "Context-encode all user input on output; apply a strict CSP. "
-                "Confirm exploitability manually before remediation sign-off."
+                "Context-encode user input on output (HTML-escape for element "
+                "content, attribute-encode for attributes); never build markup by "
+                "concatenation. If HTML is required, sanitize with a vetted library "
+                "— `el.innerHTML = DOMPurify.sanitize(input)`. Add a strict CSP: "
+                "`Content-Security-Policy: default-src 'self'; script-src 'self'; "
+                "object-src 'none'; base-uri 'none'`. Confirm exploitability manually."
             ),
             evidence=[Evidence(
                 source=self.name, url=url,
