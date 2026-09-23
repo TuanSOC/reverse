@@ -38,7 +38,11 @@ class StartScanRequest(BaseModel):
     browser: bool = False
     allow_private: bool = False
     active: bool = False
+    probe: bool = False
     scope_mode: str = "same-domain"
+    cookie: str | None = None
+    # extra request headers as a "Name: value" list (authenticated scan)
+    headers: list[str] = []
 
 
 def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI:
@@ -213,6 +217,13 @@ class _SimpleManager:
         cfg.scope.allow_private_targets = req.allow_private
         cfg.browser_mode = req.browser
         cfg.active = req.active
+        cfg.probe = req.probe
+        if req.cookie:
+            cfg.http.cookie = req.cookie
+        for h in req.headers:
+            name, sep, value = h.partition(":")
+            if sep and name.strip():
+                cfg.http.auth_headers[name.strip()] = value.strip()
         try:
             cfg.scope.mode = ScopeMode(req.scope_mode)
         except ValueError:
