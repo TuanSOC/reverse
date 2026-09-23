@@ -179,7 +179,13 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
 
     @app.get("/")
     async def index() -> FileResponse:
-        return FileResponse(_STATIC / "index.html")
+        # The dashboard is a single self-contained file that changes with every
+        # release; tell the browser to always revalidate so a stale cached copy
+        # never hides new UI (a bare 200 lets the browser serve an old shell).
+        return FileResponse(
+            _STATIC / "index.html",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
 
     return app
 

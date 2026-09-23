@@ -99,8 +99,10 @@ def test_api_serves_scan_data(mock_site: str, tmp_path) -> None:
         # 404 for unknown scan
         assert client.get("/api/scans/does-not-exist").status_code == 404
 
-        # dashboard HTML is served
-        assert "WEBRECON" in client.get("/").text or "WebRecon" in client.get("/").text
+        # dashboard HTML is served, with no-cache so updates are never stale
+        root = client.get("/")
+        assert "WEBRECON" in root.text or "WebRecon" in root.text
+        assert "no-cache" in root.headers.get("cache-control", "")
 
 
 def test_api_secret_values_not_leaked(mock_site: str, tmp_path) -> None:
