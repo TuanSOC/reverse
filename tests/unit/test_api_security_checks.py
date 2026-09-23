@@ -30,6 +30,12 @@ def test_open_redirect_none_on_clean_urls() -> None:
     assert find_open_redirect_params(["https://x.com/", "https://x.com/p?q=1"]) == []
 
 
+def test_open_redirect_empty_value_still_flagged() -> None:
+    # a present-but-empty redirect param must still be detected
+    hits = find_open_redirect_params(["https://x.com/login?next="])
+    assert hits == [("https://x.com/login?next=", "next")]
+
+
 def test_insecure_websocket_flagged_on_https() -> None:
     ws = ["ws://x.com/socket", "wss://x.com/secure"]
     assert insecure_websockets(ws, page_is_https=True) == ["ws://x.com/socket"]

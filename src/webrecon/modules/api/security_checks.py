@@ -22,7 +22,8 @@ def find_open_redirect_params(urls: list[str]) -> list[tuple[str, str]]:
     seen: set[tuple[str, str]] = set()
     for url in urls:
         try:
-            qs = parse_qs(urlsplit(url).query)
+            # keep_blank_values so an empty but present param (?next=) still counts
+            qs = parse_qs(urlsplit(url).query, keep_blank_values=True)
         except ValueError:
             continue
         for name in qs:

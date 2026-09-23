@@ -18,6 +18,7 @@ from ...core.enums import (
 from ...core.models import Evidence, Finding, ModuleResult
 from ...core.module import ScannerModule
 from ...core.registry import default_registry
+from ..crawler.module import HTML_BODIES_KEY
 from ..http.module import PRIMARY_RESPONSE_KEY
 from ..javascript.module import JS_ANALYSIS_KEY
 from .analysis import SecretHit, find_secrets
@@ -35,14 +36,23 @@ class SecretLeakModule(ScannerModule):
         result.mark_started()
         log = ctx.bind_logger(self.name)
 
-        # (source-url, text) pairs to scan: each JS file + the primary HTML page.
+        # (source-url, text) pairs to scan: every JS file + every crawled HTML
+        # page (bodies retained by the crawler), falling back to the primary
+        # response if the crawler retained nothing.
         sources: list[tuple[str | None, str]] = []
+        seen_urls: set[str | None] = set()
         for a in ctx.shared.get(JS_ANALYSIS_KEY) or []:
             if getattr(a, "content", ""):
                 sources.append((a.url, a.content))
-        primary = ctx.shared.get(PRIMARY_RESPONSE_KEY)
-        if primary is not None and not primary.truncated:
-            sources.append((primary.url, primary.text))
+        html_bodies = ctx.shared.get(HTML_BODIES_KEY) or []
+        for url, text in html_bodies:
+            if url not in seen_urls:
+                seen_urls.add(url)
+                sources.append((url, text))
+        if not html_bodies:
+            primary = ctx.shared.get(PRIMARY_RESPONSE_KEY)
+            if primary is not None and not primary.truncated:
+                sources.append((primary.url, primary.text))
 
         if not sources:
             result.data = {"skipped": "no JS/HTML content to scan"}
@@ -53,7 +63,7 @@ class SecretLeakModule(ScannerModule):
         seen: set[tuple[str, str]] = set()  # dedup identical secret across files
         for url, text in sources:
             for hit in find_secrets(text):
-                key = (hit.kind, hit.masked)
+                key = (hit.kind, hit.fingerprint)
                 if key in seen:
                     continue
                 seen.add(key)

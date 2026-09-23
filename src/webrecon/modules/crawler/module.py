@@ -31,6 +31,12 @@ _HTML_TYPES = ("text/html", "application/xhtml")
 # Key under which accumulated content disclosures are published (crawler + js).
 DISCLOSURES_KEY = "disclosures"
 
+# Retained HTML page bodies (url, capped-text) for downstream static scanners
+# (e.g. secret_leak). Bounded in count and per-page size to cap memory.
+HTML_BODIES_KEY = "html_bodies"
+_HTML_BODY_CAP = 400_000       # per-page character cap
+_HTML_BODIES_MAX = 200         # max pages retained
+
 
 @default_registry.register
 class CrawlerModule(ScannerModule):
@@ -170,6 +176,9 @@ class CrawlerModule(ScannerModule):
             disc = ctx.shared.get(DISCLOSURES_KEY)
             if disc is not None:
                 disc.merge(scan_disclosures(resp.text))
+            bodies = ctx.shared.setdefault(HTML_BODIES_KEY, [])
+            if len(bodies) < _HTML_BODIES_MAX:
+                bodies.append((resp.url, resp.text[:_HTML_BODY_CAP]))
             extract = parse_html(resp.url, resp.text)
             page.title = extract.title
             page.canonical = extract.canonical

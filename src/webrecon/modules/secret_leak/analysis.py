@@ -7,6 +7,7 @@ raw secret never enters a Finding, report, or the dashboard. Detection only.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 
@@ -57,10 +58,20 @@ class SecretHit:
     severity: Severity
     masked: str
     offset: int
+    fingerprint: str  # sha256 prefix of the raw value — stable, non-reversible
+
+
+def _fingerprint(raw: str) -> str:
+    return hashlib.sha256(raw.encode("utf-8", errors="ignore")).hexdigest()[:16]
 
 
 def find_secrets(text: str, cap_per_kind: int = 20) -> list[SecretHit]:
-    """Return masked secret hits found in ``text`` (deduped by masked value+kind)."""
+    """Return masked secret hits found in ``text``.
+
+    Deduped by (kind, fingerprint-of-raw) so two distinct secrets that happen to
+    share the same masked ends are both reported; the raw value never leaves this
+    function — only its mask and a one-way fingerprint do.
+    """
     hits: list[SecretHit] = []
     seen: set[tuple[str, str]] = set()
     for kind, pat, sev, label in _PATTERNS:
@@ -69,12 +80,12 @@ def find_secrets(text: str, cap_per_kind: int = 20) -> list[SecretHit]:
             raw = m.group(0)
             if raw in _KNOWN_EXAMPLES:
                 continue  # documented example key, not a real secret
-            masked = mask_secret(raw)
-            key = (kind, masked)
+            fp = _fingerprint(raw)
+            key = (kind, fp)
             if key in seen:
                 continue
             seen.add(key)
-            hits.append(SecretHit(kind, label, sev, masked, m.start()))
+            hits.append(SecretHit(kind, label, sev, mask_secret(raw), m.start(), fp))
             found += 1
             if found >= cap_per_kind:
                 break

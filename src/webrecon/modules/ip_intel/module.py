@@ -15,6 +15,8 @@ Private/loopback targets are skipped unless lab mode is enabled.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import dns.asyncresolver
 import dns.exception
@@ -48,6 +50,27 @@ from .analysis import (
 IP_INTEL_KEY = "ip_intel"
 _GEO_HOST = "ip-api.com"
 _GEO_FIELDS = "status,country,countryCode,regionName,city,lat,lon,timezone,isp,org,as,query"
+
+
+@contextmanager
+def _scope_allow(scope, host: str) -> Iterator[None]:
+    """Temporarily allow ``host`` through the scope gate for a single request.
+
+    The change is reverted on exit so ip_intel's intel host never permanently
+    widens the scan-wide scope boundary for other modules.
+    """
+    added = False
+    if scope is not None and host not in scope.config.allowed_hosts:
+        scope.config.allowed_hosts.append(host)
+        added = True
+    try:
+        yield
+    finally:
+        if added:
+            try:
+                scope.config.allowed_hosts.remove(host)
+            except ValueError:
+                pass
 
 
 @default_registry.register
@@ -147,13 +170,10 @@ class IpIntelModule(ScannerModule):
         """Best-effort geolocation via a public API through ctx.http."""
         if ctx.http is None:
             return False
-        # Permit the trusted intel host through the scope gate for this call.
-        scope = getattr(ctx.http, "scope", None)
-        if scope is not None and _GEO_HOST not in scope.config.allowed_hosts:
-            scope.config.allowed_hosts.append(_GEO_HOST)
         url = f"http://{_GEO_HOST}/json/{ip}?fields={_GEO_FIELDS}"
         try:
-            resp = await ctx.http.get(url)
+            with _scope_allow(getattr(ctx.http, "scope", None), _GEO_HOST):
+                resp = await ctx.http.get(url)
             data = json.loads(resp.text)
         except Exception as exc:  # noqa: BLE001 - geo is optional; degrade offline
             log.info("geolocation unavailable", ip=ip, error=str(exc))

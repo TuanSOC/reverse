@@ -10,6 +10,7 @@ query. All lookups are read-only DNS queries.
 
 from __future__ import annotations
 
+import asyncio
 import ipaddress
 
 import dns.asyncresolver
@@ -77,9 +78,13 @@ class DnsModule(ScannerModule):
         data.dmarc = extract_dmarc(await self._query(resolver, f"_dmarc.{host}", "TXT"))
 
         # DKIM: probe common selectors for a published key (mail domains only).
+        # Independent lookups run concurrently to bound wall-clock to one query.
         if data.records.get("MX"):
-            for sel in COMMON_DKIM_SELECTORS:
-                txts = await self._query(resolver, f"{sel}._domainkey.{host}", "TXT")
+            probes = await asyncio.gather(*(
+                self._query(resolver, f"{sel}._domainkey.{host}", "TXT")
+                for sel in COMMON_DKIM_SELECTORS
+            ))
+            for sel, txts in zip(COMMON_DKIM_SELECTORS, probes, strict=True):
                 if any(is_dkim_record(t) for t in txts):
                     data.dkim_selectors.append(sel)
 

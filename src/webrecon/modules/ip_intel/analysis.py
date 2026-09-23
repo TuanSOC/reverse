@@ -178,12 +178,15 @@ def cdn_from_headers(headers: dict[str, str]) -> str | None:
 
 
 def detect_origin_exposure(edge_cdn: str | None, ip_provider: str | None) -> bool:
-    """True when the edge is a CDN but the resolved IP is NOT that CDN.
+    """True when the edge is a CDN but the resolved IP is a *different, known* net.
 
     That means DNS handed us a direct/origin host instead of the CDN edge — the
-    classic "bypass the WAF by hitting the origin IP" exposure. Conservative: we
-    only assert exposure when a CDN edge is positively identified.
+    classic "bypass the WAF by hitting the origin IP" exposure. Conservative on
+    both sides: we only assert exposure when a CDN edge is positively identified
+    AND the resolved IP is classified to a *different known* provider. An unknown
+    provider (ASN/geo lookup failed or rate-limited) is NOT treated as exposure —
+    otherwise every CDN site would misfire whenever classification is unavailable.
     """
-    if not edge_cdn:
+    if not edge_cdn or not ip_provider:
         return False
     return ip_provider != edge_cdn

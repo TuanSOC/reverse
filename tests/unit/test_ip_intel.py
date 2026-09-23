@@ -80,7 +80,8 @@ def test_cdn_from_headers() -> None:
 def test_detect_origin_exposure() -> None:
     # edge is Cloudflare but the resolved IP is on DigitalOcean → exposed origin
     assert detect_origin_exposure("Cloudflare", "DigitalOcean") is True
-    assert detect_origin_exposure("Cloudflare", None) is True  # unknown network
+    # unknown provider (lookup failed/rate-limited) → NOT asserted (no false alarm)
+    assert detect_origin_exposure("Cloudflare", None) is False
     # edge Cloudflare + IP also Cloudflare → normal, not exposed
     assert detect_origin_exposure("Cloudflare", "Cloudflare") is False
     # no CDN on the edge → nothing to expose

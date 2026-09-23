@@ -79,4 +79,14 @@ def test_known_example_key_not_flagged() -> None:
 def test_dedup_repeated_secret() -> None:
     raw = "AKIA1234567890ABCDEF"
     hits = find_secrets(f"{raw} ... {raw} ... {raw}")
-    assert len(hits) == 1  # same masked value collapses
+    assert len(hits) == 1  # same raw value collapses
+
+
+def test_distinct_secrets_sharing_masked_ends_both_reported() -> None:
+    # Two different AWS keys with identical first-4/last-4 → distinct fingerprints.
+    a = "AKIAAAAA1111BBBB2CDE"
+    b = "AKIAAAAA9999BBBB2CDE"
+    assert mask_secret(a) == mask_secret(b)  # masks collide
+    hits = find_secrets(f"{a}\n{b}")
+    assert len(hits) == 2  # but both are reported (fingerprint-based dedup)
+    assert len({h.fingerprint for h in hits}) == 2
