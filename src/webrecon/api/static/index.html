@@ -758,6 +758,50 @@ function moduleTiming(modules){
       el("span",{class:"kv"},m.duration_ms?Math.round(m.duration_ms)+"ms":m.status)));}
   return w;
 }
+/* Force-directed layout: repulsion between all nodes + springs along edges +
+   gentle centering, then a collision pass so circles never overlap. Deterministic
+   (golden-angle seed, no RNG) so the graph is stable across re-renders. */
+function forceLayout(nodes,edges,W,H,radius){
+  const cx=W/2,cy=H/2,N=nodes.length,P={},M=26;           // M = viewport margin
+  nodes.forEach((n,i)=>{const a=i*2.399963267,r=20*Math.sqrt(i+0.5);
+    P[n.id]={x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};});
+  const E=edges.filter(e=>P[e.source]&&P[e.target]);
+  const area=(W-2*M)*(H-2*M);
+  const k=Math.min(120,0.8*Math.sqrt(area/(N+1)));         // ideal edge length (FR)
+  const iters=N>160?140:320;
+  let temp=(W-2*M)/8;                                      // max step, cools each pass
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  for(let it=0;it<iters;it++){
+    const dsp={};nodes.forEach(n=>dsp[n.id]={x:0,y:0});
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){             // repulsion  k²/d
+      const a=P[nodes[i].id],b=P[nodes[j].id];
+      let dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||0.01,f=k*k/d;
+      const ux=dx/d,uy=dy/d,A=dsp[nodes[i].id],B=dsp[nodes[j].id];
+      A.x+=ux*f;A.y+=uy*f;B.x-=ux*f;B.y-=uy*f;}
+    for(const e of E){                                     // attraction  d²/k
+      const a=P[e.source],b=P[e.target];
+      let dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||0.01,f=d*d/k;
+      const ux=dx/d,uy=dy/d;
+      dsp[e.source].x-=ux*f;dsp[e.source].y-=uy*f;dsp[e.target].x+=ux*f;dsp[e.target].y+=uy*f;}
+    for(const n of nodes){const p=P[n.id],d=dsp[n.id];
+      const m=Math.hypot(d.x,d.y)||0.01;                   // step ≤ temperature
+      p.x+=d.x/m*Math.min(m,temp);p.y+=d.y/m*Math.min(m,temp);
+      p.x+=(cx-p.x)*0.02;p.y+=(cy-p.y)*0.02;               // gentle centering
+      p.x=clamp(p.x,M,W-M);p.y=clamp(p.y,M,H-M);}          // stay inside the box
+    temp*=0.97;
+  }
+  // Collision resolution: separate any pair closer than r1+r2+pad (kept in-box).
+  for(let pass=0;pass<60;pass++){let moved=false;
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+      const a=P[nodes[i].id],b=P[nodes[j].id];
+      const min=radius(nodes[i])+radius(nodes[j])+8;
+      let dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||0.01;
+      if(d<min){const s=(min-d)/2,ux=dx/d,uy=dy/d;
+        a.x=clamp(a.x+ux*s,M,W-M);a.y=clamp(a.y+uy*s,M,H-M);
+        b.x=clamp(b.x-ux*s,M,W-M);b.y=clamp(b.y-uy*s,M,H-M);moved=true;}}
+    if(!moved)break;}
+  const out={};for(const n of nodes)out[n.id]=[P[n.id].x,P[n.id].y];return out;
+}
 async function graphView(){
   const g=await api(`/api/scans/${SID()}/graph`);const w=el("div");
   w.append(el("h1",{},"Relationship Graph"));
@@ -773,17 +817,23 @@ async function graphView(){
   svg.style.cssText="border:1px solid var(--border);border-radius:12px;background:var(--panel);"+
     "cursor:grab;touch-action:none;display:block;max-width:100%";
   const root=document.createElementNS(NS,"g");svg.append(root);  // pan/zoom transform target
-  const others=g.nodes.slice(1),pos={[g.nodes[0].id]:[cx,cy]};
-  others.forEach((n,i)=>{const a=2*Math.PI*i/others.length,r=Math.min(W,H)/2-70;
-    pos[n.id]=[cx+r*Math.cos(a),cy+r*Math.sin(a)];});
-  // degree count per node for the detail drawer
+  // degree count per node (drives node size + which labels we show)
   const deg={};for(const e of g.edges){deg[e.source]=(deg[e.source]||0)+1;deg[e.target]=(deg[e.target]||0)+1;}
-  for(const e of g.edges){const[x1,y1]=pos[e.source]||[cx,cy],[x2,y2]=pos[e.target]||[cx,cy];
-    const l=document.createElementNS(NS,"line");for(const[a,v]of Object.entries({x1,y1,x2,y2,stroke:"var(--border)"}))
-      l.setAttribute(a,v);root.append(l);}
-  for(const n of g.nodes){const[x,y]=pos[n.id];const c=document.createElementNS(NS,"circle");
-    for(const[a,v]of Object.entries({cx:x,cy:y,r:n.type==="domain"?10:5.5,fill:color[n.type]||"#8a93a6"}))
-      c.setAttribute(a,v);c.style.cursor="pointer";
+  const radius=n=>n.type==="domain"?11:Math.min(10,4.5+(deg[n.id]||0)*0.7);
+  const pos=forceLayout(g.nodes,g.edges,W,H,radius);
+  // edges first (under nodes)
+  for(const e of g.edges){const a=pos[e.source],b=pos[e.target];if(!a||!b)continue;
+    const l=document.createElementNS(NS,"line");
+    for(const[k,v]of Object.entries({x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--border)","stroke-width":0.8}))
+      l.setAttribute(k,v);root.append(l);}
+  // show a text label only for hubs / the domain node, so labels don't collide.
+  const labelDeg=[...g.nodes].map(n=>deg[n.id]||0).sort((a,b)=>b-a);
+  const labelCut=labelDeg[Math.min(labelDeg.length-1,14)]||0;  // ~top 15 by degree
+  for(const n of g.nodes){const p=pos[n.id];if(!p)continue;const[x,y]=p;
+    const c=document.createElementNS(NS,"circle");
+    for(const[k,v]of Object.entries({cx:x,cy:y,r:radius(n),fill:color[n.type]||"#8a93a6",
+      stroke:"var(--panel)","stroke-width":1.5}))c.setAttribute(k,v);
+    c.style.cursor="pointer";
     const tt=document.createElementNS(NS,"title");tt.textContent=n.label;c.append(tt);
     c.addEventListener("click",ev=>{ev.stopPropagation();
       const nbrs=g.edges.filter(e=>e.source===n.id||e.target===n.id)
@@ -794,12 +844,24 @@ async function graphView(){
         {label:"Neighbors",tags:[...new Set(nbrs)].slice(0,40)},
         {label:"Raw",raw:n}]);});
     root.append(c);
-    const t=document.createElementNS(NS,"text");t.setAttribute("x",x+9);t.setAttribute("y",y+3);
-    t.setAttribute("font-size","10");t.style.pointerEvents="none";
-    t.textContent=(n.label||"").slice(0,42);root.append(t);}
-  // pan + zoom via a single transform on the root group
+    if(n.type==="domain"||(deg[n.id]||0)>=Math.max(2,labelCut)){
+      const t=document.createElementNS(NS,"text");t.setAttribute("x",x+radius(n)+3);t.setAttribute("y",y+3);
+      t.setAttribute("font-size","10");t.style.pointerEvents="none";
+      t.textContent=(n.label||"").slice(0,36);root.append(t);}}
+  // pan + zoom via a single transform on the root group.
+  // Auto-fit: frame the laid-out node bbox to fill the canvas (with padding),
+  // so a tightly-clustered graph still reads large instead of a dot in the middle.
+  const XS=g.nodes.map(n=>pos[n.id]?.[0]).filter(v=>v!=null);
+  const YS=g.nodes.map(n=>pos[n.id]?.[1]).filter(v=>v!=null);
   const view={x:0,y:0,k:1};
+  if(XS.length){const minX=Math.min(...XS),maxX=Math.max(...XS),
+    minY=Math.min(...YS),maxY=Math.max(...YS),pad=48,
+    bw=Math.max(1,maxX-minX),bh=Math.max(1,maxY-minY);
+    view.k=Math.max(.4,Math.min((W-2*pad)/bw,(H-2*pad)/bh,2.4));
+    view.x=pad-minX*view.k+(W-2*pad-bw*view.k)/2;
+    view.y=pad-minY*view.k+(H-2*pad-bh*view.k)/2;}
   function apply(){root.setAttribute("transform",`translate(${view.x} ${view.y}) scale(${view.k})`);}
+  apply();
   svg.addEventListener("wheel",ev=>{ev.preventDefault();
     const r=svg.getBoundingClientRect(),mx=ev.clientX-r.left,my=ev.clientY-r.top;
     const f=ev.deltaY<0?1.12:1/1.12,nk=Math.min(6,Math.max(.3,view.k*f));
