@@ -65,6 +65,12 @@ class BrowserModule(ScannerModule):
                     page = await browser.new_page(
                         user_agent=ctx.config.http.user_agent, ignore_https_errors=True
                     )
+                    # Authenticated scan: seed the target's cookies so the SPA
+                    # renders its logged-in state. Cookies are domain-scoped by
+                    # the browser, so they never reach third-party hosts.
+                    cookies = _parse_cookies(ctx.config.http.cookie, ctx.target)
+                    if cookies:
+                        await page.context.add_cookies(cookies)  # type: ignore[arg-type]
 
                     async def _router(route):
                         url = route.request.url
@@ -178,6 +184,25 @@ def _resp_dict(response) -> dict:
         "resource_type": req.resource_type,
         "content_type": response.headers.get("content-type"),
     }
+
+
+def _parse_cookies(cookie: str | None, target) -> list[dict]:
+    """Parse a raw 'k=v; k2=v2' Cookie string into Playwright cookie dicts.
+
+    Scoped to the target host + path '/' so the browser only sends them to the
+    target domain (never third parties).
+    """
+    if not cookie or target is None:
+        return []
+    out: list[dict] = []
+    for part in cookie.split(";"):
+        name, sep, value = part.strip().partition("=")
+        if sep and name:
+            out.append({
+                "name": name.strip(), "value": value.strip(),
+                "domain": target.hostname, "path": "/",
+            })
+    return out
 
 
 def _unique(items) -> list[str]:

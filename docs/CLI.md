@@ -41,6 +41,8 @@ export flag, prints a one-line risk summary.
 | `--no-robots` | Ignore robots.txt (authorized only). |
 | `--probe` | Probe curated sensitive files (.git/.env/…), content-verified, GET-only. Authorized targets only. |
 | `--active` | Active assessment (`apitest` + `active_verify`): DB errors, error-based SQLi susceptibility, data exposure, unauth access, GraphQL introspection, plus canary-confirmed open-redirect & reflected-XSS. GET-only, observed endpoints only, budget-capped, detection/confirmation-level (no payload execution or data extraction). Authorized targets only. |
+| `--cookie "k=v; k2=v2"` | Authenticated scan: raw Cookie header sent **only to the target host** (never third parties) so the crawler/browser/active checks reach behind a login. Authorized targets only. |
+| `--header "Name: value"` / `-H` | Extra request header (repeatable), e.g. `Authorization`. Sent **only to the target host**. |
 | `--html P` / `--pdf P` | Also write HTML / PDF report. |
 | `--no-db` | Don't persist to the database. |
 

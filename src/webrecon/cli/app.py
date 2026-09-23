@@ -104,6 +104,16 @@ def scan(
     browser: bool | None = typer.Option(
         None, "--browser/--no-browser", help="Use the headless browser engine."
     ),
+    cookie: str | None = typer.Option(
+        None, "--cookie",
+        help="Authenticated scan: raw Cookie header ('k=v; k2=v2'). Sent only to "
+             "the target host. Authorized targets only.",
+    ),
+    header: list[str] | None = typer.Option(
+        None, "--header", "-H",
+        help="Extra request header 'Name: value' (repeatable), e.g. an "
+             "Authorization token. Sent only to the target host.",
+    ),
     no_db: bool = typer.Option(False, "--no-db", help="Do not persist results to the database."),
     database_url: str = typer.Option(
         "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
@@ -151,6 +161,13 @@ def scan(
         cfg.probe = True
     if active:
         cfg.active = True
+    if cookie:
+        cfg.http.cookie = cookie
+    if header:
+        for h in header:
+            name, sep, value = h.partition(":")
+            if sep and name.strip():
+                cfg.http.auth_headers[name.strip()] = value.strip()
     if modules_opt:
         cfg.enabled_modules = [m.strip() for m in modules_opt.split(",") if m.strip()]
 
@@ -161,6 +178,11 @@ def scan(
         console.print(
             "[red]Active checks enabled[/] — run only on assets you own or are "
             "explicitly authorized to test."
+        )
+    if cfg.http.cookie or cfg.http.auth_headers:
+        console.print(
+            "[yellow]authenticated scan:[/] credentials will be sent to the "
+            f"target host only ({url})."
         )
 
     status_glyph = {

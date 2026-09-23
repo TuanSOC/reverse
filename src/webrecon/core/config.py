@@ -67,6 +67,11 @@ class HttpConfig(BaseSettings):
     follow_redirects: bool = True
     user_agent: str = DEFAULT_USER_AGENT
     verify_tls: bool = True
+    # Authenticated scan: a raw Cookie header value ("k=v; k2=v2") and/or extra
+    # request headers (e.g. Authorization). These are attached ONLY to requests
+    # whose host is the target (or a subdomain) — never leaked to third parties.
+    cookie: str | None = None
+    auth_headers: dict[str, str] = Field(default_factory=dict)
 
 
 class CrawlConfig(BaseSettings):

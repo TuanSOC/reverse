@@ -182,6 +182,23 @@ class HttpEngine:
     async def head(self, url: str) -> HttpResponse:
         return await self.request("HEAD", url)
 
+    def _auth_headers_for(self, host: str) -> dict[str, str] | None:
+        """Auth cookie/headers, but ONLY for the target host (or a subdomain).
+
+        Credentials must never leak to third-party hosts (e.g. the geolocation
+        API or an off-origin redirect), so we gate them on the scope base host.
+        """
+        if not self.config.cookie and not self.config.auth_headers:
+            return None
+        base = self.scope.base_host if self.scope is not None else None
+        host = (host or "").lower()
+        if base is None or not (host == base or host.endswith("." + base)):
+            return None
+        headers: dict[str, str] = dict(self.config.auth_headers)
+        if self.config.cookie:
+            headers["Cookie"] = self.config.cookie
+        return headers
+
     async def _send_with_retry(self, method: str, host: str, url: str) -> httpx.Response:
         if self._client is None:  # pragma: no cover - guarded by request()
             raise HttpEngineError("HttpEngine used outside its context manager")
@@ -190,7 +207,9 @@ class HttpEngine:
         for attempt in range(attempts):
             async with self.rate.slot(host):
                 try:
-                    req = self._client.build_request(method, url)
+                    req = self._client.build_request(
+                        method, url, headers=self._auth_headers_for(host)
+                    )
                     resp = await self._client.send(req, stream=True)
                 except (httpx.ConnectError, httpx.ReadError, httpx.WriteError) as exc:
                     last_exc = exc
