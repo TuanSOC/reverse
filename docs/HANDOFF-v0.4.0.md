@@ -18,7 +18,7 @@ layers on top of the existing 21-module scanner **without rewriting the working
 ./.venv/Scripts/python.exe -m mypy src
 ./.venv/Scripts/python.exe -m pytest -q
 ```
-Last known-green full run: **332 passed** (end of Phase 1). Phase 2 added ~12 tests.
+Last known-green full run: **338 passed** (end of Phase 2).
 
 ## Status
 
@@ -29,22 +29,12 @@ endpoint `param_meta` + `discovery_status`), G3 source-map reconstruction
 (`sourcemap.reconstruct_sources` + `javascript/module._analyze_reconstructed`,
 finding `exposure.sourcemap.reconstructed`, secrets masked).
 
-### ⚠️ Phase 2 — IMPLEMENTED, NOT COMMITTED (verify suite → commit)
-Uncommitted files:
-- `src/webrecon/intel/__init__.py`, `intel/asset_graph.py` (G4 unified typed graph
-  builder w/ provenance/confidence; `build_asset_graph(db, scan_id)`),
-  `intel/auth_flow.py` (G5 auth-flow model, pure).
-- `src/webrecon/api/queries.py` — `get_graph` rewired to `build_asset_graph`;
-  added `get_auth_flow` (+ `import re`).
-- `src/webrecon/api/app.py` — added `GET /api/scans/{id}/auth-flow`.
-- Tests: `tests/unit/test_auth_flow.py`, `tests/integration/test_asset_graph.py`.
-- (G5 static/dynamic `discovery_status` already landed in Phase 1.)
+### ✅ Phase 2 — COMMITTED (`1e90613`)
+G4 asset graph (`intel/asset_graph.py`, `build_asset_graph(db, scan_id)`; `get_graph`
+rewired, dashboard shape preserved), G5 auth-flow model (`intel/auth_flow.py`;
+`GET /api/scans/{id}/auth-flow`). 338 pytest green.
 
-**FIRST ACTION in new session:** run the quality gate; if green, commit Phase 2:
-```
-feat(intel-p2): unified asset graph + auth-flow model (v0.4.0 Phase 2)
-```
-Backward compat already verified: `tests/integration/test_api.py` graph shape passes.
+**FIRST ACTION in new session:** read this file, then start **Phase 3** (below).
 
 ### ⬜ Phase 3 — PENDING (timeline + dashboard explorers)
 - **G6 Event timeline:** add `ctx.event(kind, label, data)` sink on ScanContext,
