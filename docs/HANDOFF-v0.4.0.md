@@ -18,7 +18,7 @@ layers on top of the existing 21-module scanner **without rewriting the working
 ./.venv/Scripts/python.exe -m mypy src
 ./.venv/Scripts/python.exe -m pytest -q
 ```
-Last known-green full run: **348 passed** (end of Phase 3).
+Last known-green full run: **361 passed** (end of Phase 4).
 
 ## Status
 
@@ -51,28 +51,27 @@ Attack-surface tree: `intel/attack_surface.py` (pure, severity rollup) →
 G7 dashboard: Endpoint Explorer, JS Explorer, Attack Surface, Auth Flow,
 Event Timeline views; old "Timeline / Compare" is now "Compare".
 
-**FIRST ACTION in new session:** read this file, then start **Phase 4** (below).
+**FIRST ACTION in new session:** read this file; v0.4.0 phases are done — next is the
+"Cross-cutting" list below.
 
-### ⬜ Phase 4 — AI layer via GROQ (user chose Groq, not stub-only)
-- New `src/webrecon/intel/ai/`:
-  - `AnalysisContext` — normalized structured evidence (graph + findings +
-    endpoints + tech + auth-flow) with stable **evidence IDs**. The model gets
-    THIS, never the raw target.
-  - `AiAnalyzer` protocol; `StubAnalyzer` (deterministic offline, still cites IDs);
-    `GroqAnalyzer` (real). Groq is **OpenAI-compatible**:
-    `POST https://api.groq.com/openai/v1/chat/completions`, header
-    `Authorization: Bearer $GROQ_API_KEY`, model e.g. `llama-3.3-70b-versatile`.
-    Use httpx directly (NOT the scoped scan engine). Opt-in via `--ai` flag.
-  - Prompt rule: answer "what is this app / components / attack surface /
-    auth-related APIs / static-only vs observed / gaps"; **every claim must cite an
-    evidence ID; never invent evidence.**
-  - CLI `--ai`; API field; dashboard "AI Analysis" panel.
-- 🔐 **SECURITY — critical:**
-  - `GROQ_API_KEY` comes from the **environment only**. Never hardcode it, never
-    write it into any committed file, never log/print it. Add a `.env` read via
-    env var; ensure `.env` is gitignored.
-  - The user pasted the key in chat (session before this one) — **advise them to
-    rotate it** in the Groq console; do not paste the key value into any file/commit.
+### ✅ Phase 4 — COMMITTED (AI layer via Groq)
+`src/webrecon/intel/ai/`: `context.py` (`AnalysisContext`, stable evidence IDs
+X1/S1/T#/E#/F#/J#/M#/A1, query values masked, form values dropped, caps for the
+free-tier token budget), `analyzers.py` (`StubAnalyzer`, `GroqAnalyzer`,
+`parse_analysis` drops claims without a valid ID → `rejected_claims`;
+`get_analyzer`: explicit > `WEBRECON_AI_PROVIDER` > groq if key > stub),
+`service.py` (`analyze_scan` persists to `ai_analyses` with a snapshot of cited
+evidence; `latest_analysis`).
+- Groq default model **`openai/gpt-oss-120b`** (`llama-3.3-70b-versatile` was
+  retired — 404); override with `WEBRECON_AI_MODEL`. JSON mode, `reasoning_effort=low`.
+- Surfaces: `webrecon scan --ai [--ai-provider]`, `webrecon ai <id> [--show]
+  [--provider] [--json]`, `GET/POST /api/scans/{id}/ai`, `StartScanRequest.ai`,
+  dashboard "AI Analysis" (claims with clickable evidence-ID chips).
+- 🔐 Key: `GROQ_API_KEY` read from env; `.env` (gitignored) loaded by
+  `load_env_file` without overriding real env vars. `.env.example` has the
+  placeholder. Key is scrubbed from errors (`gsk_***`), hidden from repr, and
+  the API only exposes `groq_available: bool`. Tests never call Groq
+  (MockTransport / stub).
 
 ## Cross-cutting (any phase)
 - CLI read commands: `webrecon endpoints|assets|findings|graph` (read from DB; keep

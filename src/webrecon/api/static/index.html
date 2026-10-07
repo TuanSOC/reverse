@@ -305,6 +305,13 @@
   .steps li::before{content:counter(st);position:absolute;left:12px;top:50%;transform:translateY(-50%);
     width:24px;height:24px;border-radius:50%;background:var(--grad);color:#fff;font-weight:800;font-size:12px;
     display:flex;align-items:center;justify-content:center}
+  .claims{list-style:none;margin:0;padding:0}
+  .claims li{padding:10px 13px;margin:7px 0;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;line-height:1.6}
+  .evchips{display:inline-flex;gap:4px;flex-wrap:wrap;vertical-align:baseline}
+  .evchip{font:10.5px var(--mono);font-weight:700;padding:1px 6px;border-radius:6px;cursor:pointer;
+    color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent)}
+  .evchip:hover{background:color-mix(in srgb,var(--accent) 30%,transparent)}
   @media (max-width:860px){.tlrow{grid-template-columns:62px minmax(0,1fr)}
     .tlrow .kbadge,.tlrow .tmod{display:none} .ttype{display:none}}
 </style>
@@ -351,6 +358,7 @@
   <label class="check"><input type="checkbox" id="f_active"> Active checks (apitest + verify open-redirect/XSS · authorized only)</label>
   <label class="check"><input type="checkbox" id="f_probe"> Probe sensitive files (.git/.env… · authorized only)</label>
   <label class="check"><input type="checkbox" id="f_private"> Lab mode (allow private/loopback)</label>
+  <label class="check"><input type="checkbox" id="f_ai"> AI analysis when done (Groq if configured · sends scan evidence to the provider)</label>
   <details style="margin-top:10px">
     <summary style="cursor:pointer;color:var(--muted);font-size:12px">Authenticated scan (optional) — credentials sent to target host only</summary>
     <label>Auto-login — login page URL</label>
@@ -421,7 +429,7 @@ const obs=o=>el("span",{class:"obs-"+o},o);
 
 /* ============================ state ============================ */
 const SECTIONS=[
-  ["Recon",["Overview","Attack Surface"]],
+  ["Recon",["Overview","AI Analysis","Attack Surface"]],
   ["Content",["Findings","Endpoints","JS Files","Auth Flow","Technologies","Pages","Assets","Forms"]],
   ["Infra",["DNS / TLS","Graph"]],
   ["Output",["Timeline","Compare","Reports"]],
@@ -449,6 +457,7 @@ const ICONS={
   "DNS / TLS":'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
   "Graph":'<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 11l8-4M8 13l8 4"/>',
   "Timeline":'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4M12 8v4l3 2"/>',
+  "AI Analysis":'<path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/>',
   "Attack Surface":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   "JS Files":'<path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/><path d="M13.5 4l-3 16"/>',
   "Auth Flow":'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>',
@@ -650,6 +659,7 @@ const RENDER={
   async "JS Files"(){ return await jsExplorer(); },
   async "Auth Flow"(){ return await authFlowView(); },
   async "Attack Surface"(){ return await attackSurfaceView(); },
+  async "AI Analysis"(){ return await aiView(); },
   async Technologies(){
     const d=await api(`/api/scans/${SID()}/technologies`);
     const w=el("div");w.append(el("h1",{},"Technologies"),
@@ -1200,6 +1210,59 @@ async function eventTimelineView(){
   draw();return w;
 }
 
+/* ---- AI analysis (G8) ---- */
+const AI_TITLES={components:"Components",attack_surface:"Attack surface",auth_apis:"Authentication APIs",
+  static_vs_observed:"Static vs observed",gaps:"Coverage gaps"};
+async function aiView(){
+  const r=await api(`/api/scans/${SID()}/ai`);
+  const w=el("div");w.append(el("h1",{},"AI Analysis"),
+    el("div",{class:"sub"},"Every claim cites scan evidence — click an ID to inspect it. "+
+      "The model sees normalized evidence only, never the raw site."));
+  const opts=r.groq_available?[["groq","Groq"],["stub","Offline stub"]]:[["stub","Offline stub"]];
+  const prov=el("select",{},...opts.map(([v,l])=>el("option",{value:v},l)));
+  const btn=el("button",{class:"primary",onclick:run},r.analysis?"Re-run analysis":"Run AI analysis");
+  const bar=el("div",{class:"toolbar"},el("span",{class:"sub"},"Provider"),prov,btn);
+  if(!r.groq_available)bar.append(el("span",{class:"kv"},"Set GROQ_API_KEY (e.g. in .env) to enable Groq."));
+  w.append(bar);
+  const out=el("div");w.append(out);
+  if(r.analysis)renderAi(out,r.analysis);else out.append(emptyState("No analysis yet for this scan."));
+  async function run(){
+    btn.disabled=true;btn.textContent="Analyzing…";out.innerHTML="";out.append(skeleton(6));
+    try{
+      const res=await fetch(`/api/scans/${SID()}/ai?provider=${encodeURIComponent(prov.value)}`,{method:"POST"});
+      const j=await res.json();if(!res.ok)throw new Error(j.detail||String(res.status));
+      out.innerHTML="";renderAi(out,j.analysis);toast("AI analysis complete","ok");btn.textContent="Re-run analysis";
+    }catch(e){out.innerHTML="";out.append(emptyState("AI analysis failed: "+e.message));
+      toast("AI analysis failed","err");btn.textContent="Run AI analysis";}
+    finally{btn.disabled=false;}
+  }
+  return w;
+}
+function renderAi(out,a){
+  const ev=a.evidence||{};
+  const chips=ids=>el("span",{class:"evchips"},...ids.map(id=>el("span",{class:"evchip",
+    title:ev[id]?.summary||id,onclick:()=>evidenceDrawer(id,ev[id])},id)));
+  out.append(el("div",{class:"sub",style:"margin-bottom:8px"},
+    `${a.provider} · ${a.model} · ${(a.created_at||"").slice(0,19).replace("T"," ")}`+
+    (a.rejected_claims?` · ${a.rejected_claims} unsupported claim(s) dropped`:"")));
+  if(a.app_summary)out.append(el("div",{class:"riskhero"},el("div",{},
+    el("div",{class:"kv",style:"text-transform:uppercase;letter-spacing:.06em;font-size:11px"},"What this app is"),
+    el("div",{style:"font-size:15px;margin-top:4px"},a.app_summary.text," ",chips(a.app_summary.evidence)))));
+  for(const[k,title]of Object.entries(AI_TITLES)){
+    const cl=a.sections?.[k]||[];out.append(el("h2",{},title));
+    if(!cl.length){out.append(el("div",{class:"sub"},"Nothing grounded in the evidence."));continue;}
+    out.append(el("ul",{class:"claims"},...cl.map(c=>el("li",{},c.text," ",chips(c.evidence)))));
+  }
+}
+function evidenceDrawer(id,item){
+  if(!item){openDrawer(id,[{label:"Evidence",rows:[["ID",id],["Status","not in snapshot"]]}]);return;}
+  openDrawer(`${id} · ${item.kind}`,[
+    {label:"Evidence",rows:[["ID",id],["Kind",item.kind],["Summary",item.summary]]},
+    {label:"Data",evidence:[item.data||{}]},
+    item.kind==="finding"?{label:"",rows:[["",el("button",{class:"ghost",
+      onclick:()=>{closeDrawer();go("Findings");}},"Open Findings →")]]}:null]);
+}
+
 function reportsView(){
   const w=el("div");w.append(el("h1",{},"Reports"),el("div",{class:"sub"},"Generated from stored scan data"));
   const base=`/api/scans/${SID()}/report`;
@@ -1267,7 +1330,7 @@ $("#startScanBtn").onclick=async()=>{
     cookie:$("#f_cookie").value.trim()||null,headers,
     login_url:$("#f_login_url").value.trim()||null,
     login_user:$("#f_login_user").value.trim()||null,
-    login_pass:$("#f_login_pass").value||null};
+    login_pass:$("#f_login_pass").value||null,ai:$("#f_ai").checked};
   if(!body.url){$("#f_url").focus();return;}
   $("#scanDialog").close();
   try{const {scan_id}=await fetch("/api/scans",{method:"POST",headers:{"content-type":"application/json"},

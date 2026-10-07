@@ -248,6 +248,17 @@ class ScanEventRecord(IdMixin, Base):
     data: Mapped[dict] = mapped_column(JSON, default=dict)
 
 
+class AiAnalysisRecord(IdMixin, Base):
+    """A stored AI analysis of a scan (G8); ``result`` embeds cited evidence."""
+
+    __tablename__ = "ai_analyses"
+
+    scan_id: Mapped[str] = mapped_column(String(36), ForeignKey("scans.id"), index=True)
+    provider: Mapped[str] = mapped_column(String(32))
+    model: Mapped[str] = mapped_column(String(128))
+    result: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
 class EvidenceRecord(IdMixin, Base):
     __tablename__ = "evidence"
 

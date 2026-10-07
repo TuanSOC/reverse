@@ -125,6 +125,13 @@ def scan(
     database_url: str = typer.Option(
         "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
     ),
+    ai: bool = typer.Option(
+        False, "--ai", help="After the scan, run the AI analysis (Groq if GROQ_API_KEY is "
+                            "set, else the offline stub). Sends scan evidence to the provider."
+    ),
+    ai_provider: str | None = typer.Option(
+        None, "--ai-provider", help="Force the AI provider: groq | stub."
+    ),
     json_out: str | None = typer.Option(None, "--json", help="Write JSON report to this path."),
     html_out: str | None = typer.Option(None, "--html", help="Write HTML report to this path."),
     pdf_out: str | None = typer.Option(None, "--pdf", help="Write PDF report to this path."),
@@ -215,19 +222,27 @@ def scan(
         glyph = status_glyph.get(p.status, str(p.status))
         console.print(f"  [{p.index + 1}/{p.total}] {p.module:<12} {glyph}")
 
-    async def _run() -> tuple[dict, dict]:
+    if ai and no_db:
+        console.print("[yellow]--ai needs the database; skipping AI analysis (--no-db).[/]")
+
+    async def _run() -> tuple[dict, dict, dict | None]:
         db = None if no_db else await init_db(database_url)
         try:
             pipeline = Pipeline(cfg, registry=default_registry, db=db, progress=on_progress)
             ctx = await pipeline.run(url)
-            return build_report(ctx), collect_extras(ctx)
+            analysis = None
+            if ai and db is not None:
+                analysis = await _ai_best_effort(db, ctx.scan_id, ai_provider)
+            return build_report(ctx), collect_extras(ctx), analysis
         finally:
             if db is not None:
                 await db.dispose()
 
-    report, extras = asyncio.run(_run())
+    report, extras, analysis = asyncio.run(_run())
 
     _print_summary(report)
+    if analysis is not None:
+        _print_ai(analysis)
 
     def _write(path: str, data: str | bytes) -> None:
         p = Path(path)
@@ -253,6 +268,47 @@ def scan(
                 console.print(f"[green]OK[/] PDF report written to [bold]{pdf_out}[/]")
             except PdfUnavailableError as exc:
                 console.print(f"[red]PDF unavailable:[/] {exc}")
+
+
+async def _ai_best_effort(db, scan_id: str, provider: str | None) -> dict | None:
+    """Run the AI analysis; report a provider error instead of failing the scan."""
+    from ..intel.ai import AiError, analyze_scan
+
+    try:
+        return await analyze_scan(db, scan_id, provider=provider)
+    except AiError as exc:
+        console.print(f"[red]AI analysis failed:[/] {exc}")
+        return None
+
+
+_AI_TITLES = {
+    "components": "Components", "attack_surface": "Attack surface",
+    "auth_apis": "Authentication APIs", "static_vs_observed": "Static vs observed",
+    "gaps": "Coverage gaps",
+}
+
+
+def _print_ai(analysis: dict) -> None:
+    """Render an AI analysis; every claim shows its evidence IDs."""
+    from rich.markup import escape
+
+    console.print()
+    console.print(f"[bold]AI analysis[/] [dim]({analysis['provider']} · {analysis['model']})[/]")
+    summary = analysis.get("app_summary")
+    if summary:
+        console.print(f"  {escape(summary['text'])} [cyan]{', '.join(summary['evidence'])}[/]")
+    for key, title in _AI_TITLES.items():
+        claims = analysis["sections"].get(key) or []
+        if not claims:
+            continue
+        console.print()
+        console.print(f"[bold]{title}[/]")
+        for c in claims:
+            console.print(f"  • {escape(c['text'])} [cyan]{', '.join(c['evidence'])}[/]")
+    if analysis.get("rejected_claims"):
+        console.print()
+        console.print(f"[dim]{analysis['rejected_claims']} claim(s) dropped: no valid "
+                      "evidence ID.[/]")
 
 
 def _print_summary(report: dict) -> None:
@@ -394,6 +450,56 @@ def report(
                 console.print(f"[green]OK[/] PDF -> {pdf_out}")
             except PdfUnavailableError as exc:
                 console.print(f"[red]PDF unavailable:[/] {exc}")
+
+
+@app.command("ai")
+def ai_cmd(
+    scan_id: str = typer.Argument(..., help="Scan id (full or 8-char prefix)."),
+    provider: str | None = typer.Option(None, "--provider", help="groq | stub (default: auto)."),
+    show: bool = typer.Option(False, "--show", help="Show the latest stored analysis only."),
+    json_out: str | None = typer.Option(None, "--json", help="Also write the analysis as JSON."),
+    database_url: str = typer.Option(
+        "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
+    ),
+) -> None:
+    """AI analysis of a stored scan (evidence-cited; Groq if GROQ_API_KEY is set)."""
+    import json
+    from pathlib import Path
+
+    from ..api import queries
+    from ..intel.ai import AiError, analyze_scan, latest_analysis
+
+    configure_logging()
+
+    async def _run() -> dict | None:
+        db = await init_db(database_url)
+        try:
+            full = scan_id
+            if len(scan_id) < 36:
+                for s in await queries.list_scans(db):
+                    if s["id"].startswith(scan_id):
+                        full = s["id"]
+                        break
+            if show:
+                return await latest_analysis(db, full)
+            return await analyze_scan(db, full, provider=provider)
+        finally:
+            await db.dispose()
+
+    try:
+        result = asyncio.run(_run())
+    except AiError as exc:
+        console.print(f"[red]AI analysis failed:[/] {exc}")
+        raise typer.Exit(1) from None
+    if result is None:
+        console.print(f"[red]No scan (or no stored analysis) for:[/] {scan_id}")
+        raise typer.Exit(1)
+    _print_ai(result)
+    if json_out:
+        out = Path(json_out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        console.print(f"[green]OK[/] JSON -> {json_out}")
 
 
 @app.command()

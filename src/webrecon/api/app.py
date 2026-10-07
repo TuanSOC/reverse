@@ -47,6 +47,9 @@ class StartScanRequest(BaseModel):
     login_url: str | None = None
     login_user: str | None = None
     login_pass: str | None = None
+    # run the AI analysis (G8) once the scan finishes; provider None = auto
+    ai: bool = False
+    ai_provider: str | None = None
 
 
 def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI:
@@ -132,6 +135,30 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
     @app.get("/api/scans/{scan_id}/timeline")
     async def timeline(scan_id: str, kind: str | None = None) -> list[dict]:
         return await queries.get_events(db(), scan_id, kind)
+
+    @app.get("/api/scans/{scan_id}/ai")
+    async def ai_get(scan_id: str) -> dict:
+        from ..intel.ai import groq_available, latest_analysis
+
+        # Only a boolean about the key ever leaves the server.
+        return {"analysis": await latest_analysis(db(), scan_id),
+                "groq_available": groq_available()}
+
+    @app.post("/api/scans/{scan_id}/ai")
+    async def ai_run(scan_id: str, provider: str | None = None) -> dict:
+        from ..intel.ai import AiError, analyze_scan, get_analyzer
+
+        try:
+            analyzer = get_analyzer(provider)
+        except AiError as exc:
+            raise HTTPException(400, str(exc)) from None
+        try:
+            result = await analyze_scan(db(), scan_id, analyzer=analyzer)
+        except AiError as exc:
+            raise HTTPException(502, str(exc)) from None
+        if result is None:
+            raise HTTPException(404, "scan not found")
+        return {"analysis": result}
 
     @app.get("/api/scans/{scan_id}/diff")
     async def diff(scan_id: str, against: str) -> dict:
@@ -268,21 +295,35 @@ class _SimpleManager:
 
         pipeline = Pipeline(cfg, db=self.db, progress=on_progress)
         self.status[scan_id] = "running"
-        asyncio.create_task(self._run(pipeline, req.url, scan_id, token))
+        ai_provider = (req.ai_provider or "auto") if req.ai else None
+        asyncio.create_task(self._run(pipeline, req.url, scan_id, token, ai_provider))
         return scan_id
 
     async def _run(
-        self, pipeline: Pipeline, url: str, scan_id: str, token: CancellationToken
+        self, pipeline: Pipeline, url: str, scan_id: str, token: CancellationToken,
+        ai_provider: str | None = None,
     ) -> None:
         try:
             await pipeline.run(url, scan_id=scan_id, cancellation=token)
             self.status[scan_id] = "done"
+            if ai_provider is not None:
+                await self._run_ai(scan_id, None if ai_provider == "auto" else ai_provider)
         except Exception as exc:  # noqa: BLE001
             self.status[scan_id] = f"error: {exc}"
         finally:
             for q in list(self._subscribers.get(scan_id, [])):
                 q.put_nowait({"module": "_done", "status": self.status.get(scan_id, "done"),
                               "index": 0, "total": 0})
+
+    async def _run_ai(self, scan_id: str, provider: str | None) -> None:
+        """Best-effort post-scan AI analysis; a failure never fails the scan."""
+        from ..core.logging import get_logger
+        from ..intel.ai import analyze_scan
+
+        try:
+            await analyze_scan(self.db, scan_id, provider=provider)
+        except Exception as exc:  # noqa: BLE001 - the scan itself already succeeded
+            get_logger("ai").warning("ai analysis failed", scan_id=scan_id, error=str(exc))
 
     def progress(self, scan_id: str) -> list[dict]:
         return self._progress.get(scan_id, [])
