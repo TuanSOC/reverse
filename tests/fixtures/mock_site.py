@@ -195,6 +195,27 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, b"console.log('wp theme');", ctype="application/javascript")
         elif path == "/static/jquery-1.12.4.min.js":
             self._send(200, b"/*! jQuery v1.12.4 */", ctype="application/javascript")
+        elif path == "/login":
+            # A login form for the auto-login (headless browser) capture flow.
+            self._send(200, (
+                b'<html><body><h2>Sign in</h2>'
+                b'<form method="get" action="/account">'
+                b'<input name="username" type="text" placeholder="user">'
+                b'<input name="password" type="password" placeholder="pass">'
+                b'<button type="submit">Login</button></form></body></html>'
+            ))
+        elif path == "/account":
+            from urllib.parse import parse_qs
+            qs = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+            if qs.get("username", [""])[0] == "admin" and qs.get("password", [""])[0] == "secret":
+                # Correct creds → set a session cookie + a page with NO password field.
+                self._send(200, b"<html><body><h1>Welcome admin</h1></body></html>",
+                           extra={"Set-Cookie": "authsession=LOGGED_IN_TOKEN; Path=/"})
+            else:
+                self._send(200, (
+                    b'<html><body><form method="get" action="/account">'
+                    b'<input name="password" type="password"></form></body></html>'
+                ))
         elif path == "/redir":
             # Vulnerable open redirect: reflects the ?url= param into Location
             # (for active_verify's canary-based confirmation).

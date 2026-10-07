@@ -43,6 +43,10 @@ class StartScanRequest(BaseModel):
     cookie: str | None = None
     # extra request headers as a "Name: value" list (authenticated scan)
     headers: list[str] = []
+    # auto-login: supply credentials and let a headless browser capture the session
+    login_url: str | None = None
+    login_user: str | None = None
+    login_pass: str | None = None
 
 
 def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI:
@@ -224,6 +228,10 @@ class _SimpleManager:
         cfg.browser_mode = req.browser
         cfg.active = req.active
         cfg.probe = req.probe
+        if req.login_url:
+            cfg.auth.login_url = req.login_url
+            cfg.auth.username = req.login_user
+            cfg.auth.password = req.login_pass
         if req.cookie:
             cfg.http.cookie = req.cookie
         for h in req.headers:

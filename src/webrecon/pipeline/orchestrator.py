@@ -91,6 +91,7 @@ class Pipeline:
         scan_persisted = False
         async with HttpEngine(self.config.http, rate, guard, scope=None) as http:
             ctx.http = http
+            await self._auto_login(ctx, input_url)
             for index, name in enumerate(order):
                 try:
                     ctx.cancellation.raise_if_cancelled()
@@ -134,6 +135,28 @@ class Pipeline:
                 log.error("finalize failed", scan_id=ctx.scan_id, error=str(exc))
         log.info("scan finished", scan_id=ctx.scan_id, findings=len(ctx.all_findings()))
         return ctx
+
+    async def _auto_login(self, ctx: ScanContext, input_url: str) -> None:
+        """If credentials are configured, log in once and reuse the session.
+
+        Captured cookies populate ``config.http.cookie`` (target-host scoped by
+        the HTTP engine) so the crawler/active checks run authenticated. Any
+        operator-supplied cookie is left untouched.
+        """
+        auth = self.config.auth
+        if not auth.enabled or self.config.http.cookie:
+            return
+        from ..engine.auto_login import capture_session_cookies, host_of
+
+        log.info("auto-login starting", login_url=auth.login_url)
+        host = host_of(input_url) or host_of(auth.login_url or "")
+        cookie = await capture_session_cookies(self.config, host, log)
+        if cookie:
+            self.config.http.cookie = cookie
+            ctx.shared["authenticated"] = True
+            log.info("auto-login session captured", cookie_count=cookie.count("="))
+        else:
+            log.warning("auto-login did not capture a session; scanning unauthenticated")
 
     async def _run_module(self, ctx: ScanContext, name: str) -> ModuleResult:
         module_cls = self.registry.get(name)

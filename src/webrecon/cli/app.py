@@ -104,6 +104,13 @@ def scan(
     browser: bool | None = typer.Option(
         None, "--browser/--no-browser", help="Use the headless browser engine."
     ),
+    login_url: str | None = typer.Option(
+        None, "--login-url",
+        help="Auto-login: URL of the login page. With --login-user/--login-pass, a "
+             "headless browser logs in and reuses the session (authorized only).",
+    ),
+    login_user: str | None = typer.Option(None, "--login-user", help="Auto-login username."),
+    login_pass: str | None = typer.Option(None, "--login-pass", help="Auto-login password."),
     cookie: str | None = typer.Option(
         None, "--cookie",
         help="Authenticated scan: raw Cookie header ('k=v; k2=v2'). Sent only to "
@@ -161,6 +168,10 @@ def scan(
         cfg.probe = True
     if active:
         cfg.active = True
+    if login_url:
+        cfg.auth.login_url = login_url
+        cfg.auth.username = login_user
+        cfg.auth.password = login_pass
     if cookie:
         cfg.http.cookie = cookie
     if header:
@@ -178,6 +189,12 @@ def scan(
         console.print(
             "[red]Active checks enabled[/] — run only on assets you own or are "
             "explicitly authorized to test."
+        )
+    if cfg.auth.enabled:
+        console.print(
+            "[yellow]auto-login:[/] a headless browser will log in at "
+            f"{cfg.auth.login_url} and reuse the session (target host only). "
+            "Authorized targets only."
         )
     if cfg.http.cookie or cfg.http.auth_headers:
         console.print(

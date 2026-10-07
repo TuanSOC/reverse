@@ -122,6 +122,31 @@ class BrowserConfig(BaseSettings):
     settle_ms: int = 2500
 
 
+class AuthConfig(BaseSettings):
+    """Automated-login settings (§ authenticated scan).
+
+    When ``login_url`` + credentials are set, a headless browser logs in before
+    the scan and the captured session cookies are reused (target-host scoped) for
+    the crawler / HTTP engine / active checks — so the operator supplies only
+    credentials, not cookies. Authorized targets only; the password is never
+    logged or persisted.
+    """
+
+    model_config = SettingsConfigDict(extra="forbid")
+
+    login_url: str | None = None
+    username: str | None = None
+    password: str | None = None
+    # Optional explicit CSS selectors; auto-detected from the form when omitted.
+    username_selector: str | None = None
+    password_selector: str | None = None
+    submit_selector: str | None = None
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.login_url and self.username and self.password)
+
+
 class ScanConfig(BaseSettings):
     """Top-level scan configuration assembled from the sub-configs."""
 
@@ -133,6 +158,7 @@ class ScanConfig(BaseSettings):
     crawl: CrawlConfig = Field(default_factory=CrawlConfig)
     js: JsConfig = Field(default_factory=JsConfig)
     browser: BrowserConfig = Field(default_factory=BrowserConfig)
+    auth: AuthConfig = Field(default_factory=AuthConfig)
     # Enabled modules; empty means "all registered modules".
     enabled_modules: list[str] = Field(default_factory=list)
     browser_mode: bool = False
