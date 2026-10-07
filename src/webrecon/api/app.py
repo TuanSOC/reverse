@@ -116,6 +116,10 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
     async def graph(scan_id: str) -> dict:
         return await queries.get_graph(db(), scan_id)
 
+    @app.get("/api/scans/{scan_id}/auth-flow")
+    async def auth_flow(scan_id: str) -> dict:
+        return await queries.get_auth_flow(db(), scan_id)
+
     @app.get("/api/scans/{scan_id}/diff")
     async def diff(scan_id: str, against: str) -> dict:
         return await queries.diff_scans(db(), scan_id, against)

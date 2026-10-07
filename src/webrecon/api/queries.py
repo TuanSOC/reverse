@@ -6,6 +6,7 @@ the SQLAlchemy ORM (bound parameters — threat T6).
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from sqlalchemy import func, select
@@ -258,28 +259,39 @@ async def diff_scans(db: Database, scan_id: str, against_id: str) -> dict[str, A
     }
 
 
+_SESSION_COOKIE = re.compile(
+    r"session|sess|sid|auth|token|jsessionid|phpsessid|connect\.sid|csrftoken", re.I)
+
+
+async def get_auth_flow(db: Database, scan_id: str) -> dict[str, Any]:
+    """Build the detection-only authentication-flow model for a scan."""
+    from ..intel.auth_flow import build_auth_flow
+    from ..storage.models import Cookie
+
+    endpoints = await get_endpoints(db, scan_id)
+    forms = await get_forms(db, scan_id)
+    has_login_form = any(
+        str(i.get("type") or "").lower() == "password"
+        for fm in forms for i in (fm.get("inputs") or [])
+    )
+    async with db.session() as s:
+        cookies = (
+            await s.execute(select(Cookie).where(Cookie.scan_id == scan_id))
+        ).scalars().all()
+    has_session_cookie = any(_SESSION_COOKIE.search(c.name or "") for c in cookies)
+    flow = build_auth_flow(
+        endpoints, has_login_form=has_login_form, has_session_cookie=has_session_cookie)
+    return flow.to_dict()
+
+
 async def get_graph(db: Database, scan_id: str) -> dict[str, Any]:
-    """Build a relationship graph from persisted entities (§25)."""
-    overview = await get_overview(db, scan_id)
-    if overview is None:
-        return {"nodes": [], "edges": []}
-    host = overview["target"]["hostname"] or "target"
-    nodes: list[dict] = [{"id": host, "label": host, "type": "domain"}]
-    edges: list[dict] = []
+    """Unified asset graph from persisted entities (§25).
 
-    def add(node_id: str, label: str, ntype: str, parent: str, relation: str) -> None:
-        nodes.append({"id": node_id, "label": label, "type": ntype})
-        edges.append({"source": parent, "target": node_id, "relation": relation})
+    Backed by the typed asset-graph builder; the returned shape keeps the
+    ``{nodes:[{id,label,type,...}], edges:[{source,target,relation,...}]}``
+    contract the dashboard renders, now enriched with provenance/confidence.
+    """
+    from ..intel.asset_graph import build_asset_graph
 
-    for t in overview["technologies"]:
-        add(f"tech:{t['name']}", f"{t['name']} {t['version'] or ''}".strip(), "technology",
-            host, "uses")
-    for e in (await get_endpoints(db, scan_id))[:60]:
-        add(f"ep:{e['url']}", e["url"], "endpoint", host, e["observation"])
-    for d in await get_dns(db, scan_id):
-        add(f"dns:{d['record_type']}:{d['value']}", f"{d['record_type']} {d['value']}",
-            "dns", host, "dns")
-    certs = await get_certificates(db, scan_id)
-    if certs:
-        add("cert", "TLS certificate", "certificate", host, "secured-by")
-    return {"nodes": nodes, "edges": edges}
+    graph = await build_asset_graph(db, scan_id)
+    return graph.to_dict()
