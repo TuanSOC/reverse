@@ -45,10 +45,27 @@ class Endpoint:
     # Observed query-param NAMES (values are dropped). The normalized `url` has
     # its query stripped, so we retain param names here for the apitest module.
     params: set[str] = field(default_factory=set)
+    # Parameter intelligence: [{name, classification, confidence, source}] —
+    # populated by the api module after aggregation (see params.classify_params).
+    param_meta: list[dict] = field(default_factory=list)
+    # static/dynamic correlation: STATIC_ONLY | DYNAMIC_ONLY | STATIC_AND_DYNAMIC
+    discovery_status: str = ""
 
     @property
     def sensitive(self) -> bool:
         return bool(_SENSITIVE_MARKERS.search(self.url))
+
+    def compute_discovery_status(self) -> str:
+        """STATIC_ONLY / DYNAMIC_ONLY / STATIC_AND_DYNAMIC from source provenance."""
+        has_static = bool({"javascript", "sitemap"} & self.sources) or (
+            self.observation == Observation.REFERENCED and "crawler" in self.sources
+        )
+        has_dynamic = "browser" in self.sources or self.observation == Observation.OBSERVED
+        if has_static and has_dynamic:
+            return "STATIC_AND_DYNAMIC"
+        if has_dynamic:
+            return "DYNAMIC_ONLY"
+        return "STATIC_ONLY"
 
 
 def looks_like_api(url: str) -> bool:

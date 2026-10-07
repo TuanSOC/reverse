@@ -38,3 +38,32 @@ def parse_source_map(text: str, *, max_paths: int = 100) -> SourceMapInfo | None
         source_paths=[str(s) for s in sources[:max_paths]],
         has_sources_content=bool(doc.get("sourcesContent")),
     )
+
+
+def reconstruct_sources(
+    text: str, *, max_files: int = 50, max_bytes_per_file: int = 400_000
+) -> list[tuple[str, str]]:
+    """Return (path, original-source) pairs from a map's ``sourcesContent``.
+
+    Deep source-map intelligence: when a build ships ``sourcesContent`` the
+    original pre-minified files are embedded verbatim. We pair each with its
+    declared path so downstream analysis (endpoint + masked-secret scanning) can
+    cite a real source file. Bounded in count and per-file size.
+    """
+    try:
+        doc = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        return []
+    if not isinstance(doc, dict):
+        return []
+    sources = doc.get("sources") or []
+    contents = doc.get("sourcesContent") or []
+    if not isinstance(sources, list) or not isinstance(contents, list):
+        return []
+    out: list[tuple[str, str]] = []
+    for i, content in enumerate(contents[:max_files]):
+        if not isinstance(content, str) or not content:
+            continue
+        path = str(sources[i]) if i < len(sources) else f"source_{i}"
+        out.append((path, content[:max_bytes_per_file]))
+    return out

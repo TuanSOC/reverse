@@ -37,6 +37,8 @@ class JsAnalysis:
     truncated: bool = False
     # Retained JS source (capped) for downstream static analysis (dom_security).
     content: str = ""
+    # AST-extracted calls: [{kind, method, url, line, col, confidence}] (v0.4.0).
+    ast_calls: list[dict] = field(default_factory=list)
 
 
 def _dedup(items: list[str], cap: int = 200) -> list[str]:

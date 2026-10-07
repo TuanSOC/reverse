@@ -75,6 +75,10 @@ class JavaScriptModule(ScannerModule):
             if resp.status_code >= 400:
                 continue
             analysis = analyze_js(url, resp.text, truncated=resp.truncated)
+            # AST-based endpoint extraction (method + normalized path + line/col);
+            # enriches the regex endpoints, degrades to [] if Node/acorn absent.
+            from .ast_js import extract_calls
+            analysis.ast_calls = [c.__dict__ for c in await extract_calls(resp.text)]
             analyses.append(analysis)
 
             disc = ctx.shared.get("disclosures")
@@ -202,8 +206,65 @@ class JavaScriptModule(ScannerModule):
                     ],
                 )
             )
+            # Deep parse: reconstruct embedded original sources and scan them.
+            if info.has_sources_content:
+                await self._analyze_reconstructed(result, map_url, resp.text, analysis, log)
             break  # one map per JS file is enough
         return requests
+
+    async def _analyze_reconstructed(self, result, map_url, map_text, analysis, log) -> None:
+        """Reconstruct original sources from a .map and mine them for intel."""
+        from ..secret_leak.analysis import find_secrets
+        from .ast_js import extract_calls
+        from .sourcemap import reconstruct_sources
+
+        files = reconstruct_sources(map_text)
+        if not files:
+            return
+        masked_secrets: list[dict] = []
+        endpoints: list[dict] = []
+        for path, content in files:
+            for hit in find_secrets(content):  # already masked
+                masked_secrets.append({"file": path, "kind": hit.kind, "match": hit.masked})
+            for call in await extract_calls(content):
+                endpoints.append({"file": path, "method": call.method, "url": call.url})
+        # Feed reconstructed endpoints into the shared JS analysis for the api module.
+        analysis.ast_calls = (analysis.ast_calls or []) + [
+            {"kind": "sourcemap", "method": e["method"], "url": e["url"],
+             "line": 0, "col": 0, "confidence": 0.75}
+            for e in endpoints
+        ]
+        result.findings.append(
+            Finding(
+                check_id="exposure.sourcemap.reconstructed",
+                name="Original source reconstructed from source map",
+                category=FindingCategory.EXPOSURE, severity=Severity.MEDIUM,
+                confidence=Confidence.HIGH, observation=Observation.OBSERVED,
+                module=self.name,
+                description=(
+                    f"The source map embeds sourcesContent: {len(files)} original "
+                    f"file(s) were reconstructed, yielding {len(endpoints)} endpoint "
+                    f"reference(s) and {len(masked_secrets)} secret-like value(s)."
+                ),
+                impact=(
+                    "Full pre-minified source (logic, routes, comments, and any "
+                    "hardcoded secrets) is recoverable by anyone."
+                ),
+                recommendation=(
+                    "Strip sourcesContent from production maps or do not deploy maps "
+                    "publicly. Rotate any exposed secret."
+                ),
+                evidence=[Evidence(
+                    source=self.name, url=map_url,
+                    description="Reconstructed source analysis (secrets masked)",
+                    data={"files": [f for f, _ in files][:20],
+                          "secrets": masked_secrets[:20],
+                          "endpoints": endpoints[:30]},
+                )],
+            )
+        )
+        log.info("sourcemap reconstructed", files=len(files),
+                 endpoints=len(endpoints), secrets=len(masked_secrets))
 
 
 def _unique(items) -> list[str]:

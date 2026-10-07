@@ -218,7 +218,8 @@ class ScanRepository:
                         kind=e.kind,
                         observation=str(e.observation),
                         source=",".join(sorted(e.sources)),
-                        meta={"in_scope": e.in_scope, "sources": sorted(e.sources)},
+                        meta={"in_scope": e.in_scope, "sources": sorted(e.sources),
+                              "params": e.param_meta, "discovery_status": e.discovery_status},
                     )
                 )
 

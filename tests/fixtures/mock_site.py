@@ -49,6 +49,11 @@ var awsKey = "AKIAIOSFODNN7EXAMPLE";
 
 APP_JS_MAP = (
     b'{"version":3,"sources":["src/index.js","src/api/client.js"],'
+    b'"sourcesContent":['
+    b'"const title = \\"home\\";",'
+    b'"axios.get(\\"/api/v2/profile/\\" + userId);\\n'
+    b'const AWS_KEY = \\"AKIAZZZZ1111WWWW2222\\";"'
+    b'],'
     b'"sourceRoot":"","names":[],"mappings":"AAAA"}'
 )
 

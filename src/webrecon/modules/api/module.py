@@ -58,6 +58,11 @@ class ApiDiscoveryModule(ScannerModule):
         self._from_browser(ctx, agg)
 
         endpoints = agg.endpoints()
+        # Parameter intelligence + static/dynamic correlation (v0.4.0).
+        from .params import classify_params
+        for e in endpoints:
+            e.param_meta = [pi.__dict__ for pi in classify_params(sorted(e.params))]
+            e.discovery_status = e.compute_discovery_status()
         ctx.shared[API_INVENTORY_KEY] = endpoints
         await self._persist(ctx, endpoints)
 
@@ -80,6 +85,8 @@ class ApiDiscoveryModule(ScannerModule):
                     "in_scope": e.in_scope,
                     "sources": sorted(e.sources),
                     "methods": sorted(e.methods),
+                    "params": e.param_meta,
+                    "discovery_status": e.discovery_status,
                 }
                 for e in endpoints
             ],
@@ -117,6 +124,14 @@ class ApiDiscoveryModule(ScannerModule):
                     agg.add(url, Observation.REFERENCED, "javascript")
             for ws in a.websockets:
                 agg.add(ws, Observation.REFERENCED, "javascript")
+            # AST-extracted calls carry an HTTP method + normalized path.
+            for call in getattr(a, "ast_calls", []) or []:
+                url = call.get("url") or ""
+                if not url:
+                    continue
+                abs_url = url if url.startswith(("http", "ws")) else urljoin(base, url)
+                agg.add(abs_url, Observation.REFERENCED, "javascript",
+                        method=call.get("method"))
 
     def _from_sitemap(self, ctx, agg: EndpointAggregator) -> None:
         inv = ctx.shared.get("inventory")
