@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from .config import ScanConfig
@@ -20,6 +21,29 @@ from .models import Finding, ModuleResult
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     import structlog
+
+#: Hard cap on timeline events kept per scan; further events are counted, not stored.
+MAX_SCAN_EVENTS = 5000
+
+
+@dataclass
+class ScanEvent:
+    """One timeline entry: something was discovered / observed / found (G6).
+
+    ``data`` must stay small and must never carry secret values — callers pass
+    identifiers (URLs, check ids, counts), not response bodies.
+    """
+
+    seq: int
+    ts: datetime
+    kind: str          # scan | module | auth | discovered | observed | finding
+    label: str
+    module: str | None = None
+    data: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"seq": self.seq, "ts": self.ts.isoformat(), "kind": self.kind,
+                "label": self.label, "module": self.module, "data": self.data}
 
 
 class CancellationToken:
@@ -63,10 +87,32 @@ class ScanContext:
     #: Free-form shared bag for cross-module data (asset inventory, etc.).
     shared: dict[str, Any] = field(default_factory=dict)
     logger: structlog.stdlib.BoundLogger | None = None
+    #: Ordered scan timeline (G6); the pipeline persists it incrementally.
+    events: list[ScanEvent] = field(default_factory=list)
+    #: Events dropped after :data:`MAX_SCAN_EVENTS` was reached.
+    events_dropped: int = 0
+    #: Module currently running — set by the pipeline, used to attribute events.
+    current_module: str | None = None
 
     def __post_init__(self) -> None:
         if self.logger is None:
             self.logger = get_logger("scan", scan_id=self.scan_id)
+
+    # -- timeline -------------------------------------------------------------
+
+    def event(self, kind: str, label: str, data: dict[str, Any] | None = None) -> None:
+        """Record a timeline event, attributed to the running module.
+
+        Never raises and never blocks: once the cap is hit, events are only
+        counted so a huge site cannot balloon memory or the database.
+        """
+        if len(self.events) >= MAX_SCAN_EVENTS:
+            self.events_dropped += 1
+            return
+        self.events.append(ScanEvent(
+            seq=len(self.events), ts=datetime.now(UTC), kind=kind, label=label,
+            module=self.current_module, data=dict(data or {}),
+        ))
 
     # -- convenience accessors ---------------------------------------------
 

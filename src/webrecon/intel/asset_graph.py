@@ -133,7 +133,7 @@ async def build_asset_graph(db: Database, scan_id: str) -> AssetGraph:
         if not url:
             continue
         aid = g.add_node(GraphNode(f"asset:{url}", _short(url, host), "asset",
-                                   source="crawler", props={"type": a.get("type")}))
+                                   source="crawler", props={"type": a.get("asset_type")}))
         g.add_edge(host, aid, "REFERENCES")
 
     # Endpoints (with method / discovery status / params)

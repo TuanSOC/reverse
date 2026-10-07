@@ -273,6 +273,40 @@
     .grid2{grid-template-columns:1fr}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===================== v0.4.0 explorers ===================== */
+  .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:12px 0}
+  .filters label{display:flex;flex-direction:column;gap:4px;font-size:10.5px;color:var(--faint);
+    text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .filters select{min-width:118px;padding:6px 9px;text-transform:none;letter-spacing:0;font-weight:400}
+  .filters input{min-width:220px}
+  .tree{font-size:13px;margin-top:8px;background:color-mix(in srgb,var(--panel) 70%,transparent);
+    border:1px solid var(--border);border-radius:12px;padding:8px}
+  .tnode{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;cursor:pointer;min-width:0}
+  .tnode:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  .tnode>.tl-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .tcaret{width:12px;color:var(--faint);flex:0 0 auto;text-align:center;font-size:10px}
+  .ticon{width:16px;flex:0 0 auto;text-align:center;color:var(--accent)}
+  .tkids{margin-left:14px;border-left:1px dashed var(--border);padding-left:6px}
+  .ttype{font:10.5px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.04em;flex:0 0 auto}
+  .tright{margin-left:auto;display:flex;gap:8px;align-items:center;flex:0 0 auto}
+  .tl{margin-top:8px;margin-left:6px;padding-left:18px;border-left:2px solid var(--border)}
+  .tlrow{position:relative;display:grid;grid-template-columns:76px 96px 112px minmax(0,1fr);gap:10px;
+    align-items:baseline;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:13px}
+  .tlrow:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  .tlrow::before{content:"";position:absolute;left:-25px;top:11px;width:10px;height:10px;border-radius:50%;
+    background:var(--kc,var(--faint));box-shadow:0 0 0 3px var(--bg)}
+  .tlrow>.tlabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tlt{font:11.5px var(--mono);color:var(--faint)}
+  .kbadge{font:10.5px var(--mono);font-weight:700;padding:1px 7px;border-radius:6px;color:var(--kc);
+    background:color-mix(in srgb,var(--kc) 16%,transparent);justify-self:start}
+  .steps{list-style:none;margin:6px 0;padding:0;counter-reset:st}
+  .steps li{counter-increment:st;position:relative;padding:9px 12px 9px 46px;margin:6px 0;max-width:640px;
+    background:var(--panel);border:1px solid var(--border);border-radius:10px}
+  .steps li::before{content:counter(st);position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:24px;height:24px;border-radius:50%;background:var(--grad);color:#fff;font-weight:800;font-size:12px;
+    display:flex;align-items:center;justify-content:center}
+  @media (max-width:860px){.tlrow{grid-template-columns:62px minmax(0,1fr)}
+    .tlrow .kbadge,.tlrow .tmod{display:none} .ttype{display:none}}
 </style>
 </head>
 <body>
@@ -387,10 +421,10 @@ const obs=o=>el("span",{class:"obs-"+o},o);
 
 /* ============================ state ============================ */
 const SECTIONS=[
-  ["Recon",["Overview"]],
-  ["Content",["Findings","Endpoints","Technologies","Pages","Assets","Forms"]],
+  ["Recon",["Overview","Attack Surface"]],
+  ["Content",["Findings","Endpoints","JS Files","Auth Flow","Technologies","Pages","Assets","Forms"]],
   ["Infra",["DNS / TLS","Graph"]],
-  ["Output",["Timeline","Reports"]],
+  ["Output",["Timeline","Compare","Reports"]],
 ];
 const FLATSECTIONS=SECTIONS.flatMap(([,items])=>items);
 const state={scanId:null,section:"Overview",ws:null,runningId:null,
@@ -415,6 +449,10 @@ const ICONS={
   "DNS / TLS":'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
   "Graph":'<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 11l8-4M8 13l8 4"/>',
   "Timeline":'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4M12 8v4l3 2"/>',
+  "Attack Surface":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  "JS Files":'<path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/><path d="M13.5 4l-3 16"/>',
+  "Auth Flow":'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>',
+  "Compare":'<path d="M7 4L3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7"/>',
   "Reports":'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
 };
 function iconEl(name){
@@ -608,20 +646,10 @@ const RENDER={
     }
     apply();return w;
   },
-  async Endpoints(){
-    const d=await api(`/api/scans/${SID()}/endpoints`);
-    const w=el("div");w.append(el("h1",{},"API Endpoints"),
-      el("div",{class:"sub"},`${d.length} total · click a row for detail`));
-    dataTable(w,d,["observation","kind","method","url","source"],e=>({
-      cells:[obs(e.observation),e.kind,e.method||"—",el("code",{},e.url),el("span",{class:"kv"},e.source||"")],
-      onclick:()=>openDrawer("Endpoint",[
-        {label:"Overview",rows:[["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],
-          ["Kind",e.kind],["Method",e.method||"—"],["Observation",obs(e.observation)],
-          ["In scope",String(e.meta?.in_scope??"—")]]},
-        {label:"Sources",tags:(e.meta?.sources||(e.source?e.source.split(","):[]))},
-        {label:"Raw",raw:e}])}));
-    return w;
-  },
+  async Endpoints(){ return await endpointExplorer(); },
+  async "JS Files"(){ return await jsExplorer(); },
+  async "Auth Flow"(){ return await authFlowView(); },
+  async "Attack Surface"(){ return await attackSurfaceView(); },
   async Technologies(){
     const d=await api(`/api/scans/${SID()}/technologies`);
     const w=el("div");w.append(el("h1",{},"Technologies"),
@@ -697,7 +725,8 @@ const RENDER={
     return w;
   },
   async Graph(){ return await graphView(); },
-  async Timeline(){ return await timelineView(); },
+  async Timeline(){ return await eventTimelineView(); },
+  async Compare(){ return await compareView(); },
   async Reports(){ return reportsView(); },
 };
 function confClass(c){return (c==="confirmed"||c==="high")?"low":"informational";}
@@ -896,8 +925,8 @@ async function graphView(){
     try{svg.releasePointerCapture(ev.pointerId);}catch{}});
   w.append(svg);return w;
 }
-async function timelineView(){
-  const w=el("div");w.append(el("h1",{},"Timeline / Compare"));
+async function compareView(){
+  const w=el("div");w.append(el("h1",{},"Compare Scans"));
   const scans=(await api("/api/scans")).filter(s=>s.id!==SID());
   if(!scans.length){w.append(emptyState("Need at least two scans to compare."));return w;}
   const sel=el("select",{},el("option",{value:""},"— pick a scan to compare against —"),
@@ -917,6 +946,260 @@ async function timelineView(){
     out.append(grid);};
   return w;
 }
+/* ===================== v0.4.0 explorers ===================== */
+const uniq=a=>[...new Set(a.filter(x=>x!=null&&x!==""))].sort();
+const fmtBytes=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB";
+function hostOf(u){try{return new URL(u,location.href).hostname;}catch{return "";}}
+function shortPath(u){try{const x=new URL(u,location.href);return x.pathname+(x.search||"");}catch{return u;}}
+/** labelled <select> filter; values are strings or [value,label]; returns [labelEl, selectEl] */
+function selFilter(label,values,onchange){
+  const opt=v=>Array.isArray(v)?el("option",{value:v[0]},v[1]):el("option",{value:v},v);
+  const s=el("select",{onchange},el("option",{value:""},"all"),...values.map(opt));
+  return [el("label",{},label,s),s];
+}
+/** toggle chip bound to a Set; `color` is the "on" background */
+function toggleChip(set,key,text,color,onchange){
+  const chip=el("span",{class:"chip",onclick:()=>{set.has(key)?set.delete(key):set.add(key);
+    chip.style.cssText=set.has(key)?`background:${color};color:#fff;border-color:transparent`:"";onchange();}},text);
+  return chip;
+}
+function card(k,v){return el("div",{class:"card"},el("div",{class:"k"},k),
+  el("div",{class:"v",style:"font-size:19px"},v));}
+
+/* ---- Endpoint Explorer ---- */
+const statusLabel=s=>({STATIC_ONLY:"static only",DYNAMIC_ONLY:"dynamic only",
+  STATIC_AND_DYNAMIC:"static + dynamic"})[s]||s||"—";
+const AUTH_PARAM=new Set(["token","authentication"]);
+async function endpointExplorer(){
+  const [d,flow]=await Promise.all([api(`/api/scans/${SID()}/endpoints`),
+    api(`/api/scans/${SID()}/auth-flow`).catch(()=>({endpoints:[]}))]);
+  const role={};for(const a of flow.endpoints||[])role[a.url]=a.role;
+  const rows=d.map(e=>{const params=e.meta?.params||[];
+    return {...e,host:hostOf(e.url),status:e.meta?.discovery_status||"",params,
+      pclasses:uniq(params.map(p=>p.classification)),
+      auth:role[e.url]||(params.some(p=>AUTH_PARAM.has(p.classification))?"auth param":"")};});
+  const w=el("div");w.append(el("h1",{},"Endpoint Explorer"),
+    el("div",{class:"sub"},`${d.length} endpoints · click a row for parameters and provenance`));
+  if(!d.length){w.append(emptyState("No endpoints."));return w;}
+  const f={};const bar=el("div",{class:"filters"});
+  const q=el("input",{placeholder:"Search URL…",oninput:apply});bar.append(el("label",{},"search",q));
+  const add=(key,label,values)=>{const [lab,sel]=selFilter(label,values,()=>{f[key]=sel.value;apply();});
+    if(values.length)bar.append(lab);};
+  add("host","host",uniq(rows.map(r=>r.host)));
+  add("method","method",uniq(rows.map(r=>r.method||"—")));
+  add("auth","auth",["auth-related","non-auth"]);
+  add("status","static / dynamic",uniq(rows.map(r=>r.status)).map(v=>[v,statusLabel(v)]));
+  add("ptype","param type",uniq(rows.flatMap(r=>r.pclasses)));
+  add("observation","confidence",["observed","referenced","potential"]);
+  w.append(bar);
+  const summary=el("div",{class:"sub"});const wrap=el("div");w.append(summary,wrap);
+  function apply(){
+    const ql=q.value.toLowerCase();
+    const out=rows.filter(r=>(!ql||r.url.toLowerCase().includes(ql))
+      &&(!f.host||r.host===f.host)&&(!f.method||(r.method||"—")===f.method)
+      &&(!f.auth||(f.auth==="auth-related")===!!r.auth)
+      &&(!f.status||r.status===f.status)&&(!f.ptype||r.pclasses.includes(f.ptype))
+      &&(!f.observation||r.observation===f.observation));
+    summary.textContent=`${out.length} of ${rows.length} shown`;
+    wrap.innerHTML="";
+    if(!out.length){wrap.append(emptyState("No matching endpoints."));return;}
+    wrap.append(tbl(["confidence","method","url","discovery","params","auth"],out.map(r=>({
+      cells:[obs(r.observation),r.method||"—",el("code",{},r.url),
+        el("span",{class:"kv"},statusLabel(r.status)),
+        el("div",{class:"taglist"},...r.pclasses.slice(0,4).map(c=>el("span",{class:"tag"},c))),
+        r.auth?el("span",{class:"pill medium"},r.auth):""],
+      onclick:()=>endpointDrawer(r)}))));
+  }
+  apply();return w;
+}
+function endpointDrawer(e){
+  openDrawer("Endpoint",[
+    {label:"Overview",rows:[["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],
+      ["Host",e.host||"—"],["Kind",e.kind],["Method",e.method||"—"],["Confidence",obs(e.observation)],
+      ["Discovery",statusLabel(e.status)],["Auth",e.auth||"—"],
+      ["In scope",String(e.meta?.in_scope??"—")]]},
+    e.params.length?{label:`Parameters (${e.params.length})`,rows:e.params.map(p=>[p.name,
+      el("span",{},el("span",{class:"tag"},p.classification),
+        el("span",{class:"kv"},` ${p.source||""} · ${Math.round((p.confidence||0)*100)}%`))])}:null,
+    {label:"Sources",tags:(e.meta?.sources||(e.source?e.source.split(","):[]))},
+    {label:"Raw",raw:e}]);
+}
+
+/* ---- JS Explorer ---- */
+async function jsExplorer(){
+  const d=await api(`/api/scans/${SID()}/js`);
+  const w=el("div");w.append(el("h1",{},"JS Explorer"),
+    el("div",{class:"sub"},`${d.length} scripts · ${d.filter(x=>x.analyzed).length} fetched and analyzed`));
+  if(!d.length){w.append(emptyState("No JavaScript files."));return w;}
+  const FLAGS={analyzed:["analyzed",x=>x.analyzed],map:["source map",x=>x.sourcemap_exposed],
+    eps:["has endpoints",x=>x.endpoints.length+x.ast_calls.length>0],secrets:["has secrets",x=>x.secrets>0]};
+  const on=new Set();const bar=el("div",{class:"filters"});
+  const q=el("input",{placeholder:"Search file or hash…",oninput:apply});bar.append(el("label",{},"search",q));
+  const [hl,hs]=selFilter("host",uniq(d.map(x=>x.host)),apply);bar.append(hl);
+  const fw=uniq(d.flatMap(x=>x.frameworks));
+  const [fl,fs]=selFilter("framework",fw,apply);if(fw.length)bar.append(fl);
+  for(const[k,[label,test]]of Object.entries(FLAGS)){const n=d.filter(test).length;
+    if(n)bar.append(toggleChip(on,k,`${label} ${n}`,"var(--accent)",apply));}
+  w.append(bar);
+  const wrap=el("div");w.append(wrap);
+  function apply(){const ql=q.value.toLowerCase();
+    const out=d.filter(x=>(!ql||(x.url+" "+(x.sha256||"")).toLowerCase().includes(ql))
+      &&(!hs.value||x.host===hs.value)&&(!fs.value||x.frameworks.includes(fs.value))
+      &&[...on].every(k=>FLAGS[k][1](x)));
+    wrap.innerHTML="";
+    if(!out.length){wrap.append(emptyState("No matching files."));return;}
+    wrap.append(tbl(["file","size","framework","endpoints","source map","secrets","sha-256"],out.map(x=>({
+      cells:[el("code",{},shortPath(x.url)),x.size!=null?fmtBytes(x.size):"—",
+        el("div",{class:"taglist"},...x.frameworks.slice(0,3).map(t=>el("span",{class:"tag"},t))),
+        x.analyzed?`${x.endpoints.length} regex · ${x.ast_calls.length} ast`:el("span",{class:"kv"},"not fetched"),
+        x.sourcemap_exposed?el("span",{class:"pill "+(x.reconstructed_files?"medium":"low")},
+          x.reconstructed_files?`exposed · ${x.reconstructed_files} src`:"exposed")
+          :(x.sourcemap?el("span",{class:"kv"},"referenced"):"—"),
+        x.secrets?el("span",{class:"pill high"},String(x.secrets)):"—",
+        x.sha256?el("code",{},x.sha256.slice(0,12)):"—"],
+      onclick:()=>jsDrawer(x)}))));}
+  apply();return w;
+}
+function jsDrawer(x){
+  openDrawer(shortPath(x.url),[
+    {label:"File",rows:[["URL",el("span",{},el("code",{},x.url),copyBtn(x.url))],["Host",x.host||"—"],
+      ["Size",x.size!=null?fmtBytes(x.size):"—"],
+      ["SHA-256",x.sha256?el("span",{},el("code",{},x.sha256),copyBtn(x.sha256)):"—"],
+      ["Observation",obs(x.observation)],["Truncated",x.truncated?"yes":"no"],
+      ["GraphQL",x.graphql?"referenced":"—"],["Secrets",x.secrets?`${x.secrets} (see Findings, masked)`:"none"]]},
+    {label:"Source map",rows:[["Referenced",x.sourcemap?el("code",{},x.sourcemap):"—"],
+      ["Exposed",x.sourcemap_exposed?"yes":"no"],["Reconstructed",String(x.reconstructed_files||0)+" file(s)"]]},
+    x.frameworks.length?{label:"Framework clues",tags:x.frameworks}:null,
+    x.ast_calls.length?{label:`AST calls (${x.ast_calls.length})`,rows:x.ast_calls.slice(0,100).map(c=>[
+      (c.method||c.kind||"?").toUpperCase(),el("span",{},el("code",{},c.url),
+        el("span",{class:"kv"},` · ${c.kind}${c.line?` · L${c.line}:${c.col}`:""} · ${Math.round((c.confidence||0)*100)}%`))])}:null,
+    x.endpoints.length?{label:`Regex endpoints (${x.endpoints.length})`,tags:x.endpoints.slice(0,100)}:null,
+    x.websockets.length?{label:"WebSockets",tags:x.websockets}:null,
+    {label:"Raw",raw:x}]);
+}
+
+/* ---- Attack-surface tree ---- */
+const TYPE_ICON={domain:"◎",group:"▤",host:"⌂",path:"/",endpoint:"⇄",page:"▢",form:"✎",
+  asset:"◆",technology:"⚙",ip:"⌖",dns:"≡",certificate:"⚿"};
+function countLeaves(n){return n.children.length?n.children.reduce((a,c)=>a+countLeaves(c),0):1;}
+async function attackSurfaceView(){
+  const t=await api(`/api/scans/${SID()}/attack-surface`);
+  const w=el("div");w.append(el("h1",{},"Attack Surface"),
+    el("div",{class:"sub"},`${t.label} · ${t.finding_count} finding(s) · severity rolls up from every branch`));
+  if(!t.children.length){w.append(emptyState("No attack-surface data."));return w;}
+  const all=[];(function walk(n,d){all.push([n,d]);n.children.forEach(c=>walk(c,d+1));})(t,0);
+  const open=new Set(all.filter(([,d])=>d<2).map(([n])=>n.id));
+  const risky=new Set();
+  const box=el("div",{class:"tree"});
+  w.append(el("div",{class:"toolbar"},
+    el("button",{class:"ghost",onclick:()=>{all.forEach(([n])=>open.add(n.id));draw();}},"Expand all"),
+    el("button",{class:"ghost",onclick:()=>{open.clear();open.add(t.id);draw();}},"Collapse all"),
+    el("button",{class:"ghost",onclick:()=>{all.forEach(([n])=>{if(n.finding_count)open.add(n.id);});draw();}},
+      "Expand risky branches"),
+    toggleChip(risky,"on","Only branches with findings","var(--crit)",draw)),box);
+  function nodeEl(n){
+    const has=n.children.length>0,isOpen=open.has(n.id);
+    const right=el("span",{class:"tright"});
+    if(has)right.append(el("span",{class:"kv"},String(countLeaves(n))));
+    if(n.max_severity)right.append(el("span",{class:"pill "+n.max_severity},`${n.max_severity} · ${n.finding_count}`));
+    if(has)right.append(el("span",{class:"copy",title:"Details",
+      onclick:ev=>{ev.stopPropagation();surfaceDrawer(n);}},"details"));
+    const row=el("div",{class:"tnode",onclick:()=>{
+        if(!has){surfaceDrawer(n);return;} isOpen?open.delete(n.id):open.add(n.id);draw();}},
+      el("span",{class:"tcaret"},has?(isOpen?"▾":"▸"):""),
+      el("span",{class:"ticon"},TYPE_ICON[n.type]||"•"),
+      el("span",{class:"tl-label",style:(n.type==="group"||n.type==="domain")?"font-weight:700":""},n.label),
+      el("span",{class:"ttype"},n.type),right);
+    const node=el("div",{},row);
+    if(has&&isOpen){const kids=el("div",{class:"tkids"});
+      for(const c of n.children)if(!risky.size||c.finding_count)kids.append(nodeEl(c));
+      node.append(kids);}
+    return node;
+  }
+  function draw(){box.innerHTML="";box.append(nodeEl(t));}
+  draw();return w;
+}
+function surfaceDrawer(n){
+  const props=Object.entries(n.props||{}).filter(([,v])=>v!=null&&v!==""&&typeof v!=="object");
+  openDrawer(n.label,[
+    {label:"Node",rows:[["Type",n.type],["Children",String(n.children.length)],
+      ["Findings (subtree)",String(n.finding_count)],
+      ["Max severity",n.max_severity?sevPill(n.max_severity):"—"],...props.map(([k,v])=>[k,String(v)])]},
+    n.props?.params?.length?{label:"Parameters",rows:n.props.params.map(p=>[p.name,
+      `${p.classification} · ${p.source||""}`])}:null,
+    n.findings.length?{label:`Findings on this node (${n.findings.length})`,
+      rows:[...n.findings.map(f=>[sevPill(f.severity||"informational"),f.label]),
+        ["",el("button",{class:"ghost",onclick:()=>{closeDrawer();go("Findings");}},"Open Findings →")]]}:null,
+    {label:"Raw",raw:{...n,children:n.children.length}}]);
+}
+
+/* ---- Auth-flow view ---- */
+const AUTH_ROLE_ORDER=["login","register","authorize","callback","token","identity","reset","logout"];
+const roleRank=r=>{const i=AUTH_ROLE_ORDER.indexOf(r);return i<0?AUTH_ROLE_ORDER.length:i;};
+async function authFlowView(){
+  const f=await api(`/api/scans/${SID()}/auth-flow`);
+  const w=el("div");w.append(el("h1",{},"Authentication Flow"),
+    el("div",{class:"sub"},"Detection-only model inferred from endpoints, forms and cookies — nothing is submitted."));
+  const eps=f.endpoints||[];
+  w.append(el("div",{class:"cards"},card("flow type",f.kind||"unknown"),
+    card("confidence",Math.round((f.confidence||0)*100)+"%"),
+    card("login form",f.has_login_form?"yes":"no"),card("session cookie",f.has_session_cookie?"yes":"no"),
+    card("auth endpoints",String(eps.length))));
+  w.append(el("h2",{},"Inferred flow"));
+  if(f.steps?.length)w.append(el("ol",{class:"steps"},...f.steps.map(s=>el("li",{},s))));
+  else w.append(el("div",{class:"sub"},"No ordered authentication steps could be inferred."));
+  w.append(el("h2",{},"Auth-related endpoints"));
+  if(!eps.length){w.append(emptyState("No authentication endpoints detected."));return w;}
+  const sorted=[...eps].sort((a,b)=>roleRank(a.role)-roleRank(b.role));
+  w.append(tbl(["role","method","url","confidence"],sorted.map(e=>({
+    cells:[el("span",{class:"tag"},e.role),e.method||"—",el("code",{},e.url),obs(e.observation)],
+    onclick:()=>openDrawer("Auth endpoint",[{label:"Endpoint",rows:[["Role",e.role],
+      ["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],["Method",e.method||"—"],
+      ["Confidence",obs(e.observation)]]}])}))));
+  return w;
+}
+
+/* ---- Event timeline ---- */
+const KIND_COLOR={scan:"var(--accent)",module:"var(--info)",auth:"var(--accent2)",
+  discovered:"var(--low)",observed:"var(--ok)",finding:"var(--high)"};
+async function eventTimelineView(){
+  const ev=await api(`/api/scans/${SID()}/timeline`);
+  const w=el("div");w.append(el("h1",{},"Event Timeline"),
+    el("div",{class:"sub"},`${ev.length} events · what was discovered, observed and found, in order`));
+  if(!ev.length){w.append(emptyState("No timeline recorded for this scan (scans before v0.4.0 have none)."));return w;}
+  const t0=Date.parse(ev[0].ts);
+  const offset=e=>"+"+((Date.parse(e.ts)-t0)/1000).toFixed(2)+"s";
+  const kinds={};for(const e of ev)kinds[e.kind]=(kinds[e.kind]||0)+1;
+  const on=new Set();const bar=el("div",{class:"filters"});
+  const q=el("input",{placeholder:"Search events…",oninput:apply});bar.append(el("label",{},"search",q));
+  const [ml,modSel]=selFilter("module",uniq(ev.map(e=>e.module)),apply);bar.append(ml);
+  for(const k of Object.keys(KIND_COLOR))if(kinds[k])
+    bar.append(toggleChip(on,k,`${k} ${kinds[k]}`,KIND_COLOR[k],apply));
+  w.append(bar);
+  const summary=el("div",{class:"sub"});const list=el("div",{class:"tl"});w.append(summary,list);
+  const PAGE=400;let limit=PAGE;
+  function apply(){limit=PAGE;draw();}
+  function draw(){const ql=q.value.toLowerCase();
+    const out=ev.filter(e=>(!on.size||on.has(e.kind))&&(!modSel.value||e.module===modSel.value)
+      &&(!ql||(e.label+" "+JSON.stringify(e.data)).toLowerCase().includes(ql)));
+    summary.textContent=`${out.length} of ${ev.length} shown`;
+    list.innerHTML="";
+    if(!out.length){list.append(emptyState("No matching events."));return;}
+    for(const e of out.slice(0,limit)){
+      const c=e.kind==="finding"?riskColor(e.data?.severity):(KIND_COLOR[e.kind]||"var(--faint)");
+      list.append(el("div",{class:"tlrow",style:`--kc:${c}`,onclick:()=>openDrawer(e.label,[
+          {label:"Event",rows:[["#",String(e.seq)],["Time",e.ts],["Offset",offset(e)],
+            ["Kind",e.kind],["Module",e.module||"pipeline"]]},
+          {label:"Data",evidence:[e.data||{}]}])},
+        el("span",{class:"tlt"},offset(e)),
+        el("span",{class:"kbadge"},e.kind==="finding"?(e.data?.severity||"finding"):e.kind),
+        el("span",{class:"kv tmod"},e.module||"pipeline"),el("span",{class:"tlabel",title:e.label},e.label)));}
+    if(out.length>limit)list.append(el("button",{class:"ghost",style:"margin:10px 0",
+      onclick:()=>{limit+=PAGE;draw();}},`Show ${Math.min(PAGE,out.length-limit)} more`));
+  }
+  draw();return w;
+}
+
 function reportsView(){
   const w=el("div");w.append(el("h1",{},"Reports"),el("div",{class:"sub"},"Generated from stored scan data"));
   const base=`/api/scans/${SID()}/report`;
@@ -952,6 +1235,7 @@ async function refreshCounts(){
   try{const o=await api(`/api/scans/${SID()}`);state.counts.Findings=o.total_findings;
     state.counts.Technologies=o.technologies.length;}catch{}
   try{state.counts.Endpoints=(await api(`/api/scans/${SID()}/endpoints`)).length;}catch{}
+  try{state.counts["JS Files"]=(await api(`/api/scans/${SID()}/js`)).length;}catch{}
   renderNav();
   buildSearchIndex();  // refresh Ctrl+K global search (fire-and-forget)
 }
@@ -969,6 +1253,7 @@ async function buildSearchIndex(){
     grab("technologies","Technologies",t=>({label:t.name,hint:"technology",
       text:`${t.name} ${t.category||""}`})),
     grab("pages","Pages",p=>({label:p.title||p.url,hint:"page",text:`${p.title||""} ${p.url}`})),
+    grab("js","JS Files",x=>({label:x.url,hint:"script",text:`${x.url} ${x.sha256||""}`})),
   ]);
   if(SID()===sid)state.searchIndex=idx;  // ignore stale responses after a scan switch
 }

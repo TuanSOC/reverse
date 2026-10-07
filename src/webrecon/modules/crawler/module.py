@@ -194,7 +194,15 @@ class CrawlerModule(ScannerModule):
             for form in extract.forms:
                 inv.forms.append(form)
                 inv.edges.append((resp.url, "form", form.action or resp.url))
+                ctx.event("discovered", f"Form ({form.method}) on {resp.url}", {
+                    "entity": "form", "url": resp.url, "action": form.action,
+                    "method": form.method,
+                })
         inv.pages.append(page)
+        ctx.event("observed", f"Page {resp.status_code}: {resp.url}", {
+            "entity": "page", "url": resp.url, "status": resp.status_code,
+            "depth": depth, "from": discovered_from,
+        })
 
     def _add_asset(self, inv, asset_urls, asset: DiscoveredAsset, ctx) -> None:
         if asset.url in asset_urls:

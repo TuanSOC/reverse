@@ -120,6 +120,19 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
     async def auth_flow(scan_id: str) -> dict:
         return await queries.get_auth_flow(db(), scan_id)
 
+    @app.get("/api/scans/{scan_id}/attack-surface")
+    async def attack_surface(scan_id: str) -> dict:
+        return await queries.get_attack_surface(db(), scan_id)
+
+    @app.get("/api/scans/{scan_id}/js")
+    async def js_files(scan_id: str) -> list[dict]:
+        return await queries.get_js_files(db(), scan_id)
+
+    # The persisted timeline. (``/events`` is the live-progress WebSocket.)
+    @app.get("/api/scans/{scan_id}/timeline")
+    async def timeline(scan_id: str, kind: str | None = None) -> list[dict]:
+        return await queries.get_events(db(), scan_id, kind)
+
     @app.get("/api/scans/{scan_id}/diff")
     async def diff(scan_id: str, against: str) -> dict:
         return await queries.diff_scans(db(), scan_id, against)

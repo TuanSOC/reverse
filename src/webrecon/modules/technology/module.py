@@ -77,6 +77,11 @@ class TechnologyModule(ScannerModule):
                 for d in detections
             ]
         }
+        for d in detections:
+            ctx.event("discovered", f"Technology: {d.name} {d.version or ''}".strip(), {
+                "entity": "technology", "name": d.name, "version": d.version,
+                "category": d.category, "confidence": str(d.confidence),
+            })
         # One module-level evidence item per detection (for the evidence view).
         for d in detections:
             result.evidence.append(

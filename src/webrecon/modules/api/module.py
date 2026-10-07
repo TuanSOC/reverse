@@ -65,6 +65,15 @@ class ApiDiscoveryModule(ScannerModule):
             e.discovery_status = e.compute_discovery_status()
         ctx.shared[API_INVENTORY_KEY] = endpoints
         await self._persist(ctx, endpoints)
+        for e in endpoints:
+            method = next(iter(sorted(e.methods)), None)
+            ctx.event(
+                "observed" if str(e.observation) == "observed" else "discovered",
+                f"{method or e.kind.upper()} {e.url}",
+                {"entity": "endpoint", "url": e.url, "method": method, "kind": e.kind,
+                 "observation": str(e.observation), "sources": sorted(e.sources),
+                 "discovery_status": e.discovery_status},
+            )
 
         by_obs = {"observed": 0, "referenced": 0, "potential": 0}
         by_kind = {"rest": 0, "graphql": 0, "websocket": 0}

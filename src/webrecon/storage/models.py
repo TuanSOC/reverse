@@ -234,6 +234,20 @@ class FindingRecord(IdMixin, Base):
     )
 
 
+class ScanEventRecord(IdMixin, Base):
+    """One scan-timeline event (G6): discovered / observed / finding / lifecycle."""
+
+    __tablename__ = "scan_events"
+
+    scan_id: Mapped[str] = mapped_column(String(36), ForeignKey("scans.id"), index=True)
+    seq: Mapped[int] = mapped_column(Integer)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    kind: Mapped[str] = mapped_column(String(32), index=True)
+    module: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    label: Mapped[str] = mapped_column(Text)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
 class EvidenceRecord(IdMixin, Base):
     __tablename__ = "evidence"
 

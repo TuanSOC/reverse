@@ -80,6 +80,11 @@ class JavaScriptModule(ScannerModule):
             from .ast_js import extract_calls
             analysis.ast_calls = [c.__dict__ for c in await extract_calls(resp.text)]
             analyses.append(analysis)
+            ctx.event("observed", f"JS analyzed: {url}", {
+                "entity": "script", "url": url, "size": analysis.size,
+                "endpoints": len(analysis.endpoints), "ast_calls": len(analysis.ast_calls),
+                "frameworks": analysis.framework_clues[:5],
+            })
 
             disc = ctx.shared.get("disclosures")
             if disc is not None:
@@ -93,6 +98,7 @@ class JavaScriptModule(ScannerModule):
                 requests += await self._check_source_map(ctx, result, url, analysis, log)
 
         ctx.shared[JS_ANALYSIS_KEY] = analyses
+        await self._persist(ctx, analyses)
 
         result.data = {
             "files_analyzed": len(analyses),
@@ -175,6 +181,11 @@ class JavaScriptModule(ScannerModule):
             info = parse_source_map(resp.text)
             if info is None:
                 continue
+            analysis.sourcemap_exposed = True
+            ctx.event("discovered", f"Source map exposed: {map_url}", {
+                "entity": "sourcemap", "url": map_url, "js": js_url,
+                "sources": info.sources_count,
+            })
             result.findings.append(
                 Finding(
                     check_id="exposure.sourcemap.exposed",
@@ -208,11 +219,14 @@ class JavaScriptModule(ScannerModule):
             )
             # Deep parse: reconstruct embedded original sources and scan them.
             if info.has_sources_content:
-                await self._analyze_reconstructed(result, map_url, resp.text, analysis, log)
+                await self._analyze_reconstructed(
+                    ctx, result, map_url, resp.text, analysis, log)
             break  # one map per JS file is enough
         return requests
 
-    async def _analyze_reconstructed(self, result, map_url, map_text, analysis, log) -> None:
+    async def _analyze_reconstructed(
+        self, ctx, result, map_url, map_text, analysis, log
+    ) -> None:
         """Reconstruct original sources from a .map and mine them for intel."""
         from ..secret_leak.analysis import find_secrets
         from .ast_js import extract_calls
@@ -221,6 +235,7 @@ class JavaScriptModule(ScannerModule):
         files = reconstruct_sources(map_text)
         if not files:
             return
+        analysis.reconstructed_files = len(files)
         masked_secrets: list[dict] = []
         endpoints: list[dict] = []
         for path, content in files:
@@ -265,6 +280,16 @@ class JavaScriptModule(ScannerModule):
         )
         log.info("sourcemap reconstructed", files=len(files),
                  endpoints=len(endpoints), secrets=len(masked_secrets))
+        ctx.event("discovered", f"Original source reconstructed: {len(files)} file(s)", {
+            "entity": "source", "url": map_url, "files": len(files),
+            "endpoints": len(endpoints), "secrets": len(masked_secrets),
+        })
+
+    async def _persist(self, ctx, analyses: list[JsAnalysis]) -> None:
+        storage = ctx.storage
+        if storage is None:
+            return
+        await storage.save_js_analyses(ctx.scan_id, analyses)
 
 
 def _unique(items) -> list[str]:

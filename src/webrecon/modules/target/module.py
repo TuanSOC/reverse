@@ -71,6 +71,9 @@ class TargetModule(ScannerModule):
             resolved_ips=list(resolved.addresses),
         )
         ctx.target = target
+        ctx.event("discovered", f"Target resolved: {target.base_url}", {
+            "entity": "target", "url": target.base_url, "ips": target.resolved_ips,
+        })
         result.data = target.model_dump(mode="json")
         result.evidence.append(
             Evidence(

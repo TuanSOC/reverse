@@ -24,6 +24,7 @@ from ..storage.models import (
     ModuleRun,
     Page,
     Scan,
+    ScanEventRecord,
     Target,
     Technology,
 )
@@ -295,3 +296,57 @@ async def get_graph(db: Database, scan_id: str) -> dict[str, Any]:
 
     graph = await build_asset_graph(db, scan_id)
     return graph.to_dict()
+
+
+async def get_events(db: Database, scan_id: str, kind: str | None = None) -> list[dict[str, Any]]:
+    """Scan timeline (G6) in emission order, optionally filtered to one ``kind``."""
+    async with db.session() as s:
+        stmt = select(ScanEventRecord).where(ScanEventRecord.scan_id == scan_id)
+        if kind:
+            stmt = stmt.where(ScanEventRecord.kind == kind)
+        rows = (await s.execute(stmt.order_by(ScanEventRecord.seq))).scalars().all()
+        return [
+            {"seq": r.seq, "ts": r.ts.isoformat() if r.ts else None, "kind": r.kind,
+             "module": r.module, "label": r.label, "data": r.data or {}}
+            for r in rows
+        ]
+
+
+async def get_js_files(db: Database, scan_id: str) -> list[dict[str, Any]]:
+    """JS Explorer rows: every script asset, flattened with its analysis (if fetched)."""
+    from urllib.parse import urlsplit
+
+    out: list[dict[str, Any]] = []
+    for a in await get_assets(db, scan_id):
+        if a["asset_type"] != "script":
+            continue
+        js = (a.get("meta") or {}).get("js") or {}
+        try:
+            host = urlsplit(a["url"]).hostname or ""
+        except ValueError:
+            host = ""
+        out.append({
+            "url": a["url"], "host": host, "observation": a["observation"],
+            "sha256": a.get("content_hash"), "size": a.get("size_bytes"),
+            "analyzed": bool(js.get("analyzed")),
+            "frameworks": js.get("frameworks", []),
+            "endpoints": js.get("endpoints", []),
+            "ast_calls": js.get("ast_calls", []),
+            "websockets": js.get("websockets", []),
+            "graphql": bool(js.get("graphql")),
+            "secrets": js.get("secrets", 0),
+            "sourcemap": js.get("sourcemap"),
+            "sourcemap_exposed": bool(js.get("sourcemap_exposed")),
+            "reconstructed_files": js.get("reconstructed_files", 0),
+            "truncated": bool(js.get("truncated")),
+        })
+    # Analyzed files first, then the largest — the most interesting rows on top.
+    out.sort(key=lambda r: (not r["analyzed"], -(r["size"] or 0), r["url"]))
+    return out
+
+
+async def get_attack_surface(db: Database, scan_id: str) -> dict[str, Any]:
+    """Hierarchical attack-surface tree derived from the unified asset graph."""
+    from ..intel.attack_surface import build_attack_surface
+
+    return build_attack_surface(await get_graph(db, scan_id))

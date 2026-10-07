@@ -18,7 +18,7 @@ layers on top of the existing 21-module scanner **without rewriting the working
 ./.venv/Scripts/python.exe -m mypy src
 ./.venv/Scripts/python.exe -m pytest -q
 ```
-Last known-green full run: **338 passed** (end of Phase 2).
+Last known-green full run: **348 passed** (end of Phase 3).
 
 ## Status
 
@@ -34,21 +34,24 @@ G4 asset graph (`intel/asset_graph.py`, `build_asset_graph(db, scan_id)`; `get_g
 rewired, dashboard shape preserved), G5 auth-flow model (`intel/auth_flow.py`;
 `GET /api/scans/{id}/auth-flow`). 338 pytest green.
 
-**FIRST ACTION in new session:** read this file, then start **Phase 3** (below).
+### ✅ Phase 3 — COMMITTED (timeline + dashboard explorers)
+G6 timeline: `ScanContext.event(kind, label, data)` (`core/context.py`, `ScanEvent`,
+cap `MAX_SCAN_EVENTS`=5000 → `events_dropped`), events attributed via
+`ctx.current_module`; `ScanEventRecord` table `scan_events`; pipeline emits
+scan/module/auth/finding events and flushes incrementally (`repo.save_events`);
+modules emit discovered/observed (target, crawler page+form, javascript
+script+sourcemap+source, api endpoint, technology). Kinds:
+`scan|module|auth|discovered|observed|finding`, `data.entity` names the thing.
+**API path is `GET /api/scans/{id}/timeline?kind=`** — `/events` stays the
+live-progress WebSocket.
+JS persistence: `repo.save_js_analyses` enriches script `assets` rows
+(content_hash/size_bytes + `meta["js"]`), served by `GET /api/scans/{id}/js`.
+Attack-surface tree: `intel/attack_surface.py` (pure, severity rollup) →
+`GET /api/scans/{id}/attack-surface`. Fixed asset-graph asset `type` (was None).
+G7 dashboard: Endpoint Explorer, JS Explorer, Attack Surface, Auth Flow,
+Event Timeline views; old "Timeline / Compare" is now "Compare".
 
-### ⬜ Phase 3 — PENDING (timeline + dashboard explorers)
-- **G6 Event timeline:** add `ctx.event(kind, label, data)` sink on ScanContext,
-  a `ScanEvent` table (storage/models.py + repository save), emit events from
-  modules (discovered/observed/finding), expose `GET /api/scans/{id}/events`.
-- **G7 Dashboard** (`src/webrecon/api/static/index.html`, self-contained, has a
-  `node --check` JS syntax guard test `tests/unit/test_dashboard_js.py`):
-  - **Endpoint Explorer** (filters: host/method/auth/static-dynamic/param-type/confidence) — consume endpoint `params` + `discovery_status`.
-  - **JS Explorer** (file/hash/size/framework/sourcemap/endpoints/ast_calls).
-  - **Attack-surface tree** (derive hierarchy from the asset graph).
-  - **Auth-flow view** (consume `/api/scans/{id}/auth-flow`).
-  - **Event timeline** view.
-  - NOTE: graph already force-directed + hub-centered; `/api/scans/{id}/graph`
-    now returns the richer asset graph (nodes carry type/source/confidence/props).
+**FIRST ACTION in new session:** read this file, then start **Phase 4** (below).
 
 ### ⬜ Phase 4 — AI layer via GROQ (user chose Groq, not stub-only)
 - New `src/webrecon/intel/ai/`:

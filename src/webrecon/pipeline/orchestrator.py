@@ -84,11 +84,13 @@ class Pipeline:
         order = self.registry.resolution_order(selected)
         total = len(order)
         log.info("scan starting", scan_id=ctx.scan_id, url=input_url, modules=order)
+        ctx.event("scan", f"Scan started: {input_url}", {"url": input_url, "modules": order})
 
         guard = SsrfGuard(allow_private_targets=self.config.scope.allow_private_targets)
         rate = RateLimiter(self.config.rate)
 
         scan_persisted = False
+        events_saved = 0  # timeline cursor: ctx.events[:events_saved] are persisted
         async with HttpEngine(self.config.http, rate, guard, scope=None) as http:
             ctx.http = http
             await self._auto_login(ctx, input_url)
@@ -98,10 +100,14 @@ class Pipeline:
                 except ScanCancelledError:
                     self._emit(ScanProgress(name, index, total, ModuleStatus.CANCELLED))
                     log.warning("scan cancelled", scan_id=ctx.scan_id, at=name)
+                    ctx.event("scan", f"Scan cancelled before {name}", {"at": name})
                     break
 
+                ctx.current_module = name
                 result = await self._run_module(ctx, name)
                 ctx.results[name] = result
+                self._record_module_events(ctx, result)
+                ctx.current_module = None
 
                 # Publish the scope engine into the HTTP engine once available,
                 # so all subsequent requests are scope-gated.
@@ -123,14 +129,23 @@ class Pipeline:
                             ctx.storage = self.repo
                         if scan_persisted:
                             await self.repo.save_module_result(ctx.scan_id, result)
+                            pending = ctx.events[events_saved:]
+                            await self.repo.save_events(ctx.scan_id, pending)
+                            events_saved += len(pending)
                     except Exception as exc:  # noqa: BLE001 - persistence is best-effort
                         log.error("persistence failed", module=name, error=str(exc))
 
                 self._emit(ScanProgress(name, index, total, result.status))
 
+        overall = self._overall_status(ctx)
+        ctx.event("scan", f"Scan finished: {overall}", {
+            "status": overall, "findings": len(ctx.all_findings()),
+            "events_dropped": ctx.events_dropped,
+        })
         if self.repo is not None and scan_persisted:
             try:
-                await self.repo.finalize_scan(ctx.scan_id, self._overall_status(ctx))
+                await self.repo.save_events(ctx.scan_id, ctx.events[events_saved:])
+                await self.repo.finalize_scan(ctx.scan_id, overall)
             except Exception as exc:  # noqa: BLE001 - never fail the scan on finalize
                 log.error("finalize failed", scan_id=ctx.scan_id, error=str(exc))
         log.info("scan finished", scan_id=ctx.scan_id, findings=len(ctx.all_findings()))
@@ -151,12 +166,17 @@ class Pipeline:
         log.info("auto-login starting", login_url=auth.login_url)
         host = host_of(input_url) or host_of(auth.login_url or "")
         cookie = await capture_session_cookies(self.config, host, log)
+        # Timeline data names the login URL only — never the cookie values.
         if cookie:
             self.config.http.cookie = cookie
             ctx.shared["authenticated"] = True
             log.info("auto-login session captured", cookie_count=cookie.count("="))
+            ctx.event("auth", "Auto-login session captured",
+                      {"login_url": auth.login_url, "authenticated": True})
         else:
             log.warning("auto-login did not capture a session; scanning unauthenticated")
+            ctx.event("auth", "Auto-login failed; scanning unauthenticated",
+                      {"login_url": auth.login_url, "authenticated": False})
 
     async def _run_module(self, ctx: ScanContext, name: str) -> ModuleResult:
         module_cls = self.registry.get(name)
@@ -182,6 +202,19 @@ class Pipeline:
             result.mark_finished(ModuleStatus.FAILED)
             log.error("module crashed", module=name, error=str(exc))
             return result
+
+    @staticmethod
+    def _record_module_events(ctx: ScanContext, result: ModuleResult) -> None:
+        """Timeline: one event per finding, then the module's completion."""
+        for f in result.findings:
+            ctx.event("finding", f.name, {
+                "check_id": f.check_id, "severity": str(f.severity),
+                "confidence": str(f.confidence), "observation": str(f.observation),
+            })
+        ctx.event("module", f"{result.module} {result.status}", {
+            "status": str(result.status), "duration_ms": result.duration_ms,
+            "findings": len(result.findings), "error": result.error,
+        })
 
     def _emit(self, progress: ScanProgress) -> None:
         if self.progress is not None:

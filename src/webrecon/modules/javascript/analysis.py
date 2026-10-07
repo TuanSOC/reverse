@@ -39,6 +39,10 @@ class JsAnalysis:
     content: str = ""
     # AST-extracted calls: [{kind, method, url, line, col, confidence}] (v0.4.0).
     ast_calls: list[dict] = field(default_factory=list)
+    # Source-map outcome (set by the module's map probe): a parseable .map was
+    # reachable, and how many original files its sourcesContent yielded.
+    sourcemap_exposed: bool = False
+    reconstructed_files: int = 0
 
 
 def _dedup(items: list[str], cap: int = 200) -> list[str]:

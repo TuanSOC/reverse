@@ -24,15 +24,22 @@ from .models import (
     ModuleRun,
     Page,
     Scan,
+    ScanEventRecord,
     Target,
     Technology,
 )
 
 if TYPE_CHECKING:
+    from ..core.context import ScanEvent
     from ..modules.api.classify import Endpoint as EndpointDTO
     from ..modules.crawler.models import CrawlInventory
+    from ..modules.javascript.analysis import JsAnalysis
     from ..modules.technology.fingerprint import TechDetection
     from ..modules.tls.analysis import CertInfo
+
+
+#: Per-file cap on list fields copied into ``assets.meta["js"]``.
+_JS_LIST_CAP = 200
 
 
 class ScanRepository:
@@ -220,6 +227,61 @@ class ScanRepository:
                         source=",".join(sorted(e.sources)),
                         meta={"in_scope": e.in_scope, "sources": sorted(e.sources),
                               "params": e.param_meta, "discovery_status": e.discovery_status},
+                    )
+                )
+
+    async def save_js_analyses(self, scan_id: str, analyses: list[JsAnalysis]) -> None:
+        """Attach JS analysis to the crawler's script asset rows (JS Explorer).
+
+        Enriches the existing ``assets`` rows in place (hash/size columns plus a
+        ``meta["js"]`` block) instead of adding a table; a script fetched but not
+        recorded by the crawler gets a fresh row. Secret values are never stored —
+        only the count of masked hits.
+        """
+        from sqlalchemy import select
+
+        async with self.db.session() as s:
+            rows = (
+                await s.execute(
+                    select(Asset).where(Asset.scan_id == scan_id, Asset.asset_type == "script")
+                )
+            ).scalars().all()
+            by_url = {r.url: r for r in rows}
+            for a in analyses:
+                js = {
+                    "analyzed": True,
+                    "frameworks": list(a.framework_clues),
+                    "endpoints": list(a.endpoints)[:_JS_LIST_CAP],
+                    "ast_calls": list(a.ast_calls)[:_JS_LIST_CAP],
+                    "websockets": list(a.websockets)[:_JS_LIST_CAP],
+                    "graphql": a.graphql,
+                    "secrets": len(a.secrets),
+                    "sourcemap": a.sourcemap_url,
+                    "sourcemap_exposed": a.sourcemap_exposed,
+                    "reconstructed_files": a.reconstructed_files,
+                    "truncated": a.truncated,
+                }
+                row = by_url.get(a.url)
+                if row is None:
+                    row = Asset(scan_id=scan_id, asset_type="script", url=a.url, meta={})
+                    s.add(row)
+                    by_url[a.url] = row
+                row.observation = "observed"  # fetched + parsed, not just referenced
+                row.content_hash = a.sha256
+                row.size_bytes = a.size
+                # Reassign (not mutate) so the JSON column change is tracked.
+                row.meta = {**(row.meta or {}), "js": js}
+
+    async def save_events(self, scan_id: str, events: list[ScanEvent]) -> None:
+        """Append timeline events (the pipeline flushes them incrementally)."""
+        if not events:
+            return
+        async with self.db.session() as s:
+            for ev in events:
+                s.add(
+                    ScanEventRecord(
+                        scan_id=scan_id, seq=ev.seq, ts=ev.ts, kind=ev.kind,
+                        module=ev.module, label=ev.label, data=ev.data,
                     )
                 )
 
