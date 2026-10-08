@@ -241,7 +241,8 @@ def scan(
             analysis = None
             if ai and db is not None:
                 analysis = await _ai_best_effort(db, ctx.scan_id, ai_provider)
-            return build_report(ctx), collect_extras(ctx), analysis
+            exporting = bool(json_out or html_out or pdf_out)
+            return build_report(ctx, include_intel=exporting), collect_extras(ctx), analysis
         finally:
             if db is not None:
                 await db.dispose()
@@ -407,7 +408,6 @@ def report(
     import json
     from pathlib import Path
 
-    from ..api import queries
     from ..reporting.db_report import build_report_from_db
     from ..reporting.html_report import render_html
     from ..storage import init_db
@@ -415,13 +415,7 @@ def report(
     async def _run() -> tuple[dict, dict] | None:
         db = await init_db(database_url)
         try:
-            # Resolve an 8-char prefix to a full id.
-            full = scan_id
-            if len(scan_id) < 36:
-                for s in await queries.list_scans(db):
-                    if s["id"].startswith(scan_id):
-                        full = s["id"]
-                        break
+            full = await _resolve_scan_id(db, scan_id) or scan_id
             return await build_report_from_db(db, full)
         finally:
             await db.dispose()
@@ -474,7 +468,6 @@ def ai_cmd(
     import json
     from pathlib import Path
 
-    from ..api import queries
     from ..intel.ai import AiError, analyze_scan, latest_analysis
 
     configure_logging()
@@ -482,12 +475,7 @@ def ai_cmd(
     async def _run() -> dict | None:
         db = await init_db(database_url)
         try:
-            full = scan_id
-            if len(scan_id) < 36:
-                for s in await queries.list_scans(db):
-                    if s["id"].startswith(scan_id):
-                        full = s["id"]
-                        break
+            full = await _resolve_scan_id(db, scan_id) or scan_id
             if show:
                 return await latest_analysis(db, full)
             return await analyze_scan(db, full, provider=provider)
@@ -508,6 +496,196 @@ def ai_cmd(
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(result, indent=2), encoding="utf-8")
         console.print(f"[green]OK[/] JSON -> {json_out}")
+
+
+# ---------------------------------------------------------------------------
+# Read commands over stored scans (findings / endpoints / assets / graph)
+# ---------------------------------------------------------------------------
+
+_DB_OPT = typer.Option("sqlite+aiosqlite:///webrecon.db", "--database-url",
+                       help="SQLAlchemy async URL.")
+_SCAN_ARG = typer.Argument(None, help="Scan id or 8-char prefix (default: the latest scan).")
+_JSON_OPT = typer.Option(False, "--json", help="Print raw JSON instead of a table (for scripts).")
+async def _resolve_scan_id(db, scan_id: str | None) -> str | None:
+    """Full id for ``scan_id`` (exact or unique prefix); the newest scan when ``None``.
+
+    An ambiguous prefix is an error (exit 2) rather than silently picking one.
+    """
+    from sqlalchemy import select
+
+    from ..storage.models import Scan
+
+    async with db.session() as s:
+        if not scan_id:
+            return await s.scalar(select(Scan.id).order_by(Scan.created_at.desc()).limit(1))
+        if await s.get(Scan, scan_id) is not None:
+            return scan_id
+        matches = (await s.execute(
+            select(Scan.id).where(Scan.id.startswith(scan_id, autoescape=True))
+            .order_by(Scan.created_at.desc()).limit(6)
+        )).scalars().all()
+    if len(matches) > 1:
+        console.print(f"[red]Ambiguous scan id prefix[/] {scan_id!r} matches "
+                      f"{', '.join(m[:8] for m in matches)} — use more characters.")
+        raise typer.Exit(2)
+    return matches[0] if matches else None
+
+
+def _load_for_scan(database_url: str, scan_id: str | None, fetch):
+    """Open the DB, resolve the scan, run ``fetch(db, sid)``; exit 1 if no scan."""
+
+    async def _run():
+        db = await init_db(database_url)
+        try:
+            sid = await _resolve_scan_id(db, scan_id)
+            if sid is None:
+                return None, None
+            return sid, await fetch(db, sid)
+        finally:
+            await db.dispose()
+
+    sid, data = asyncio.run(_run())
+    if sid is None:
+        msg = f"Scan not found: {scan_id}" if scan_id else "No scans stored yet."
+        console.print(f"[red]{msg}[/]")
+        raise typer.Exit(1)
+    return sid, data
+
+
+def _emit_json(data) -> None:
+    import json
+
+    typer.echo(json.dumps(data, indent=2, default=str))
+
+
+@app.command("findings")
+def findings_cmd(
+    scan_id: str | None = _SCAN_ARG,
+    min_severity: str | None = typer.Option(
+        None, "--min-severity", help="Only show findings at/above this severity."),
+    as_json: bool = _JSON_OPT,
+    database_url: str = _DB_OPT,
+) -> None:
+    """List the findings of a stored scan (most severe first)."""
+    from rich.markup import escape
+
+    from ..api import queries
+    from ..core.enums import SEVERITY_ORDER
+
+    rank = {str(k): v for k, v in SEVERITY_ORDER.items()}
+    floor = rank.get((min_severity or "").lower(), -1)
+    if min_severity and floor < 0:
+        console.print(f"[red]Unknown severity:[/] {min_severity}")
+        raise typer.Exit(2)
+    sid, rows = _load_for_scan(database_url, scan_id, queries.get_findings)
+    rows = [f for f in rows if rank.get(f["severity"], 0) >= floor]
+    if as_json:
+        _emit_json(rows)
+        return
+    table = Table(title=f"Findings · scan {sid[:8]} ({len(rows)})")
+    for col in ("severity", "conf", "obs", "check", "name"):
+        table.add_column(col)
+    for f in rows:
+        table.add_row(f["severity"], f["confidence"], f["observation"],
+                      escape(f["check_id"]), escape(f["name"]))
+    console.print(table)
+
+
+@app.command("endpoints")
+def endpoints_cmd(
+    scan_id: str | None = _SCAN_ARG,
+    observation: str | None = typer.Option(
+        None, "--observation", help="Filter: observed | referenced | potential."),
+    as_json: bool = _JSON_OPT,
+    database_url: str = _DB_OPT,
+) -> None:
+    """List API endpoints of a stored scan with discovery status and parameters."""
+    from rich.markup import escape
+
+    from ..api import queries
+
+    sid, rows = _load_for_scan(database_url, scan_id, queries.get_endpoints)
+    if observation:
+        rows = [e for e in rows if e["observation"] == observation.lower()]
+    from ..reporting.intel_sections import OBSERVATION_RANK
+
+    rows.sort(key=lambda e: (OBSERVATION_RANK.get(e["observation"], 3), e["url"]))
+    if as_json:
+        _emit_json(rows)
+        return
+    table = Table(title=f"Endpoints · scan {sid[:8]} ({len(rows)})")
+    for col in ("obs", "method", "url", "discovery", "params"):
+        table.add_column(col)
+    for e in rows:
+        meta = e.get("meta") or {}
+        params = ", ".join(f"{p.get('name')}:{p.get('classification')}"
+                           for p in meta.get("params") or [])
+        table.add_row(e["observation"], e.get("method") or "—", escape(e["url"]),
+                      (meta.get("discovery_status") or "—").replace("_", " ").lower(),
+                      escape(params) or "—")
+    console.print(table)
+
+
+@app.command("assets")
+def assets_cmd(
+    scan_id: str | None = _SCAN_ARG,
+    asset_type: str | None = typer.Option(
+        None, "--type", help="Filter by asset type, e.g. script, stylesheet, image."),
+    as_json: bool = _JSON_OPT,
+    database_url: str = _DB_OPT,
+) -> None:
+    """List discovered static assets of a stored scan."""
+    from rich.markup import escape
+
+    from ..api import queries
+
+    sid, rows = _load_for_scan(database_url, scan_id, queries.get_assets)
+    if asset_type:
+        rows = [a for a in rows if a["asset_type"] == asset_type.lower()]
+    rows.sort(key=lambda a: (a["asset_type"], a["url"]))
+    if as_json:
+        _emit_json(rows)
+        return
+    table = Table(title=f"Assets · scan {sid[:8]} ({len(rows)})")
+    for col in ("type", "obs", "size", "url"):
+        table.add_column(col)
+    for a in rows:
+        size = f"{a['size_bytes']:,} B" if a.get("size_bytes") else "—"
+        table.add_row(a["asset_type"], a["observation"], size, escape(a["url"]))
+    console.print(table)
+
+
+@app.command("graph")
+def graph_cmd(
+    scan_id: str | None = _SCAN_ARG,
+    as_json: bool = _JSON_OPT,
+    database_url: str = _DB_OPT,
+) -> None:
+    """Summarize the unified asset graph of a stored scan (``--json`` for nodes/edges)."""
+    from collections import Counter
+
+    from ..api import queries
+
+    sid, graph = _load_for_scan(database_url, scan_id, queries.get_graph)
+    if as_json:
+        _emit_json(graph)
+        return
+    nodes = Counter(n["type"] for n in graph["nodes"])
+    edges = Counter(e["relation"] for e in graph["edges"])
+    console.print(f"[bold]Asset graph · scan {sid[:8]}[/] — {len(graph['nodes'])} node(s), "
+                  f"{len(graph['edges'])} edge(s)")
+    nt = Table(title="Nodes by type")
+    nt.add_column("type")
+    nt.add_column("count", justify="right")
+    for k, v in nodes.most_common():
+        nt.add_row(k, str(v))
+    et = Table(title="Edges by relation")
+    et.add_column("relation")
+    et.add_column("count", justify="right")
+    for k, v in edges.most_common():
+        et.add_row(k, str(v))
+    console.print(nt)
+    console.print(et)
 
 
 @app.command()

@@ -261,23 +261,21 @@ async def diff_scans(db: Database, scan_id: str, against_id: str) -> dict[str, A
 
 async def get_auth_flow(db: Database, scan_id: str) -> dict[str, Any]:
     """Build the detection-only authentication-flow model for a scan."""
-    from ..intel.auth_flow import build_auth_flow, is_session_cookie
+    from ..intel.auth_flow import auth_flow_from_rows
+
+    flow = auth_flow_from_rows(await get_endpoints(db, scan_id), await get_forms(db, scan_id),
+                               await get_cookie_names(db, scan_id))
+    return flow.to_dict()
+
+
+async def get_cookie_names(db: Database, scan_id: str) -> list[str]:
     from ..storage.models import Cookie
 
-    endpoints = await get_endpoints(db, scan_id)
-    forms = await get_forms(db, scan_id)
-    has_login_form = any(
-        str(i.get("type") or "").lower() == "password"
-        for fm in forms for i in (fm.get("inputs") or [])
-    )
     async with db.session() as s:
-        cookies = (
-            await s.execute(select(Cookie).where(Cookie.scan_id == scan_id))
+        rows = (
+            await s.execute(select(Cookie.name).where(Cookie.scan_id == scan_id))
         ).scalars().all()
-    has_session_cookie = any(is_session_cookie(c.name or "") for c in cookies)
-    flow = build_auth_flow(
-        endpoints, has_login_form=has_login_form, has_session_cookie=has_session_cookie)
-    return flow.to_dict()
+    return [r or "" for r in rows]
 
 
 async def get_graph(db: Database, scan_id: str) -> dict[str, Any]:

@@ -45,6 +45,15 @@ _TEMPLATE = """<!doctype html>
   .evi{background:#f6f8fb;border:1px solid var(--border);border-radius:6px;padding:8px 10px;
     margin-top:6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
     white-space:pre-wrap;word-break:break-word}
+  .tree,.tree ul{list-style:none;margin:0;padding-left:16px}
+  .tree{padding-left:0;font-size:12.5px}
+  .tree li{margin:2px 0;break-inside:avoid}
+  .tree .t{color:var(--muted);font-size:10.5px;text-transform:uppercase;margin-left:4px}
+  .tree ul{border-left:1px dashed var(--border);margin-left:5px}
+  .tag{display:inline-block;border:1px solid var(--border);border-radius:4px;padding:0 5px;
+    font-size:11px;margin:1px 2px 1px 0}
+  .tag.warn{border-color:var(--high);color:var(--high)}
+  ol.steps{margin:6px 0 6px 18px;padding:0}
   footer{margin-top:40px;color:var(--muted);font-size:11px;border-top:1px solid var(--border);
     padding-top:10px}
   @media print{body{padding:0}}
@@ -98,12 +107,65 @@ or denial-of-service techniques were used. Findings marked <em>referenced</em> o
 <td>{{ t.version or "—" }}</td><td>{{ t.confidence }}</td></tr>{% endfor %}</table>
 {% else %}<p class="muted">None detected.</p>{% endif %}
 
+{% if intel %}
+<h2>Attack Surface</h2>
+{% if intel.attack_surface %}
+<p class="muted">Every entry point grouped by host and path; the badge on a branch is the most
+severe finding anywhere beneath it ({{ intel.attack_surface.finding_count }} finding(s) in total).</p>
+<ul class="tree">
+{% for n in [intel.attack_surface] recursive %}
+  <li>{{ n.label }}<span class="t">{{ n.type }}</span>
+    {% if n.max_severity %} <span class="pill b-{{ n.max_severity }}">{{ n.max_severity }} · {{ n.finding_count }}</span>{% endif %}
+    {% if n.children %}<ul>{{ loop(n.children[:60]) }}{% if n.children|length > 60 %}<li class="muted">… {{ n.children|length - 60 }} more</li>{% endif %}</ul>{% endif %}
+  </li>
+{% endfor %}
+</ul>
+{% else %}<p class="muted">No attack-surface data.</p>{% endif %}
+
+<h2>API Endpoints</h2>
+<p class="muted">{{ intel.summary.endpoints }} endpoint(s): {{ intel.summary.observed }} observed
+(requested and answered), {{ intel.summary.static_only }} seen only statically (JS/sitemap,
+never requested).</p>
+{% if intel.endpoints %}
+<table><tr><th>Observation</th><th>Method</th><th>URL</th><th>Discovery</th><th>Parameters</th></tr>
+{% for e in intel.endpoints %}<tr><td>{{ e.observation }}</td><td>{{ e.method or "—" }}</td>
+<td><code>{{ e.url }}</code></td><td>{{ (e.discovery_status or "—")|replace("_", " ")|lower }}</td>
+<td>{% for p in e.params %}<span class="tag">{{ p }}</span>{% endfor %}
+{% for c in e.sensitive_params %}<span class="tag warn">{{ c }}</span>{% endfor %}</td></tr>{% endfor %}</table>
+{% else %}<p class="muted">None discovered.</p>{% endif %}
+
+<h2>Parameters</h2>
+<p class="muted">Parameter names classified by likely meaning (values are never recorded).
+{{ intel.summary.sensitive_parameters }} of {{ intel.summary.parameters }} are security-relevant
+(identifiers, redirects, tokens, file paths, URLs…).</p>
+{% if intel.parameters %}
+<table><tr><th>Name</th><th>Class</th><th>Confidence</th><th>Seen in</th><th>Endpoints</th></tr>
+{% for p in intel.parameters %}<tr><td><code>{{ p.name }}</code></td>
+<td>{% if p.sensitive %}<span class="tag warn">{{ p.classification }}</span>{% else %}{{ p.classification }}{% endif %}</td>
+<td>{{ (p.confidence * 100)|round|int }}%</td><td>{{ p.locations|join(", ") or "—" }}</td>
+<td>{{ p.endpoint_count }}{% for u in p.endpoints[:3] %}<br><code>{{ u }}</code>{% endfor %}</td></tr>{% endfor %}</table>
+{% else %}<p class="muted">No parameters observed.</p>{% endif %}
+
+<h2>Authentication Flow</h2>
+{% set af = intel.auth_flow %}
+<p>Model: <strong>{{ af.kind }}</strong> ({{ (af.confidence * 100)|round|int }}% confidence) ·
+login form {{ "present" if af.has_login_form else "absent" }} ·
+session cookie {{ "present" if af.has_session_cookie else "absent" }}.
+<span class="muted">Inferred from endpoints, forms and cookies; nothing was submitted.</span></p>
+{% if af.steps %}<ol class="steps">{% for st in af.steps %}<li>{{ st }}</li>{% endfor %}</ol>{% endif %}
+{% if af.endpoints %}
+<table><tr><th>Role</th><th>Method</th><th>URL</th><th>Observation</th></tr>
+{% for e in af.endpoints %}<tr><td>{{ e.role }}</td><td>{{ e.method or "—" }}</td>
+<td><code>{{ e.url }}</code></td><td>{{ e.observation }}</td></tr>{% endfor %}</table>
+{% else %}<p class="muted">No authentication endpoints detected.</p>{% endif %}
+{% else %}
 <h2>Endpoints</h2>
 {% if endpoints %}
 <table><tr><th>Provenance</th><th>Kind</th><th>URL</th></tr>
 {% for e in endpoints %}<tr><td>{{ e.observation }}</td><td>{{ e.kind }}</td>
 <td><code>{{ e.url }}</code></td></tr>{% endfor %}</table>
 {% else %}<p class="muted">None discovered.</p>{% endif %}
+{% endif %}
 
 <h2>IP Intelligence &amp; Network Footprint</h2>
 {% if ip_intel and ip_intel.ips %}
@@ -165,4 +227,5 @@ def render_html(report: dict[str, Any], extras: dict[str, Any] | None = None) ->
         endpoints=endpoints,
         counts=counts,
         ip_intel=extras.get("ip_intel") or report.get("ip_intel"),
+        intel=report.get("intelligence") or extras.get("intelligence"),
     )

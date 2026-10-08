@@ -27,6 +27,11 @@ FILTERING = "filtering"
 AUTH = "authentication"
 UNKNOWN = "unknown"
 
+#: Classes that make a parameter security-relevant (IDOR, redirect, SSRF, …).
+INTERESTING_PARAMS = frozenset({
+    OBJECT_ID, USER_ID, REDIRECT, CALLBACK, TOKEN, FILE_PATH, URL_PARAM, AUTH,
+})
+
 # (class, confidence, name-regex). First match wins; order = specificity.
 _RULES: tuple[tuple[str, float, re.Pattern[str]], ...] = (
     (REDIRECT, 0.9, re.compile(

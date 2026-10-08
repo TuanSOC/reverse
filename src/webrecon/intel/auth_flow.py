@@ -46,11 +46,15 @@ class AuthFlow:
     endpoints: list[AuthEndpoint] = field(default_factory=list)
     has_login_form: bool = False
     has_session_cookie: bool = False
+    #: stable machine id per step (same order as ``steps``) so UIs can pick an
+    #: icon / translation without parsing the English narrative
+    step_keys: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
             "kind": self.kind, "confidence": round(self.confidence, 2),
-            "steps": self.steps, "has_login_form": self.has_login_form,
+            "steps": self.steps, "step_keys": self.step_keys,
+            "has_login_form": self.has_login_form,
             "has_session_cookie": self.has_session_cookie,
             "endpoints": [e.__dict__ for e in self.endpoints],
         }
@@ -84,46 +88,47 @@ def build_auth_flow(
     if is_oauth:
         kind = "oauth"
         conf = 0.6 + 0.1 * len({"authorize", "callback", "token"} & roles)
-        steps = _oauth_steps(roles)
+        keyed = _oauth_steps(roles)
     elif has_login_form or {"login"} & roles:
         kind = "password"
         conf = 0.5 + (0.2 if has_login_form else 0) + (0.2 if has_session_cookie else 0)
-        steps = _password_steps(roles, has_login_form, has_session_cookie)
+        keyed = _password_steps(roles, has_login_form, has_session_cookie)
     else:
         kind = "unknown"
         conf = 0.3
-        steps = []
+        keyed = []
 
     # order endpoints by the canonical step order for display
     auth_eps.sort(key=lambda e: _STEP_ORDER.index(e.role) if e.role in _STEP_ORDER else 99)
-    return AuthFlow(kind, min(conf, 1.0), steps, auth_eps, has_login_form, has_session_cookie)
+    return AuthFlow(kind, min(conf, 1.0), [text for _, text in keyed], auth_eps,
+                    has_login_form, has_session_cookie, [key for key, _ in keyed])
 
 
-def _password_steps(roles: set[str], has_form: bool, has_cookie: bool) -> list[str]:
+def _password_steps(roles: set[str], has_form: bool, has_cookie: bool) -> list[tuple[str, str]]:
     steps = []
     if has_form:
-        steps.append("User submits the login form")
+        steps.append(("form", "User submits the login form"))
     if "login" in roles:
-        steps.append("POST to the login endpoint")
+        steps.append(("login", "POST to the login endpoint"))
     if has_cookie:
-        steps.append("Server sets a session cookie")
+        steps.append(("session", "Server sets a session cookie"))
     if "identity" in roles:
-        steps.append("App fetches the current identity (/me)")
+        steps.append(("identity", "App fetches the current identity (/me)"))
     if "logout" in roles:
-        steps.append("Logout endpoint ends the session")
+        steps.append(("logout", "Logout endpoint ends the session"))
     return steps
 
 
-def _oauth_steps(roles: set[str]) -> list[str]:
-    steps = ["App redirects to the authorization endpoint"]
+def _oauth_steps(roles: set[str]) -> list[tuple[str, str]]:
+    steps = [("redirect", "App redirects to the authorization endpoint")]
     if "authorize" in roles:
-        steps.append("Identity provider authenticates the user")
+        steps.append(("authorize", "Identity provider authenticates the user"))
     if "callback" in roles:
-        steps.append("Provider redirects back to the callback")
+        steps.append(("callback", "Provider redirects back to the callback"))
     if "token" in roles:
-        steps.append("App exchanges the code for a token")
+        steps.append(("token", "App exchanges the code for a token"))
     if "identity" in roles:
-        steps.append("App fetches the user profile")
+        steps.append(("identity", "App fetches the user profile"))
     return steps
 
 
@@ -152,3 +157,16 @@ def is_session_cookie(name: str) -> bool:
     if not tokens or tokens & _NOT_SESSION_TOKENS:
         return False
     return bool(tokens & _SESSION_TOKENS)
+
+
+def auth_flow_from_rows(
+    endpoints: list[dict], forms: list[dict], cookie_names: list[str]
+) -> AuthFlow:
+    """Build the auth-flow model from endpoint/form rows and cookie names."""
+    has_login_form = any(
+        str(i.get("type") or "").lower() == "password"
+        for fm in forms for i in (fm.get("inputs") or [])
+    )
+    has_session_cookie = any(is_session_cookie(n or "") for n in cookie_names)
+    return build_auth_flow(
+        endpoints, has_login_form=has_login_form, has_session_cookie=has_session_cookie)

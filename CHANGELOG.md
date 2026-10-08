@@ -16,6 +16,15 @@ semantic versioning.
   Auth-flow explorers, attack-surface tree, event timeline, AI panel, hash
   routing, mobile navigation, keyboard and screen-reader support.
 
+- CLI read commands `webrecon findings | endpoints | assets | graph`
+  (default: latest scan, `--json` for scripting).
+- HTML / JSON / PDF reports now include Attack Surface, API Endpoints,
+  Parameters and Authentication Flow sections (also for `--no-db` scans).
+
+- Dashboard: searchable scan switcher (keyboard operable), auth-flow step
+  pipeline with role/method badges.
+- `auth-flow` now returns `step_keys` alongside `steps` (stable ids for UIs).
+
 ### Security
 - Credentials (password, cookies, auth headers) are masked in the stored scan
   config and in JSON reports.

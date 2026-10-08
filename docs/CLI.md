@@ -35,6 +35,18 @@ otherwise the deterministic offline stub. `--show` prints the latest stored
 analysis without calling a provider. Every claim lists the evidence IDs it is
 based on.
 
+### Read commands — `findings`, `endpoints`, `assets`, `graph`
+```
+webrecon findings  [SCAN_ID] [--min-severity high] [--json]
+webrecon endpoints [SCAN_ID] [--observation observed] [--json]
+webrecon assets    [SCAN_ID] [--type script] [--json]
+webrecon graph     [SCAN_ID] [--json]
+```
+Read a stored scan without re-scanning. `SCAN_ID` accepts a full id or an
+8-char prefix; when omitted, the **latest** scan is used. Default output is a
+table (`graph` prints node/edge counts); `--json` prints raw JSON for scripts.
+All take `--database-url`.
+
 ## Extra `scan` options
 
 | Option | Meaning |

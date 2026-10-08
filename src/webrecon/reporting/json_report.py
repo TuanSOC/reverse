@@ -10,6 +10,7 @@ from typing import Any
 
 from ..core.context import ScanContext
 from ..core.enums import SEVERITY_ORDER, Severity
+from .intel_sections import safe_intel_from_ctx
 
 
 def collect_extras(ctx: ScanContext) -> dict[str, Any]:
@@ -42,8 +43,12 @@ def _ip_intel_dict(ctx: ScanContext) -> dict[str, Any] | None:
     }
 
 
-def build_report(ctx: ScanContext) -> dict[str, Any]:
-    """Serialize a finished scan context into a plain, JSON-safe dict."""
+def build_report(ctx: ScanContext, *, include_intel: bool = True) -> dict[str, Any]:
+    """Serialize a finished scan context into a plain, JSON-safe dict.
+
+    ``include_intel`` adds the attack-surface / endpoints / parameters / auth-flow
+    sections; skip it when the report is only summarized on screen.
+    """
     findings = ctx.all_findings()
     severity_counts: dict[str, int] = {s.value: 0 for s in Severity}
     for f in findings:
@@ -92,4 +97,6 @@ def build_report(ctx: ScanContext) -> dict[str, Any]:
             for f in sorted(findings, key=sev_key, reverse=True)
         ],
         "ip_intel": _ip_intel_dict(ctx),
+        # attack surface, API endpoints, parameters, auth flow (same as the API)
+        "intelligence": safe_intel_from_ctx(ctx, _ip_intel_dict(ctx)) if include_intel else None,
     }

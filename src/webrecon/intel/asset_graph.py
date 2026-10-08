@@ -74,10 +74,34 @@ _MAX_ENDPOINTS = 120
 
 async def build_asset_graph(db: Database, scan_id: str) -> AssetGraph:
     """Assemble the unified asset graph for a scan from persisted entities."""
-    g = AssetGraph()
     overview = await queries.get_overview(db, scan_id)
     if overview is None:
-        return g
+        return AssetGraph()
+    return assemble_asset_graph(
+        overview,
+        dns=await queries.get_dns(db, scan_id),
+        has_certificate=bool(await queries.get_certificates(db, scan_id)),
+        pages=await queries.get_pages(db, scan_id),
+        forms=await queries.get_forms(db, scan_id),
+        assets=await queries.get_assets(db, scan_id),
+        endpoints=await queries.get_endpoints(db, scan_id),
+        findings=await queries.get_findings(db, scan_id),
+    )
+
+
+def assemble_asset_graph(
+    overview: dict[str, Any],
+    *,
+    dns: list[dict],
+    has_certificate: bool,
+    pages: list[dict],
+    forms: list[dict],
+    assets: list[dict],
+    endpoints: list[dict],
+    findings: list[dict],
+) -> AssetGraph:
+    """Pure: build the graph from row dicts (stored scan or live scan context)."""
+    g = AssetGraph()
     host = (overview["target"] or {}).get("hostname") or "target"
     g.add_node(GraphNode(host, host, "domain", source="target"))
 
@@ -101,18 +125,18 @@ async def build_asset_graph(db: Database, scan_id: str) -> AssetGraph:
         g.add_edge(host, tid, "USES", _conf(t.get("confidence")))
 
     # DNS + certificate
-    for d in await queries.get_dns(db, scan_id):
+    for d in dns:
         did = g.add_node(GraphNode(
             f"dns:{d['record_type']}:{d['value']}",
             f"{d['record_type']} {d['value']}", "dns", source="dns"))
         g.add_edge(host, did, "RESOLVES_TO")
-    if await queries.get_certificates(db, scan_id):
+    if has_certificate:
         cid = g.add_node(GraphNode("cert", "TLS certificate", "certificate", source="tls"))
         g.add_edge(host, cid, "PROTECTED_BY")
 
     # Pages + forms
     page_ids: dict[str, str] = {}
-    for pg in (await queries.get_pages(db, scan_id))[:_MAX_PAGES]:
+    for pg in pages[:_MAX_PAGES]:
         url = pg.get("url") or ""
         if not url:
             continue
@@ -120,7 +144,7 @@ async def build_asset_graph(db: Database, scan_id: str) -> AssetGraph:
                                    source="crawler", props={"status": pg.get("status_code")}))
         page_ids[url] = pid
         g.add_edge(host, pid, "CONTAINS")
-    for fm in await queries.get_forms(db, scan_id):
+    for fm in forms:
         page_url = fm.get("page_url") or ""
         fid = g.add_node(GraphNode(
             f"form:{fm.get('action') or page_url}", f"form {fm.get('method', 'get')}",
@@ -128,7 +152,7 @@ async def build_asset_graph(db: Database, scan_id: str) -> AssetGraph:
         g.add_edge(page_ids.get(page_url, host), fid, "CONTAINS")
 
     # Static assets (scripts etc.)
-    for a in (await queries.get_assets(db, scan_id))[:_MAX_ASSETS]:
+    for a in assets[:_MAX_ASSETS]:
         url = a.get("url") or ""
         if not url:
             continue
@@ -137,7 +161,7 @@ async def build_asset_graph(db: Database, scan_id: str) -> AssetGraph:
         g.add_edge(host, aid, "REFERENCES")
 
     # Endpoints (with method / discovery status / params)
-    for e in (await queries.get_endpoints(db, scan_id))[:_MAX_ENDPOINTS]:
+    for e in endpoints[:_MAX_ENDPOINTS]:
         url = e.get("url") or ""
         if not url:
             continue
@@ -152,7 +176,7 @@ async def build_asset_graph(db: Database, scan_id: str) -> AssetGraph:
                    _obs_conf(e.get("observation")))
 
     # Findings linked to the asset their evidence points at (else to host)
-    for f in await queries.get_findings(db, scan_id):
+    for f in findings:
         fid = g.add_node(GraphNode(
             f"finding:{f['id']}", f.get("name") or f.get("check_id") or "finding",
             "finding", source=f.get("module") or "security",

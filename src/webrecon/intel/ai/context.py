@@ -30,11 +30,8 @@ MAX_FORMS = 10
 
 _SEV_RANK = {"critical": 4, "high": 3, "medium": 2, "low": 1, "informational": 0}
 _OBS_RANK = {"observed": 0, "referenced": 1, "potential": 2}
-# Parameter classes that make an endpoint security-relevant.
-INTERESTING_PARAMS = frozenset({
-    "object_identifier", "user_identifier", "redirect", "callback", "token",
-    "file_path", "url", "authentication",
-})
+# Parameter classes that make an endpoint security-relevant (re-exported).
+from ...modules.api.params import INTERESTING_PARAMS  # noqa: E402,F401
 
 
 @dataclass

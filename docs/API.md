@@ -25,7 +25,7 @@ credentials) are always masked.
 | `js` | JS Explorer rows: hash, size, frameworks, regex + AST endpoints, source-map status, secret *count*. |
 | `graph` | Unified asset graph `{nodes:[{id,label,type,source,confidence,props}], edges:[{source,target,relation}]}`. |
 | `attack-surface` | Hierarchical tree (domain → web surface / assets / tech / infra) with per-branch `max_severity` and `finding_count`. |
-| `auth-flow` | Detection-only auth model: `kind`, `confidence`, `steps`, auth endpoints, login-form / session-cookie flags. |
+| `auth-flow` | Detection-only auth model: `kind`, `confidence`, `steps` (English narrative) with parallel `step_keys` (stable ids: `form`, `login`, `session`, `identity`, `logout`, `redirect`, `authorize`, `callback`, `token`), auth endpoints, login-form / session-cookie flags. |
 | `timeline?kind=` | Ordered scan events (`scan`, `module`, `auth`, `discovered`, `observed`, `finding`). |
 | `diff?against={other_id}` | Added/removed endpoints, technologies and findings between two scans. |
 | `screenshot` | PNG (browser mode only), else `404`. |

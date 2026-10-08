@@ -12,6 +12,7 @@ from typing import Any
 from ..api import queries
 from ..storage.database import Database
 from ..storage.models import Scan
+from .intel_sections import intel_from_db
 
 
 async def build_report_from_db(
@@ -53,4 +54,7 @@ async def build_report_from_db(
         "ip_intel": overview.get("ip_intel"),
     }
     report["ip_intel"] = overview.get("ip_intel")
+    report["intelligence"] = await intel_from_db(
+        db, scan_id, overview=overview, findings=findings, endpoints=endpoints,
+        pages=pages, assets=assets)
     return report, extras

@@ -83,6 +83,12 @@ login browser, nested settings read only WEBRECON_<SECTION>_* env vars). Dashboa
 hash routing `#/section`, off-canvas mobile nav, unified states, keyboard a11y.
 E2E harness (CLI + API, 47 checks) lives in the session scratchpad, not the repo.
 
+### ✅ Cross-cutting done
+CLI read commands (`findings/endpoints/assets/graph`, latest scan by default) and
+report sections (Attack Surface / API Endpoints / Parameters / Auth Flow) via
+`reporting/intel_sections.py` (`intel_from_db` / `intel_from_ctx`, pure
+`build_intel_sections`); asset graph split into pure `assemble_asset_graph`.
+
 ## Cross-cutting (any phase)
 - CLI read commands: `webrecon endpoints|assets|findings|graph` (read from DB; keep
   existing `scan/scans/report/serve/modules/init-db`).
