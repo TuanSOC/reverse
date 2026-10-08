@@ -8,22 +8,23 @@
 <style>
   /* ---- design tokens (dark default, light override) ---- */
   :root{
-    --bg:#0b0e14; --panel:#11151f; --panel2:#161b26; --panel3:#1b2130; --border:#232a38;
-    --fg:#d7dce5; --muted:#8a93a6; --faint:#5b6472; --accent:#4da3ff; --accent2:#7c5cff;
-    --crit:#ff4d6d; --high:#ff784e; --med:#f2c14e; --low:#4dd0e1; --info:#6b7280; --ok:#3ddc97;
-    --shadow:0 12px 40px rgba(0,0,0,.5); --radius:12px;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --bg:#07090e; --panel:#0d121c; --panel2:#131826; --panel3:#1a2133; --border:#1e2638;
+    --fg:#e2e8f0; --muted:#8e9cb2; --faint:#5c6880; --accent:#3b82f6; --accent2:#6366f1;
+    --crit:#f43f5e; --high:#f97316; --med:#eab308; --low:#06b6d4; --info:#64748b; --ok:#10b981;
+    --shadow:0 14px 45px rgba(0,0,0,.6); --radius:14px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --font:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
   }
   :root[data-theme="light"]{
-    --bg:#f5f7fb; --panel:#ffffff; --panel2:#f0f3f9; --panel3:#e8edf5; --border:#dde3ec;
-    --fg:#1a1f2b; --muted:#5b6472; --faint:#8a93a6; --accent:#2f6fe0; --accent2:#6a4bff;
-    --crit:#c1123c; --high:#d1552b; --med:#a5820f; --low:#0e7490; --info:#6b7280; --ok:#0f9d6b;
-    --shadow:0 12px 40px rgba(20,30,60,.12);
+    --bg:#f8fafc; --panel:#ffffff; --panel2:#f1f5f9; --panel3:#e2e8f0; --border:#cbd5e1;
+    --fg:#0f172a; --muted:#475569; --faint:#64748b; --accent:#2563eb; --accent2:#4f46e5;
+    --crit:#e11d48; --high:#ea580c; --med:#ca8a04; --low:#0891b2; --info:#64748b; --ok:#059669;
+    --shadow:0 14px 40px rgba(15,23,42,.08);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--fg);
-    font:14px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    font:14px/1.55 var(--font)}
   a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
   button,select,input{font:inherit;color:var(--fg);background:var(--panel2);
     border:1px solid var(--border);border-radius:8px;padding:7px 11px;transition:.12s}
@@ -38,6 +39,58 @@
   .brand{font-weight:800;letter-spacing:1px;font-size:15px;user-select:none}
   .brand span{color:var(--accent)} .spacer{flex:1}
   select#scanSelect{max-width:400px}
+
+  /* HTTP Method Badges */
+  .m-badge{font:700 11px var(--mono);padding:2px 7px;border-radius:5px;display:inline-block;letter-spacing:.02em;text-align:center;min-width:44px}
+  .m-get{background:#0e7490;color:#e0f2fe;box-shadow:0 0 10px -3px #0e7490}
+  .m-post{background:#b45309;color:#fef3c7;box-shadow:0 0 10px -3px #b45309}
+  .m-put{background:#6d28d9;color:#ede9fe;box-shadow:0 0 10px -3px #6d28d9}
+  .m-delete{background:#be123c;color:#ffe4e6;box-shadow:0 0 10px -3px #be123c}
+  .m-patch{background:#047857;color:#d1fae5;box-shadow:0 0 10px -3px #047857}
+  .m-other{background:var(--panel3);color:var(--fg)}
+
+  /* Role Badges */
+  .role-badge{font:600 11.5px var(--mono);padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px}
+  .role-login{background:color-mix(in srgb,#3b82f6 20%,transparent);color:#60a5fa;border:1px solid color-mix(in srgb,#3b82f6 40%,transparent)}
+  .role-logout{background:color-mix(in srgb,#f43f5e 20%,transparent);color:#fb7185;border:1px solid color-mix(in srgb,#f43f5e 40%,transparent)}
+  .role-identity{background:color-mix(in srgb,#8b5cf6 20%,transparent);color:#a78bfa;border:1px solid color-mix(in srgb,#8b5cf6 40%,transparent)}
+  .role-reset{background:color-mix(in srgb,#f59e0b 20%,transparent);color:#fbbf24;border:1px solid color-mix(in srgb,#f59e0b 40%,transparent)}
+  .role-authorize{background:color-mix(in srgb,#06b6d4 20%,transparent);color:#22d3ee;border:1px solid color-mix(in srgb,#06b6d4 40%,transparent)}
+  .role-token{background:color-mix(in srgb,#10b981 20%,transparent);color:#34d399;border:1px solid color-mix(in srgb,#10b981 40%,transparent)}
+  .role-callback{background:color-mix(in srgb,#ec4899 20%,transparent);color:#f472b6;border:1px solid color-mix(in srgb,#ec4899 40%,transparent)}
+  .role-register{background:color-mix(in srgb,#84cc16 20%,transparent);color:#a3e635;border:1px solid color-mix(in srgb,#84cc16 40%,transparent)}
+  .role-unknown{background:var(--panel3);color:var(--muted);border:1px solid var(--border)}
+
+  /* Interactive Auth Flow Pipeline */
+  .auth-pipeline{display:flex;gap:12px;align-items:stretch;margin:16px 0;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch}
+  .flow-step-card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid color-mix(in srgb,var(--accent) 25%,var(--border));border-radius:14px;padding:14px 18px;min-width:220px;flex:1;position:relative;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 24px -10px rgba(0,0,0,.5);transition:all .2s cubic-bezier(.2,.8,.2,1)}
+  .flow-step-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 30px -8px color-mix(in srgb,var(--accent) 30%,transparent)}
+  .flow-step-card .step-head{display:flex;align-items:center;gap:8px}
+  .flow-step-card .step-num{width:22px;height:22px;border-radius:50%;background:var(--grad);color:#fff;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center}
+  .flow-step-card .step-role{font-weight:700;font-size:13.5px;color:var(--fg)}
+  .flow-step-card .step-url{font:11px var(--mono);color:var(--accent);word-break:break-all}
+  .flow-step-card .step-desc{font-size:12px;color:var(--muted);line-height:1.4}
+  .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:22px;opacity:.7;padding:0 4px;flex:0 0 auto}
+
+  /* Quick Switcher Trigger & Modal */
+  .scan-switcher{display:inline-flex;align-items:center}
+  .switcher-trigger{display:flex;align-items:center;gap:10px;padding:6px 14px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid color-mix(in srgb,var(--accent) 25%,var(--border));border-radius:10px;color:var(--fg);cursor:pointer;font-size:13px;max-width:400px;min-width:240px;transition:.15s;text-align:left}
+  .switcher-trigger:hover{border-color:var(--accent);box-shadow:0 0 16px -4px color-mix(in srgb,var(--accent) 30%,transparent)}
+  .switcher-trigger .s-target{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .switcher-trigger .s-badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--panel3);color:var(--muted)}
+  .switcher-modal{width:min(580px,94vw);padding:0;background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.7);backdrop-filter:blur(20px);color:var(--fg)}
+  .switcher-modal::backdrop{backdrop-filter:blur(6px);background:rgba(0,0,0,.5)}
+  .switcher-search-box{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .switcher-search-box input{flex:1;background:transparent;border:none;font-size:15px;color:var(--fg);outline:none;padding:4px}
+  .switcher-list{max-height:380px;overflow-y:auto;padding:8px}
+  .switcher-opt{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.1s;border:1px solid transparent;
+    width:100%;text-align:left;background:transparent;color:inherit;font:inherit}
+  .switcher-opt:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .switcher-opt:hover,.switcher-opt.selected{background:color-mix(in srgb,var(--accent) 12%,var(--panel2));border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+  .switcher-opt .s-info{flex:1;min-width:0}
+  .switcher-opt .s-title{font-weight:700;font-size:13.5px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .switcher-opt .s-meta{font-size:11.5px;color:var(--muted);display:flex;gap:8px;align-items:center;margin-top:3px}
+
   .kbd{font:11px var(--mono);background:var(--panel2);border:1px solid var(--border);
     border-bottom-width:2px;border-radius:5px;padding:2px 6px;color:var(--muted)}
   nav{background:var(--panel);border-right:1px solid var(--border);padding:12px 10px;overflow:auto}
@@ -402,6 +455,9 @@
     header .brand,#paletteBtn,header .spacer,#progress .lbl{display:none}
     header::before{display:none}
     select#scanSelect{max-width:none;flex:1;min-width:0}
+    .scan-switcher{flex:1;min-width:0}
+    .switcher-trigger{min-width:0;max-width:none;width:100%;padding:6px 10px}
+    .switcher-trigger .s-badge{display:none}
     #newScanBtn .lbl{display:none}
     .bar{width:70px}
     .filters input,.toolbar input{min-width:0;width:100%}
@@ -420,7 +476,15 @@
   <header>
     <button class="icon menu" id="menuBtn" data-i18n-title="menu" aria-controls="nav" aria-expanded="false">☰</button>
     <div class="brand">WEB<span>RECON</span></div>
-    <select id="scanSelect" data-i18n-title="selectScan"></select>
+    <div class="scan-switcher" id="scanSwitcherWrap">
+      <button class="switcher-trigger" id="switcherTrigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-i18n-title="switchScan">
+        <span class="dot ok" id="switcherDot"></span>
+        <span class="s-target" id="switcherLabel" data-i18n="selectScan">Select a scan</span>
+        <span class="s-badge" id="switcherBadge">—</span>
+        <span class="s-arrow" aria-hidden="true">▾</span>
+      </button>
+      <select id="scanSelect" style="display:none" data-i18n-title="selectScan"></select>
+    </div>
     <div id="progress" class="prog" aria-live="polite"></div>
     <button id="cancelBtn" class="danger" hidden data-i18n="cancel">Cancel</button>
     <div class="spacer"></div>
@@ -510,6 +574,17 @@
   <div class="palresults" id="palResults" role="listbox"></div>
 </div></div>
 
+<!-- quick switcher modal -->
+<dialog id="switcherModal" class="switcher-modal" aria-labelledby="switcherInput">
+  <div class="switcher-search-box">
+    <span style="color:var(--accent);font-size:16px" aria-hidden="true">🔍</span>
+    <input type="text" id="switcherInput" data-i18n-ph="switchPh" autocomplete="off"
+      aria-controls="switcherList" data-i18n-title="switchScan">
+    <button class="icon" id="switcherClose" type="button" data-i18n-title="close">✕</button>
+  </div>
+  <div class="switcher-list" id="switcherList"></div>
+</dialog>
+
 <div id="toasts" role="status" aria-live="polite"></div>
 
 <script type="module">
@@ -573,7 +648,16 @@ en:{
   "home.scanAgain":"Scan again","home.openReport":"Open report","home.next":"Next steps",
   "home.recent":"Recent scans","home.sevMix":"Findings by severity","home.noFindings":"No findings — clean scan.",
   "kpi.risk":"Risk","kpi.findings":"Findings","kpi.endpoints":"Endpoints observed","kpi.js":"Scripts analyzed",
-  "kpi.ai":"AI summary","kpi.highSub":"{n} critical/high","hint.finding":"finding","hint.endpoint":"endpoint",
+  "kpi.ai":"AI summary","switchScan":"Switch scan",
+  "switchPh":"Search scans by domain, status or date…","au.unknownRole":"unknown",
+  "au.k.form":"Login form","au.k.login":"Credential submit","au.k.session":"Session cookie",
+  "au.k.identity":"Identity lookup","au.k.logout":"Logout","au.k.redirect":"Redirect to IdP",
+  "au.k.authorize":"Authorization","au.k.callback":"Callback","au.k.token":"Token exchange",
+  "au.d.form":"User submits the login form","au.d.login":"POST to the login endpoint",
+  "au.d.session":"Server sets a session cookie","au.d.identity":"App fetches the current identity",
+  "au.d.logout":"Logout endpoint ends the session","au.d.redirect":"App redirects to the authorization endpoint",
+  "au.d.authorize":"Identity provider authenticates the user",
+  "au.d.callback":"Provider redirects back to the callback","au.d.token":"App exchanges the code for a token","kpi.highSub":"{n} critical/high","hint.finding":"finding","hint.endpoint":"endpoint",
   "hint.technology":"technology","hint.page":"page","hint.script":"script","kpi.aiReady":"ready","kpi.aiNone":"not run","kpi.of":"of {n}",
   "next.high":"Review {n} critical/high finding(s)","next.highD":"Start with what an attacker would try first.",
   "next.ai":"Get an AI summary of this scan","next.aiD":"Every claim links back to scan evidence.",
@@ -698,7 +782,16 @@ vi:{
   "home.scanAgain":"Quét lại","home.openReport":"Mở báo cáo","home.next":"Việc nên làm tiếp",
   "home.recent":"Các lần quét gần đây","home.sevMix":"Phát hiện theo mức độ","home.noFindings":"Không có phát hiện — lần quét sạch.",
   "kpi.risk":"Mức rủi ro","kpi.findings":"Phát hiện","kpi.endpoints":"Endpoint đã gọi được","kpi.js":"Script đã phân tích",
-  "kpi.ai":"Tóm tắt AI","kpi.highSub":"{n} mức critical/high","hint.finding":"phát hiện","hint.endpoint":"endpoint",
+  "kpi.ai":"Tóm tắt AI","switchScan":"Chuyển lần quét",
+  "switchPh":"Tìm lần quét theo tên miền, trạng thái hoặc ngày…","au.unknownRole":"không rõ",
+  "au.k.form":"Form đăng nhập","au.k.login":"Gửi thông tin đăng nhập","au.k.session":"Cookie phiên",
+  "au.k.identity":"Tra cứu danh tính","au.k.logout":"Đăng xuất","au.k.redirect":"Chuyển tới IdP",
+  "au.k.authorize":"Xác thực tại IdP","au.k.callback":"Quay lại callback","au.k.token":"Đổi code lấy token",
+  "au.d.form":"Người dùng gửi form đăng nhập","au.d.login":"POST tới endpoint đăng nhập",
+  "au.d.session":"Server đặt cookie phiên","au.d.identity":"Ứng dụng lấy thông tin người dùng hiện tại",
+  "au.d.logout":"Endpoint đăng xuất kết thúc phiên","au.d.redirect":"Ứng dụng chuyển hướng tới endpoint xác thực",
+  "au.d.authorize":"Nhà cung cấp danh tính xác thực người dùng",
+  "au.d.callback":"Nhà cung cấp chuyển hướng về callback","au.d.token":"Ứng dụng đổi code lấy token","kpi.highSub":"{n} mức critical/high","hint.finding":"phát hiện","hint.endpoint":"endpoint",
   "hint.technology":"công nghệ","hint.page":"trang","hint.script":"script","kpi.aiReady":"đã có","kpi.aiNone":"chưa chạy","kpi.of":"trên {n}",
   "next.high":"Xem {n} phát hiện mức critical/high","next.highD":"Bắt đầu với những gì kẻ tấn công sẽ thử trước.",
   "next.ai":"Nhận bản tóm tắt AI cho lần quét này","next.aiD":"Mỗi nhận định đều dẫn về bằng chứng của lần quét.",
@@ -1681,27 +1774,71 @@ function surfaceDrawer(n){
 /* ============================ auth flow ============================ */
 const AUTH_ROLE_ORDER=["login","register","authorize","callback","token","identity","reset","logout"];
 const roleRank=r=>{const i=AUTH_ROLE_ORDER.indexOf(r);return i<0?AUTH_ROLE_ORDER.length:i;};
+const STEP_ICON={form:"🌐",login:"🔑",session:"🍪",identity:"👤",logout:"🚪",
+  redirect:"↪",authorize:"🛡️",callback:"🔄",token:"🎫"};
 async function authFlowView(){
   const f=await api(`/api/scans/${SID()}/auth-flow`);
   const w=el("div");w.append(pageHead(t("au.title"),t("au.sub")));
   const eps=f.endpoints||[];
-  w.append(el("div",{class:"cards"},card(t("au.type"),f.kind||"unknown"),
-    card(t("au.conf"),Math.round((f.confidence||0)*100)+"%"),
-    card(t("au.form"),t(f.has_login_form?"yes":"no")),card(t("au.cookie"),t(f.has_session_cookie?"yes":"no")),
-    card(t("au.eps"),String(eps.length))));
+  w.append(el("div",{class:"cards"},
+    card("🛡️ "+t("au.type"),f.kind||"unknown"),
+    card("🎯 "+t("au.conf"),Math.round((f.confidence||0)*100)+"%"),
+    card("📝 "+t("au.form"),t(f.has_login_form?"yes":"no")),
+    card("🍪 "+t("au.cookie"),t(f.has_session_cookie?"yes":"no")),
+    card("⇄ "+t("au.eps"),String(eps.length))));
+
   w.append(el("h2",{},t("au.flow")));
-  if(f.steps?.length)w.append(el("ol",{class:"steps"},...f.steps.map(s=>el("li",{},s))));
-  else w.append(el("div",{class:"sub"},t("au.noSteps")));
+  if(f.steps?.length){
+    const pipe=el("div",{class:"auth-pipeline"});
+    f.steps.forEach((s,idx)=>{
+      if(idx>0) pipe.append(el("div",{class:"flow-arrow","aria-hidden":"true"},"➔"));
+      const key=(f.step_keys||[])[idx];  // stable id from the backend, not parsed text
+      const known=key&&I18N.en["au.k."+key];
+      const icon=STEP_ICON[key]||"⚡";
+
+      const card=el("div",{class:"flow-step-card"});
+      const head=el("div",{class:"step-head"},
+        el("span",{class:"step-num"},String(idx+1)),
+        el("span",{style:"font-size:16px","aria-hidden":"true"},icon),
+        el("span",{class:"step-role"},known?t("au.k."+key):"#"+(idx+1))
+      );
+      const desc=el("div",{class:"step-desc"},known?t("au.d."+key):s);
+      card.append(head,desc);
+      pipe.append(card);
+    });
+    w.append(pipe);
+  } else {
+    w.append(el("div",{class:"sub"},t("au.noSteps")));
+  }
+
   w.append(el("h2",{},t("au.epsTitle")));
   if(!eps.length){w.append(emptyState(t("au.noEps")));return w;}
+
+  const methodBadge=m=>{
+    if(!m)return el("span",{class:"kv"},"—");
+    const mu=m.toUpperCase();
+    const cls=({GET:"m-get",POST:"m-post",PUT:"m-put",DELETE:"m-delete",PATCH:"m-patch"})[mu]||"m-other";
+    return el("span",{class:`m-badge ${cls}`},mu);
+  };
+  const roleBadge=r=>{
+    const cls=AUTH_ROLE_ORDER.includes(r)?`role-${r}`:"role-unknown";
+    return el("span",{class:`role-badge ${cls}`},r||t("au.unknownRole"));
+  };
+
   const sorted=[...eps].sort((a,b)=>roleRank(a.role)-roleRank(b.role));
   w.append(tbl([t("col.role"),t("col.method"),t("col.url"),t("col.confidence")],sorted.map(e=>({
-    cells:[el("span",{class:"tag"},e.role),e.method||"—",el("code",{},e.url),obs(e.observation)],
+    cells:[
+      roleBadge(e.role),
+      methodBadge(e.method),
+      el("span",{},el("code",{},e.url),copyBtn(e.url)),
+      obs(e.observation)
+    ],
     onclick:()=>openDrawer(t("au.endpoint"),[{label:"Endpoint",rows:[[t("d.role"),e.role],
       ["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],[t("d.method"),e.method||"—"],
       [t("d.conf"),obs(e.observation)]]}])}))));
   return w;
 }
+
 
 /* ============================ event timeline ============================ */
 const KIND_COLOR={scan:"var(--accent)",module:"var(--info)",auth:"var(--accent2)",
@@ -1802,12 +1939,26 @@ function evidenceDrawer(id,item){
 }
 /* ============================ scans + progress ============================ */
 function fillScanSelect(){
-  const sel=$("#scanSelect");sel.innerHTML="";
-  if(!state.scans.length){sel.append(el("option",{value:""},t("noScans")));sel.disabled=true;return;}
-  sel.disabled=false;
-  for(const s of state.scans)sel.append(el("option",{value:s.id},
-    `${s.target}  ·  ${s.status}  ·  ${t("selFindings",{n:s.findings})}  ·  ${fmtDate(s.created_at)}`));
-  sel.value=state.scanId||"";
+  const sel=$("#scanSelect");if(sel)sel.innerHTML="";
+  const trigTarget=$("#switcherLabel"), trigBadge=$("#switcherBadge"), trigDot=$("#switcherDot");
+  if(!state.scans.length){
+    if(sel){sel.append(el("option",{value:""},t("noScans")));sel.disabled=true;}
+    if(trigTarget) trigTarget.textContent=t("noScans");
+    if(trigBadge) trigBadge.textContent="—";
+    return;
+  }
+  if(sel){
+    sel.disabled=false;
+    for(const s of state.scans)sel.append(el("option",{value:s.id},
+      `${s.target}  ·  ${s.status}  ·  ${t("selFindings",{n:s.findings})}  ·  ${fmtDate(s.created_at)}`));
+    sel.value=state.scanId||"";
+  }
+  const cur=state.scans.find(s=>s.id===state.scanId)||state.scans[0];
+  if(cur){
+    if(trigTarget) trigTarget.textContent=cur.target;
+    if(trigBadge) trigBadge.textContent=t("selFindings",{n:cur.findings});
+    if(trigDot) trigDot.className=`dot ${cur.status==="success"?"ok":["failed","cancelled"].includes(cur.status)?"fail":"run"}`;
+  }
 }
 async function loadScans(keep=true){
   state.scans=await api("/api/scans");
@@ -1820,11 +1971,80 @@ async function loadScans(keep=true){
   return state.scans;
 }
 function selectScan(id){
-  state.scanId=id;store.set("wr-scan",id);$("#scanSelect").value=id;
+  state.scanId=id;store.set("wr-scan",id);
+  const sel=$("#scanSelect");if(sel)sel.value=id;
+  fillScanSelect();
   state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();state.secretsOnly=false;
   refreshCounts().then(render);
 }
-$("#scanSelect").onchange=e=>selectScan(e.target.value);
+$("#scanSelect")&&( $("#scanSelect").onchange=e=>selectScan(e.target.value) );
+
+/* Quick Switcher Modal Logic */
+let switcherSel=0;
+function openSwitcherModal(){
+  const modal=$("#switcherModal"), inp=$("#switcherInput");
+  if(!modal||!state.scans.length)return;
+  inp.value="";
+  renderSwitcherList("");
+  modal.showModal();
+  $("#switcherTrigger").setAttribute("aria-expanded","true");
+  inp.focus();
+}
+/* Reset trigger state synchronously on every way out (click, pick, Esc, backdrop). */
+function switcherClosed(){
+  const tr=$("#switcherTrigger");tr.setAttribute("aria-expanded","false");tr.focus();}
+function closeSwitcherModal(){ const m=$("#switcherModal");if(m?.open){m.close();switcherClosed();} }
+$("#switcherModal")?.addEventListener("cancel",switcherClosed);  // Esc
+/* Arrow keys move the highlight, Enter opens it — same model as the command palette. */
+$("#switcherInput")?.addEventListener("keydown",e=>{
+  const opts=[...document.querySelectorAll("#switcherList .switcher-opt")];
+  if(!opts.length)return;
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+    e.preventDefault();
+    switcherSel=Math.max(0,Math.min(opts.length-1,switcherSel+(e.key==="ArrowDown"?1:-1)));
+    opts.forEach((o,i)=>o.classList.toggle("selected",i===switcherSel));
+    opts[switcherSel].scrollIntoView({block:"nearest"});
+  }else if(e.key==="Enter"){e.preventDefault();opts[switcherSel]?.click();}
+});
+$("#switcherTrigger")&&( $("#switcherTrigger").onclick=openSwitcherModal );
+$("#switcherClose")&&( $("#switcherClose").onclick=closeSwitcherModal );
+$("#switcherInput")&&( $("#switcherInput").oninput=e=>renderSwitcherList(e.target.value) );
+$("#switcherModal")&&( $("#switcherModal").onclick=e=>{if(e.target===$("#switcherModal"))closeSwitcherModal();} );
+
+function renderSwitcherList(filter=""){
+  const list=$("#switcherList");if(!list)return;
+  list.innerHTML="";
+  const q=filter.toLowerCase();
+  const filtered=state.scans.filter(s=>!q||`${s.target} ${s.status} ${fmtDate(s.created_at)}`
+    .toLowerCase().includes(q));
+  const curIdx=filtered.findIndex(s=>s.id===state.scanId);
+  switcherSel=curIdx>=0?curIdx:0;
+  if(!filtered.length){
+    list.append(emptyState(t("noMatch")));
+    return;
+  }
+  filtered.forEach((s,i)=>{
+    const isCur=s.id===state.scanId;
+    const opt=el("button",{type:"button",class:"switcher-opt"+(i===switcherSel?" selected":""),
+      "aria-current":isCur?"true":null},
+      el("span",{class:`dot ${s.status==="success"?"ok":["failed","cancelled"].includes(s.status)?"fail":"run"}`}),
+      el("div",{class:"s-info"},
+        el("div",{class:"s-title"},s.target),
+        el("div",{class:"s-meta"},
+          el("span",{class:"pill "+(s.status==="success"?"low":"high")},s.status),
+          el("span",{},`• ${t("selFindings",{n:s.findings})}`),
+          el("span",{},`• ${fmtDate(s.created_at)}`)
+        )
+      )
+    );
+    opt.onclick=()=>{
+      selectScan(s.id);
+      closeSwitcherModal();
+    };
+    list.append(opt);
+  });
+}
+
 async function refreshCounts(){
   state.counts={};
   const sid=SID();
