@@ -18,7 +18,7 @@ layers on top of the existing 21-module scanner **without rewriting the working
 ./.venv/Scripts/python.exe -m mypy src
 ./.venv/Scripts/python.exe -m pytest -q
 ```
-Last known-green full run: **361 passed** (end of Phase 4).
+Last known-green full run: **422 passed** (hardening + UX round, plans/261008-hardening-ux).
 
 ## Status
 
@@ -72,6 +72,16 @@ evidence; `latest_analysis`).
   placeholder. Key is scrubbed from errors (`gsk_***`), hidden from repr, and
   the API only exposes `groq_available: bool`. Tests never call Groq
   (MockTransport / stub).
+
+### ✅ Hardening + UX round (plans/261008-hardening-ux)
+All 10 /code-review findings fixed with regression tests (credential masking via
+`ScanConfig.redacted_dump()`, auto-login site + SSRF guard, cookie scoping, Groq
+error shapes, `_done` before AI, early provider validation, Node kill on
+timeout, concurrent reconstructed-source parsing, placeholder AST URLs, session
+cookie tokens, login host = exact/parent/child only + per-request SSRF gate in the
+login browser, nested settings read only WEBRECON_<SECTION>_* env vars). Dashboard rewritten in place: Home hub, EN/VI i18n (`I18N`/`t()`),
+hash routing `#/section`, off-canvas mobile nav, unified states, keyboard a11y.
+E2E harness (CLI + API, 47 checks) lives in the session scratchpad, not the repo.
 
 ## Cross-cutting (any phase)
 - CLI read commands: `webrecon endpoints|assets|findings|graph` (read from DB; keep

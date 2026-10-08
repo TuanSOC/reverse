@@ -314,139 +314,542 @@
   .evchip:hover{background:color-mix(in srgb,var(--accent) 30%,transparent)}
   @media (max-width:860px){.tlrow{grid-template-columns:62px minmax(0,1fr)}
     .tlrow .kbadge,.tlrow .tmod{display:none} .ttype{display:none}}
+  /* ===================== v0.5 UX layer ===================== */
+  :root{--faint:#76819a}
+  :root[data-theme="light"]{--faint:#667085}
+  .skip{position:absolute;left:-999px;top:8px;z-index:100;background:var(--accent);color:#fff;
+    padding:8px 12px;border-radius:8px;font-weight:700}
+  .skip:focus{left:8px}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  main:focus{outline:none}
+  button:disabled{opacity:.55;cursor:not-allowed;transform:none!important}
+  .menu{display:none}
+  #langBtn{font:700 11.5px var(--mono);min-width:38px}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;margin-top:4px}
+  .tablewrap>table{margin-top:0}
+  tbody tr.clickable:focus-visible td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  [role=button]{cursor:pointer}
+  .pagehead{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .pagehead .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pagehead h1{overflow-wrap:anywhere}
+  .statuspill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11px;font-weight:700;
+    background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok);vertical-align:middle}
+  .statuspill.bad{background:color-mix(in srgb,var(--crit) 16%,transparent);color:var(--crit)}
+  .statuspill.warn{background:color-mix(in srgb,var(--med) 18%,transparent);color:var(--med)}
+  /* home */
+  .hero{border:1px solid var(--border);border-radius:20px;padding:32px 30px;margin:6px 0 18px;
+    background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 50%),
+      radial-gradient(90% 120% at 100% 100%,color-mix(in srgb,var(--accent2) 16%,transparent),transparent 55%),var(--panel);
+    box-shadow:var(--shadow)}
+  .hero h1{font-size:28px;margin-bottom:8px} .hero p{color:var(--muted);max-width:620px;margin:0 0 20px;font-size:15px}
+  .hero .note{margin-top:14px;font-size:12px;color:var(--faint)}
+  .steps3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:8px 0 6px}
+  .stepcard{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .stepcard .n{width:28px;height:28px;border-radius:50%;background:var(--grad);color:#fff;font-weight:800;
+    display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+  .stepcard b{display:block;margin-bottom:4px} .stepcard span{color:var(--muted);font-size:13px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}
+  .kpi{display:block;width:100%;text-align:left;background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 92%,#fff 3%),var(--panel));
+    border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+  .kpi:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+  .kpi .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .kpi .v{font-size:24px;font-weight:800;margin-top:4px;letter-spacing:-.02em;text-transform:capitalize}
+  .kpi .s{color:var(--muted);font-size:12px;margin-top:2px}
+  .sevbar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--panel3);margin:8px 0}
+  .sevbar i{display:block;height:100%}
+  .sevlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .sevlegend b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+  .homegrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+  .nextlist{display:grid;gap:8px}
+  .next{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px}
+  .next:hover{border-color:color-mix(in srgb,var(--c,var(--accent)) 45%,var(--border))}
+  .next .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+    background:color-mix(in srgb,var(--c,var(--accent)) 16%,transparent);color:var(--c,var(--accent));font-weight:800}
+  .next .tx{min-width:0} .next .tx b{display:block;font-weight:650} .next .tx span{color:var(--muted);font-size:12.5px}
+  .next .arrow{margin-left:auto;color:var(--faint);font-size:18px}
+  .recent{display:grid;gap:6px}
+  .recent button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:var(--panel);
+    border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px}
+  .recent button.cur{border-color:color-mix(in srgb,var(--accent) 50%,var(--border))}
+  .recent .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+  .recent .d{color:var(--faint);font:11.5px var(--mono);flex:0 0 auto}
+  /* states */
+  .empty .act{margin-top:14px} .empty .hint{color:var(--faint);font-size:12.5px;margin-top:6px}
+  .errbox .big{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--crit);opacity:.8}
+  /* dialog */
+  dialog .row{display:flex;gap:12px} dialog .row>div{flex:1;min-width:0}
+  dialog .grouplbl{margin:16px 0 4px;color:var(--faint);font-size:10.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.08em}
+  dialog .help{color:var(--faint);font-size:12px;margin-top:4px}
+  .fielderr{color:var(--crit);font-size:12px;min-height:16px;margin-top:4px}
+  dialog{max-height:92vh;overflow:auto}
+  #navScrim{z-index:34;top:56px}
+  :root[data-theme="light"] nav a.active{color:var(--accent)}
+  .finding>.head{flex-wrap:wrap} .finding .name{flex:1 1 220px;min-width:0}
+  .finding .head .cid{margin-left:auto}
+  @media (max-width:1100px){.homegrid{grid-template-columns:1fr}}
+  @media (max-width:860px){
+    .app{grid-template-columns:1fr}
+    .menu{display:inline-flex}
+    nav{position:fixed;top:56px;left:0;bottom:0;width:min(280px,86vw);z-index:35;transform:translateX(-105%);
+      transition:transform .22s cubic-bezier(.2,.8,.2,1);box-shadow:var(--shadow);background:var(--panel);backdrop-filter:none}
+    .app.navopen nav{transform:none}
+    nav a span:not(.badge):not(.navic){display:inline} nav .grp{text-align:left;font-size:10.5px}
+    nav a{justify-content:flex-start;padding:9px 12px}
+    main{padding:16px}
+    header{gap:8px;padding:0 10px}
+    header .brand,#paletteBtn,header .spacer,#progress .lbl{display:none}
+    header::before{display:none}
+    select#scanSelect{max-width:none;flex:1;min-width:0}
+    #newScanBtn .lbl{display:none}
+    .bar{width:70px}
+    .filters input,.toolbar input{min-width:0;width:100%}
+    .filters label{flex:1 1 140px}
+    .drow{grid-template-columns:96px 1fr}
+    .riskhero{flex-wrap:wrap}
+    .hero{padding:22px 18px} .hero h1{font-size:22px}
+    dialog .row{flex-direction:column;gap:0}
+    .finding .head .cid{flex-basis:100%;margin-left:0;order:9}
+  }
 </style>
 </head>
 <body>
-<div class="app">
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<div class="app" id="app">
   <header>
+    <button class="icon menu" id="menuBtn" data-i18n-title="menu" aria-controls="nav" aria-expanded="false">☰</button>
     <div class="brand">WEB<span>RECON</span></div>
-    <select id="scanSelect" title="Select a scan"></select>
-    <div id="progress" class="prog"></div>
-    <button id="cancelBtn" class="danger" style="display:none">Cancel</button>
+    <select id="scanSelect" data-i18n-title="selectScan"></select>
+    <div id="progress" class="prog" aria-live="polite"></div>
+    <button id="cancelBtn" class="danger" hidden data-i18n="cancel">Cancel</button>
     <div class="spacer"></div>
-    <button class="icon" id="paletteBtn" title="Command palette">⌘K</button>
-    <button class="icon" id="themeBtn" title="Toggle theme">◐</button>
-    <button class="primary" id="newScanBtn">+ New Scan</button>
+    <button class="icon" id="paletteBtn" data-i18n-title="palette">⌘K</button>
+    <button class="icon" id="langBtn">VI</button>
+    <button class="icon" id="themeBtn" data-i18n-title="theme">◐</button>
+    <button class="primary" id="newScanBtn"><span aria-hidden="true">+</span> <span class="lbl" data-i18n="newScan">New Scan</span></button>
   </header>
-  <nav id="nav"></nav>
-  <main id="main"></main>
+  <nav id="nav" aria-label="Sections"></nav>
+  <main id="main" tabindex="-1"></main>
 </div>
+<div class="scrim" id="navScrim"></div>
 
 <!-- detail drawer -->
 <div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" role="dialog" aria-modal="true">
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true" inert>
   <div class="dhead"><span class="t" id="drawerTitle"></span><div class="spacer" style="flex:1"></div>
-    <button class="icon" id="drawerClose" title="Close (Esc)">✕</button></div>
+    <button class="icon" id="drawerClose" data-i18n-title="close">✕</button></div>
   <div class="dbody" id="drawerBody"></div>
 </aside>
 
 <!-- new scan dialog -->
-<dialog id="scanDialog">
-  <h1 style="margin:0 0 2px">New Scan</h1>
-  <div class="sub">Only scan assets you own or are authorized to test.</div>
-  <label>Target URL</label>
-  <input type="text" id="f_url" placeholder="https://example.com">
-  <div style="display:flex;gap:12px">
-    <div style="flex:1"><label>Max depth</label><input type="number" id="f_depth" value="3"></div>
-    <div style="flex:1"><label>Max pages</label><input type="number" id="f_pages" value="300"></div>
+<dialog id="scanDialog" aria-labelledby="dlgTitle">
+  <h1 id="dlgTitle" style="margin:0 0 2px" data-i18n="dlg.title">New Scan</h1>
+  <div class="sub" data-i18n="dlg.sub">Only scan assets you own or are authorized to test.</div>
+  <label for="f_url" data-i18n="dlg.url">Target URL</label>
+  <input type="text" id="f_url" placeholder="https://example.com" autocomplete="url" inputmode="url">
+  <div class="help" data-i18n="dlg.urlHelp"></div>
+  <div class="fielderr" id="f_err" role="alert"></div>
+  <div class="grouplbl" data-i18n="dlg.limits">Crawl limits</div>
+  <div class="row">
+    <div><label for="f_depth" data-i18n="dlg.depth">Max depth</label><input type="number" id="f_depth" value="3" min="0" max="20"></div>
+    <div><label for="f_pages" data-i18n="dlg.pages">Max pages</label><input type="number" id="f_pages" value="300" min="1" max="10000"></div>
   </div>
-  <label>Scope mode</label>
+  <label for="f_scope" data-i18n="dlg.scope">Scope mode</label>
   <select id="f_scope"><option value="same-domain">same-domain</option>
     <option value="same-origin">same-origin</option>
     <option value="include-subdomains">include-subdomains</option></select>
-  <label class="check"><input type="checkbox" id="f_browser"> Browser mode (render JS, screenshot)</label>
-  <label class="check"><input type="checkbox" id="f_active"> Active checks (apitest + verify open-redirect/XSS · authorized only)</label>
-  <label class="check"><input type="checkbox" id="f_probe"> Probe sensitive files (.git/.env… · authorized only)</label>
-  <label class="check"><input type="checkbox" id="f_private"> Lab mode (allow private/loopback)</label>
-  <label class="check"><input type="checkbox" id="f_ai"> AI analysis when done (Groq if configured · sends scan evidence to the provider)</label>
-  <details style="margin-top:10px">
-    <summary style="cursor:pointer;color:var(--muted);font-size:12px">Authenticated scan (optional) — credentials sent to target host only</summary>
-    <label>Auto-login — login page URL</label>
-    <input type="text" id="f_login_url" placeholder="https://target/login (leave blank to skip)" autocomplete="off">
-    <div style="display:flex;gap:12px">
-      <div style="flex:1"><label>Username</label><input type="text" id="f_login_user" autocomplete="off"></div>
-      <div style="flex:1"><label>Password</label><input type="password" id="f_login_pass" autocomplete="new-password"></div>
+  <div class="grouplbl" data-i18n="dlg.checks">Checks</div>
+  <label class="check"><input type="checkbox" id="f_browser"> <span data-i18n="dlg.browser"></span></label>
+  <label class="check"><input type="checkbox" id="f_active"> <span data-i18n="dlg.active"></span></label>
+  <label class="check"><input type="checkbox" id="f_probe"> <span data-i18n="dlg.probe"></span></label>
+  <label class="check"><input type="checkbox" id="f_private"> <span data-i18n="dlg.private"></span></label>
+  <label class="check"><input type="checkbox" id="f_ai"> <span data-i18n="dlg.ai"></span></label>
+  <details id="f_authBox" style="margin-top:10px">
+    <summary style="cursor:pointer;color:var(--muted);font-size:12.5px" data-i18n="dlg.auth"></summary>
+    <label for="f_login_url" data-i18n="dlg.loginUrl"></label>
+    <input type="text" id="f_login_url" data-i18n-ph="dlg.loginUrlPh" autocomplete="off">
+    <div class="row">
+      <div><label for="f_login_user" data-i18n="dlg.user"></label><input type="text" id="f_login_user" autocomplete="off"></div>
+      <div><label for="f_login_pass" data-i18n="dlg.pass"></label><input type="password" id="f_login_pass" autocomplete="new-password"></div>
     </div>
-    <div class="sub" style="margin:6px 0 2px">A headless browser logs in and captures the session automatically. Or paste a cookie directly below.</div>
-    <label>Cookie header</label>
+    <div class="help" data-i18n="dlg.loginHelp"></div>
+    <label for="f_cookie" data-i18n="dlg.cookie"></label>
     <input type="text" id="f_cookie" placeholder="session=abc; other=xyz" autocomplete="off">
-    <label>Extra headers (one per line, "Name: value")</label>
+    <label for="f_headers" data-i18n="dlg.headers"></label>
     <textarea id="f_headers" rows="2" placeholder="Authorization: Bearer …"
       style="width:100%;font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:7px 11px"></textarea>
   </details>
   <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
-    <button class="ghost" id="cancelDialog">Cancel</button>
-    <button class="primary" id="startScanBtn">Start Scan</button>
+    <button class="ghost" id="cancelDialog" data-i18n="cancel">Cancel</button>
+    <button class="primary" id="startScanBtn" data-i18n="dlg.start">Start scan</button>
   </div>
 </dialog>
 
 <!-- custom export dialog -->
-<dialog id="exportDialog">
-  <h1 style="margin:0 0 2px">Custom Export</h1>
-  <div class="sub">Choose a format and an optional minimum severity.</div>
-  <label>Format</label>
+<dialog id="exportDialog" aria-labelledby="xTitle">
+  <h1 id="xTitle" style="margin:0 0 2px" data-i18n="x.title">Custom Export</h1>
+  <div class="sub" data-i18n="x.sub"></div>
+  <label for="x_fmt" data-i18n="x.fmt">Format</label>
   <select id="x_fmt"><option value="json">JSON</option>
     <option value="html">HTML</option><option value="pdf">PDF</option></select>
-  <label>Minimum severity</label>
-  <select id="x_sev"><option value="">All severities</option>
+  <label for="x_sev" data-i18n="x.sev">Minimum severity</label>
+  <select id="x_sev"><option value="" data-i18n="x.allSev">All severities</option>
     <option value="informational">Informational +</option>
     <option value="low">Low +</option><option value="medium">Medium +</option>
-    <option value="high">High +</option><option value="critical">Critical only</option></select>
+    <option value="high">High +</option><option value="critical" data-i18n="x.critOnly">Critical only</option></select>
   <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
-    <button class="ghost" id="x_cancel">Cancel</button>
-    <button class="primary" id="x_open">Open in new tab</button>
+    <button class="ghost" id="x_cancel" data-i18n="cancel">Cancel</button>
+    <button class="primary" id="x_open" data-i18n="x.open">Open in new tab</button>
   </div>
 </dialog>
 
 <!-- command palette -->
-<div id="palette"><div class="palbox">
-  <input id="palInput" placeholder="Search findings, endpoints, tech… or jump to a section" autocomplete="off">
-  <div class="palresults" id="palResults"></div>
+<div id="palette" role="dialog" aria-modal="true"><div class="palbox">
+  <input id="palInput" data-i18n-ph="pal.ph" autocomplete="off" aria-label="Command palette">
+  <div class="palresults" id="palResults" role="listbox"></div>
 </div></div>
 
-<div id="toasts"></div>
+<div id="toasts" role="status" aria-live="polite"></div>
 
 <script type="module">
 /* ============================ helpers ============================ */
 const $ = s => document.querySelector(s);
 const el = (t,a={},...k)=>{const n=document.createElement(t);
-  for(const[x,v]of Object.entries(a)){if(x==="class")n.className=v;else if(x==="html")n.innerHTML=v;
+  for(const[x,v]of Object.entries(a)){if(v==null)continue;if(x==="class")n.className=v;else if(x==="html")n.innerHTML=v;
     else if(x.startsWith("on"))n.addEventListener(x.slice(2),v);else n.setAttribute(x,v);}
   for(const c of k)n.append(c==null?"":c.nodeType?c:document.createTextNode(String(c)));return n;};
 async function api(p){
   const r=await fetch(p);
-  if(!r.ok) throw new Error(`${r.status} ${p.split("/").pop()}`);
+  if(!r.ok) throw new Error(`${r.status} ${p.split("?")[0].split("/").pop()}`);
   return r.json();
 }
-function toast(msg,type=""){const t=el("div",{class:"toast "+type},msg);$("#toasts").append(t);
-  setTimeout(()=>{t.style.opacity="0";setTimeout(()=>t.remove(),300);},3200);}
-function copyBtn(text){return el("span",{class:"copy",title:"Copy",
-  onclick:e=>{e.stopPropagation();navigator.clipboard?.writeText(text);toast("Copied","ok");}},"copy");}
+function toast(msg,type=""){const n=el("div",{class:"toast "+type},msg);$("#toasts").append(n);
+  setTimeout(()=>{n.style.opacity="0";setTimeout(()=>n.remove(),300);},3400);}
+/** make any element keyboard-activatable (Enter/Space) */
+function clickable(node,fn,{role=true}={}){
+  node.tabIndex=0;if(role)node.setAttribute("role","button");
+  node.addEventListener("click",fn);
+  node.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fn(e);}});
+  return node;
+}
 const riskColor=s=>({critical:"var(--crit)",high:"var(--high)",medium:"var(--med)",
   low:"var(--low)",informational:"var(--info)"})[s]||"var(--info)";
+const SEVS=["critical","high","medium","low","informational"];
 const sevPill=s=>el("span",{class:`pill ${s}`},s);
-const obs=o=>el("span",{class:"obs-"+o},o);
+const fmtDate=s=>(s||"").slice(0,16).replace("T"," ");
+const uniq=a=>[...new Set(a.filter(x=>x!=null&&x!==""))].sort();
+const fmtBytes=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB";
+function hostOf(u){try{return new URL(u,location.href).hostname;}catch{return "";}}
+function shortPath(u){try{const x=new URL(u,location.href);return x.pathname+(x.search||"");}catch{return u;}}
+function card(k,v){return el("div",{class:"card"},el("div",{class:"k"},k),
+  el("div",{class:"v",style:"font-size:19px"},v));}
+/* ============================ i18n ============================ */
+const I18N={
+en:{
+  newScan:"New Scan",cancel:"Cancel",close:"Close",menu:"Menu",palette:"Command palette (Ctrl+K)",
+  theme:"Toggle light/dark theme",lang:"Tiếng Việt",selectScan:"Select a scan",noScans:"— no scans yet —",
+  selFindings:"{n} findings",search:"search",searchRows:"Search {n} rows…",all:"all",nothing:"Nothing here.",
+  noMatch:"No matches.",shownOf:"{a} of {b} shown",copy:"copy",copied:"Copied",rawToggle:"Toggle raw JSON",
+  error:"Something went wrong",retry:"Retry",loadFailed:"Load failed: {e}",
+  needScan:"Pick a scan in the header, or start a new one.",yes:"yes",no:"no",none:"none",details:"details",
+  clearFilters:"Clear filters",openFindings:"Open Findings →",showMore:"Show {n} more",skip:"Skip to content",
+  "grp.start":"Start","grp.results":"Results","grp.surface":"Attack surface","grp.inventory":"Inventory",
+  "grp.history":"History & export",
+  "sec.Home":"Home","sec.Overview":"Overview","sec.AI Analysis":"AI Analysis","sec.Findings":"Findings",
+  "sec.Attack Surface":"Attack Surface","sec.Endpoints":"Endpoints","sec.JS Files":"JS Files",
+  "sec.Auth Flow":"Auth Flow","sec.Forms":"Forms","sec.Technologies":"Technologies","sec.Pages":"Pages",
+  "sec.Assets":"Assets","sec.DNS / TLS":"DNS / TLS","sec.Graph":"Graph","sec.Timeline":"Timeline",
+  "sec.Compare":"Compare","sec.Reports":"Reports",
+  "obs.observed":"Requested during the scan and the server answered.",
+  "obs.referenced":"Seen in HTML/JS/sitemap but never requested.",
+  "obs.potential":"Inferred only; it may not exist.",
+  "home.welcome":"Welcome to WebRecon",
+  "home.intro":"Map a website's attack surface, spot security issues and get an evidence-backed summary — all on your machine.",
+  "home.cta":"Start your first scan","home.s1":"Choose a target","home.s1d":"A site you own or are authorized to test.",
+  "home.s2":"Watch it run","home.s2d":"Live progress for every module; cancel any time.",
+  "home.s3":"Explore the results","home.s3d":"Findings, endpoints, attack surface and an AI summary.",
+  "home.note":"Only scan assets you own or have written permission to test.",
+  "home.scanAgain":"Scan again","home.openReport":"Open report","home.next":"Next steps",
+  "home.recent":"Recent scans","home.sevMix":"Findings by severity","home.noFindings":"No findings — clean scan.",
+  "kpi.risk":"Risk","kpi.findings":"Findings","kpi.endpoints":"Endpoints observed","kpi.js":"Scripts analyzed",
+  "kpi.ai":"AI summary","kpi.highSub":"{n} critical/high","hint.finding":"finding","hint.endpoint":"endpoint",
+  "hint.technology":"technology","hint.page":"page","hint.script":"script","kpi.aiReady":"ready","kpi.aiNone":"not run","kpi.of":"of {n}",
+  "next.high":"Review {n} critical/high finding(s)","next.highD":"Start with what an attacker would try first.",
+  "next.ai":"Get an AI summary of this scan","next.aiD":"Every claim links back to scan evidence.",
+  "next.static":"{n} endpoint(s) were only seen in code","next.staticD":"They were never requested — check whether they are live.",
+  "next.map":"Source maps are public on {n} script(s)","next.mapD":"The original source code can be reconstructed.",
+  "next.auth":"This scan ran without logging in","next.authD":"Add a login to cover pages behind sign-in.",
+  "next.failed":"{n} module(s) did not finish","next.failedD":"See module status in the overview.",
+  "next.report":"Export a report","next.reportD":"JSON, HTML or PDF — optionally filtered by severity.",
+  "ov.sub":"{status} · {host} · scan {id}","ov.total":"Total findings","ov.screenshot":"Screenshot",
+  "ov.openShot":"Open full screenshot","ov.tech":"Technology","ov.noTech":"none detected","ov.timing":"Module timing",
+  "ip.title":"IP & Infrastructure","ip.reverse":"Reverse DNS","ip.country":"Country","ip.city":"City / Region",
+  "ip.coords":"Coordinates","ip.tz":"Timezone","ip.isp":"ISP / Org","ip.origin":"⚠ Origin IP exposed",
+  "f.total":"{n} total","f.clean":"No findings — clean scan.","f.search":"Search findings…",
+  "f.secrets":"🔑 Secrets & leaks {n}","f.category":"category:","f.confidence":"confidence:",
+  "f.noMatch":"No matching findings.","f.impact":"Impact: ","f.fix":"Fix: ","f.masked":"Masked: ",
+  "flt.host":"host","flt.method":"method","flt.auth":"auth","flt.authRel":"auth-related","flt.nonAuth":"non-auth",
+  "flt.status":"static / dynamic","flt.ptype":"param type","flt.conf":"confidence","flt.module":"module",
+  "flt.framework":"framework",
+  "col.confidence":"confidence","col.method":"method","col.url":"url","col.discovery":"discovery","col.params":"params",
+  "col.auth":"auth","col.file":"file","col.size":"size","col.framework":"framework","col.endpoints":"endpoints",
+  "col.sourcemap":"source map","col.secrets":"secrets","col.sha":"sha-256","col.name":"name","col.category":"category",
+  "col.version":"version","col.status":"status","col.depth":"depth","col.title":"title","col.type":"type",
+  "col.observation":"observation","col.role":"role","col.required":"required","col.subject":"subject",
+  "col.issuer":"issuer","col.validUntil":"valid until","col.value":"value","col.kind":"kind","col.source":"source",
+  "st.STATIC_ONLY":"static only","st.DYNAMIC_ONLY":"dynamic only","st.STATIC_AND_DYNAMIC":"static + dynamic",
+  "d.overview":"Overview","d.params":"Parameters ({n})","d.sources":"Sources","d.raw":"Raw","d.kind":"Kind",
+  "d.method":"Method","d.conf":"Confidence","d.discovery":"Discovery","d.auth":"Auth","d.inScope":"In scope",
+  "d.host":"Host","d.size":"Size","d.obs":"Observation","d.truncated":"Truncated","d.secrets":"Secrets",
+  "d.secretsN":"{n} (masked — see Findings)","d.referenced":"Referenced","d.exposed":"Exposed",
+  "d.rebuilt":"Reconstructed","d.files":"{n} file(s)","d.frameworks":"Framework clues","d.ast":"AST calls ({n})",
+  "d.regex":"Regex endpoints ({n})","d.ws":"WebSockets","d.file":"File","d.type":"Type","d.name":"Name",
+  "d.category":"Category","d.version":"Version","d.title":"Title","d.status":"Status","d.depth":"Depth",
+  "d.meta":"Meta","d.node":"Node","d.children":"Children","d.subtreeF":"Findings (subtree)","d.maxSev":"Max severity",
+  "d.onNode":"Findings on this node ({n})","d.label":"Label","d.connections":"Connections","d.neighbors":"Neighbors",
+  "d.role":"Role","d.event":"Event","d.time":"Time","d.offset":"Offset","d.module":"Module","d.data":"Data",
+  "d.evidence":"Evidence","d.summary":"Summary","d.notInSnap":"not in snapshot","d.subjIssuer":"Subject / Issuer",
+  "d.validity":"Validity","d.notBefore":"Not before","d.notAfter":"Not after","d.details":"Details",
+  "d.signals":"Evidence signals","d.provenance":"Provenance","d.from":"Discovered from","d.seed":"seed",
+  "d.integrity":"Integrity",
+  "ep.title":"Endpoint Explorer","ep.sub":"{n} endpoints · click a row for parameters and provenance",
+  "ep.none":"No endpoints were discovered.","ep.search":"Search URL…","ep.authParam":"auth param",
+  "js.title":"JS Explorer","js.sub":"{n} scripts · {a} fetched and analyzed","js.none":"No JavaScript files.",
+  "js.search":"Search file or hash…","js.fAnalyzed":"analyzed","js.fMap":"source map","js.fEps":"has endpoints",
+  "js.fSecrets":"has secrets","js.notFetched":"not fetched","js.exposed":"exposed","js.exposedN":"exposed · {n} src",
+  "js.referenced":"referenced","js.calls":"{a} regex · {b} ast","js.graphql":"referenced",
+  "as.title":"Attack Surface","as.sub":"{t} · {n} finding(s) · severity rolls up from every branch",
+  "as.none":"No attack-surface data.","as.expandAll":"Expand all","as.collapseAll":"Collapse all",
+  "as.expandRisky":"Expand risky branches","as.onlyRisky":"Only branches with findings",
+  "as.grp.Web surface":"Web surface","as.grp.Static assets":"Static assets","as.grp.Technologies":"Technologies",
+  "as.grp.Infrastructure":"Infrastructure",
+  "au.title":"Authentication Flow","au.sub":"Detection-only model inferred from endpoints, forms and cookies — nothing is submitted.",
+  "au.type":"flow type","au.conf":"confidence","au.form":"login form","au.cookie":"session cookie",
+  "au.eps":"auth endpoints","au.flow":"Inferred flow","au.noSteps":"No ordered authentication steps could be inferred.",
+  "au.epsTitle":"Auth-related endpoints","au.noEps":"No authentication endpoints detected.","au.endpoint":"Auth endpoint",
+  "tl.title":"Event Timeline","tl.sub":"{n} events · what was discovered, observed and found, in order",
+  "tl.none":"No timeline recorded for this scan (scans before v0.4.0 have none).","tl.search":"Search events…",
+  "ai.sub":"Every claim cites scan evidence — click an ID to inspect it. The model sees normalized evidence only, never the raw site.",
+  "ai.provider":"Provider","ai.run":"Run AI analysis","ai.rerun":"Re-run analysis","ai.running":"Analyzing…",
+  "ai.noKey":"Set GROQ_API_KEY (e.g. in .env) to enable Groq.","ai.none":"No analysis yet for this scan.",
+  "ai.noneHint":"Takes a few seconds. Groq is used when a key is configured, otherwise the offline stub.",
+  "ai.bg":"AI analysis is running in the background — this page refreshes when it is ready.",
+  "ai.done":"AI analysis complete","ai.failed":"AI analysis failed","ai.what":"What this app is",
+  "ai.dropped":"{n} unsupported claim(s) dropped","ai.nothing":"Nothing grounded in the evidence.",
+  "ai.stub":"Offline stub","ai.s.components":"Components","ai.s.attack_surface":"Attack surface",
+  "ai.s.auth_apis":"Authentication APIs","ai.s.static_vs_observed":"Static vs observed","ai.s.gaps":"Coverage gaps",
+  "tech.sub":"{n} detected · click for evidence","pg.sub":"{n} crawled","at.sub":"{n} discovered",
+  "fm.sub":"{n} found","fm.none":"No forms.","fm.sensitive":"· sensitive","fm.on":"on {p} · enctype {e}",
+  "dns.records":"DNS records","dns.none":"none (or IP-literal target)","dns.certs":"Certificates",
+  "gr.title":"Relationship Graph","gr.hint":"Scroll to zoom · drag to pan · click a node for detail",
+  "gr.none":"No graph data.",
+  "cmp.title":"Compare Scans","cmp.need":"Need at least two scans to compare.",
+  "cmp.pick":"— pick a scan to compare against —","cmp.against":"Compare the current scan against:",
+  "cmp.noChange":"no change","cmp.k.endpoints":"Endpoints","cmp.k.technologies":"Technologies","cmp.k.findings":"Findings",
+  "rep.sub":"Generated from stored scan data","rep.json":"Open JSON","rep.html":"Open HTML",
+  "rep.pdf":"Open / download PDF","rep.custom":"⚙ Custom export…","rep.preview":"HTML preview",
+  "dlg.title":"New Scan","dlg.sub":"Only scan assets you own or are authorized to test.","dlg.url":"Target URL",
+  "dlg.urlHelp":"https:// is added if you leave it out.","dlg.limits":"Crawl limits","dlg.depth":"Max depth",
+  "dlg.pages":"Max pages","dlg.scope":"Scope mode","dlg.checks":"Checks",
+  "dlg.browser":"Browser mode (render JS, take a screenshot)",
+  "dlg.active":"Active checks (apitest + verify open-redirect/XSS · authorized only)",
+  "dlg.probe":"Probe sensitive files (.git/.env… · authorized only)",
+  "dlg.private":"Lab mode (allow private/loopback targets)",
+  "dlg.ai":"AI analysis when done (Groq if configured · sends scan evidence to the provider)",
+  "dlg.auth":"Authenticated scan (optional) — credentials go to the target's site only",
+  "dlg.loginUrl":"Auto-login — login page URL","dlg.loginUrlPh":"https://target/login (leave blank to skip)",
+  "dlg.user":"Username","dlg.pass":"Password",
+  "dlg.loginHelp":"A headless browser logs in and captures the session. Or paste a cookie directly below.",
+  "dlg.cookie":"Cookie header","dlg.headers":"Extra headers (one per line, \"Name: value\")","dlg.start":"Start scan",
+  "dlg.badUrl":"Enter a valid URL, e.g. https://example.com","dlg.started":"Scan started",
+  "dlg.startFail":"Could not start the scan: {e}",
+  "x.title":"Custom Export","x.sub":"Choose a format and an optional minimum severity.","x.fmt":"Format",
+  "x.sev":"Minimum severity","x.allSev":"All severities","x.critOnly":"Critical only","x.open":"Open in new tab",
+  "pal.ph":"Search findings, endpoints, tech… or jump to a section","pal.goto":"Go to {s}","pal.section":"section",
+  "pal.action":"action",
+  "prog.starting":"starting…","prog.cancelling":"Cancelling…","prog.done":"Scan {s}","prog.running":"Running {m} ({i}/{n})",
+},
+vi:{
+  newScan:"Quét mới",cancel:"Hủy",close:"Đóng",menu:"Menu",palette:"Bảng lệnh (Ctrl+K)",
+  theme:"Đổi giao diện sáng/tối",lang:"English",selectScan:"Chọn lần quét",noScans:"— chưa có lần quét —",
+  selFindings:"{n} phát hiện",search:"tìm",searchRows:"Tìm trong {n} dòng…",all:"tất cả",nothing:"Không có dữ liệu.",
+  noMatch:"Không có kết quả phù hợp.",shownOf:"Hiển thị {a}/{b}",copy:"chép",copied:"Đã chép",
+  rawToggle:"Ẩn/hiện JSON gốc",error:"Đã có lỗi xảy ra",retry:"Thử lại",loadFailed:"Tải thất bại: {e}",
+  needScan:"Chọn một lần quét ở thanh trên, hoặc bắt đầu lần quét mới.",yes:"có",no:"không",none:"không có",
+  details:"chi tiết",clearFilters:"Xóa bộ lọc",openFindings:"Mở Phát hiện →",showMore:"Xem thêm {n}",
+  skip:"Bỏ qua tới nội dung",
+  "grp.start":"Bắt đầu","grp.results":"Kết quả","grp.surface":"Bề mặt tấn công","grp.inventory":"Tài nguyên",
+  "grp.history":"Lịch sử & xuất",
+  "sec.Home":"Trang chủ","sec.Overview":"Tổng quan","sec.AI Analysis":"Phân tích AI","sec.Findings":"Phát hiện",
+  "sec.Attack Surface":"Bề mặt tấn công","sec.Endpoints":"Endpoint","sec.JS Files":"File JS",
+  "sec.Auth Flow":"Luồng xác thực","sec.Forms":"Form","sec.Technologies":"Công nghệ","sec.Pages":"Trang",
+  "sec.Assets":"Tài nguyên tĩnh","sec.DNS / TLS":"DNS / TLS","sec.Graph":"Đồ thị","sec.Timeline":"Dòng thời gian",
+  "sec.Compare":"So sánh","sec.Reports":"Báo cáo",
+  "obs.observed":"Đã được gọi trong lúc quét và server có phản hồi.",
+  "obs.referenced":"Thấy trong HTML/JS/sitemap nhưng chưa từng được gọi.",
+  "obs.potential":"Chỉ là suy luận; có thể không tồn tại.",
+  "home.welcome":"Chào mừng đến với WebRecon",
+  "home.intro":"Lập bản đồ bề mặt tấn công của website, tìm vấn đề bảo mật và nhận bản tóm tắt có dẫn chứng — chạy hoàn toàn trên máy bạn.",
+  "home.cta":"Bắt đầu lần quét đầu tiên","home.s1":"Chọn mục tiêu","home.s1d":"Website bạn sở hữu hoặc được phép kiểm thử.",
+  "home.s2":"Theo dõi tiến trình","home.s2d":"Tiến độ từng module theo thời gian thực; hủy bất cứ lúc nào.",
+  "home.s3":"Khám phá kết quả","home.s3d":"Phát hiện, endpoint, bề mặt tấn công và bản tóm tắt AI.",
+  "home.note":"Chỉ quét tài sản bạn sở hữu hoặc có giấy phép kiểm thử bằng văn bản.",
+  "home.scanAgain":"Quét lại","home.openReport":"Mở báo cáo","home.next":"Việc nên làm tiếp",
+  "home.recent":"Các lần quét gần đây","home.sevMix":"Phát hiện theo mức độ","home.noFindings":"Không có phát hiện — lần quét sạch.",
+  "kpi.risk":"Mức rủi ro","kpi.findings":"Phát hiện","kpi.endpoints":"Endpoint đã gọi được","kpi.js":"Script đã phân tích",
+  "kpi.ai":"Tóm tắt AI","kpi.highSub":"{n} mức critical/high","hint.finding":"phát hiện","hint.endpoint":"endpoint",
+  "hint.technology":"công nghệ","hint.page":"trang","hint.script":"script","kpi.aiReady":"đã có","kpi.aiNone":"chưa chạy","kpi.of":"trên {n}",
+  "next.high":"Xem {n} phát hiện mức critical/high","next.highD":"Bắt đầu với những gì kẻ tấn công sẽ thử trước.",
+  "next.ai":"Nhận bản tóm tắt AI cho lần quét này","next.aiD":"Mỗi nhận định đều dẫn về bằng chứng của lần quét.",
+  "next.static":"{n} endpoint chỉ thấy trong code","next.staticD":"Chưa từng được gọi — hãy kiểm tra xem chúng còn hoạt động không.",
+  "next.map":"Source map đang công khai trên {n} script","next.mapD":"Mã nguồn gốc có thể bị dựng lại.",
+  "next.auth":"Lần quét này chưa đăng nhập","next.authD":"Thêm thông tin đăng nhập để quét cả các trang cần đăng nhập.",
+  "next.failed":"{n} module chưa chạy xong","next.failedD":"Xem trạng thái module ở phần Tổng quan.",
+  "next.report":"Xuất báo cáo","next.reportD":"JSON, HTML hoặc PDF — có thể lọc theo mức độ.",
+  "ov.sub":"{status} · {host} · lần quét {id}","ov.total":"Tổng số phát hiện","ov.screenshot":"Ảnh chụp màn hình",
+  "ov.openShot":"Mở ảnh đầy đủ","ov.tech":"Công nghệ","ov.noTech":"không phát hiện","ov.timing":"Thời gian chạy module",
+  "ip.title":"IP & Hạ tầng","ip.reverse":"Reverse DNS","ip.country":"Quốc gia","ip.city":"Thành phố / Vùng",
+  "ip.coords":"Tọa độ","ip.tz":"Múi giờ","ip.isp":"ISP / Tổ chức","ip.origin":"⚠ Lộ IP gốc",
+  "f.total":"Tổng {n}","f.clean":"Không có phát hiện — lần quét sạch.","f.search":"Tìm phát hiện…",
+  "f.secrets":"🔑 Lộ khóa bí mật {n}","f.category":"loại:","f.confidence":"độ tin cậy:",
+  "f.noMatch":"Không có phát hiện phù hợp.","f.impact":"Ảnh hưởng: ","f.fix":"Khắc phục: ","f.masked":"Đã che: ",
+  "flt.host":"host","flt.method":"phương thức","flt.auth":"xác thực","flt.authRel":"liên quan xác thực",
+  "flt.nonAuth":"không liên quan","flt.status":"tĩnh / động","flt.ptype":"loại tham số","flt.conf":"độ tin cậy",
+  "flt.module":"module","flt.framework":"framework",
+  "col.confidence":"độ tin cậy","col.method":"phương thức","col.url":"url","col.discovery":"nguồn phát hiện",
+  "col.params":"tham số","col.auth":"xác thực","col.file":"file","col.size":"kích thước","col.framework":"framework",
+  "col.endpoints":"endpoint","col.sourcemap":"source map","col.secrets":"bí mật","col.sha":"sha-256","col.name":"tên",
+  "col.category":"loại","col.version":"phiên bản","col.status":"trạng thái","col.depth":"độ sâu","col.title":"tiêu đề",
+  "col.type":"kiểu","col.observation":"quan sát","col.role":"vai trò","col.required":"bắt buộc","col.subject":"chủ thể",
+  "col.issuer":"nơi cấp","col.validUntil":"hết hạn","col.value":"giá trị","col.kind":"kiểu","col.source":"nguồn",
+  "st.STATIC_ONLY":"chỉ tĩnh","st.DYNAMIC_ONLY":"chỉ động","st.STATIC_AND_DYNAMIC":"tĩnh + động",
+  "d.overview":"Tổng quan","d.params":"Tham số ({n})","d.sources":"Nguồn","d.raw":"Dữ liệu gốc","d.kind":"Kiểu",
+  "d.method":"Phương thức","d.conf":"Độ tin cậy","d.discovery":"Nguồn phát hiện","d.auth":"Xác thực",
+  "d.inScope":"Trong phạm vi","d.host":"Host","d.size":"Kích thước","d.obs":"Quan sát","d.truncated":"Bị cắt bớt",
+  "d.secrets":"Bí mật","d.secretsN":"{n} (đã che — xem Phát hiện)","d.referenced":"Được tham chiếu","d.exposed":"Bị lộ",
+  "d.rebuilt":"Dựng lại","d.files":"{n} file","d.frameworks":"Dấu hiệu framework","d.ast":"Lệnh gọi AST ({n})",
+  "d.regex":"Endpoint từ regex ({n})","d.ws":"WebSocket","d.file":"File","d.type":"Kiểu","d.name":"Tên",
+  "d.category":"Loại","d.version":"Phiên bản","d.title":"Tiêu đề","d.status":"Trạng thái","d.depth":"Độ sâu",
+  "d.meta":"Meta","d.node":"Node","d.children":"Số con","d.subtreeF":"Phát hiện (cả nhánh)","d.maxSev":"Mức cao nhất",
+  "d.onNode":"Phát hiện tại node này ({n})","d.label":"Nhãn","d.connections":"Số kết nối","d.neighbors":"Node lân cận",
+  "d.role":"Vai trò","d.event":"Sự kiện","d.time":"Thời điểm","d.offset":"Sau khi bắt đầu","d.module":"Module",
+  "d.data":"Dữ liệu","d.evidence":"Bằng chứng","d.summary":"Tóm tắt","d.notInSnap":"không có trong bản lưu",
+  "d.subjIssuer":"Chủ thể / Nơi cấp","d.validity":"Hiệu lực","d.notBefore":"Bắt đầu","d.notAfter":"Hết hạn",
+  "d.details":"Chi tiết","d.signals":"Tín hiệu nhận diện","d.provenance":"Nguồn gốc","d.from":"Phát hiện từ",
+  "d.seed":"trang gốc","d.integrity":"Toàn vẹn",
+  "ep.title":"Khám phá endpoint","ep.sub":"{n} endpoint · bấm vào dòng để xem tham số và nguồn gốc",
+  "ep.none":"Không tìm thấy endpoint nào.","ep.search":"Tìm URL…","ep.authParam":"tham số xác thực",
+  "js.title":"Khám phá JavaScript","js.sub":"{n} script · {a} đã tải và phân tích","js.none":"Không có file JavaScript.",
+  "js.search":"Tìm file hoặc hash…","js.fAnalyzed":"đã phân tích","js.fMap":"source map","js.fEps":"có endpoint",
+  "js.fSecrets":"có bí mật","js.notFetched":"chưa tải","js.exposed":"bị lộ","js.exposedN":"bị lộ · {n} nguồn",
+  "js.referenced":"được tham chiếu","js.calls":"{a} regex · {b} ast","js.graphql":"được tham chiếu",
+  "as.title":"Bề mặt tấn công","as.sub":"{t} · {n} phát hiện · mức độ được cộng dồn từ mọi nhánh",
+  "as.none":"Chưa có dữ liệu bề mặt tấn công.","as.expandAll":"Mở hết","as.collapseAll":"Thu gọn",
+  "as.expandRisky":"Mở các nhánh rủi ro","as.onlyRisky":"Chỉ nhánh có phát hiện",
+  "as.grp.Web surface":"Bề mặt web","as.grp.Static assets":"Tài nguyên tĩnh","as.grp.Technologies":"Công nghệ",
+  "as.grp.Infrastructure":"Hạ tầng",
+  "au.title":"Luồng xác thực","au.sub":"Mô hình suy luận từ endpoint, form và cookie — không gửi dữ liệu nào.",
+  "au.type":"kiểu luồng","au.conf":"độ tin cậy","au.form":"form đăng nhập","au.cookie":"cookie phiên",
+  "au.eps":"endpoint xác thực","au.flow":"Luồng suy luận","au.noSteps":"Không suy ra được các bước xác thực.",
+  "au.epsTitle":"Endpoint liên quan xác thực","au.noEps":"Không phát hiện endpoint xác thực nào.","au.endpoint":"Endpoint xác thực",
+  "tl.title":"Dòng thời gian sự kiện","tl.sub":"{n} sự kiện · những gì được phát hiện, quan sát và tìm thấy, theo thứ tự",
+  "tl.none":"Lần quét này không có dòng thời gian (các lần quét trước v0.4.0 không ghi).","tl.search":"Tìm sự kiện…",
+  "ai.sub":"Mỗi nhận định đều dẫn bằng chứng của lần quét — bấm vào mã để xem. Mô hình chỉ thấy bằng chứng đã chuẩn hóa, không bao giờ thấy trang gốc.",
+  "ai.provider":"Nhà cung cấp","ai.run":"Chạy phân tích AI","ai.rerun":"Chạy lại","ai.running":"Đang phân tích…",
+  "ai.noKey":"Đặt GROQ_API_KEY (vd. trong .env) để bật Groq.","ai.none":"Chưa có phân tích cho lần quét này.",
+  "ai.noneHint":"Mất vài giây. Dùng Groq nếu đã có key, nếu không dùng bản offline.",
+  "ai.bg":"Phân tích AI đang chạy nền — trang sẽ tự cập nhật khi xong.",
+  "ai.done":"Đã phân tích xong","ai.failed":"Phân tích AI thất bại","ai.what":"Ứng dụng này là gì",
+  "ai.dropped":"đã loại {n} nhận định không có dẫn chứng","ai.nothing":"Không có nhận định nào đủ dẫn chứng.",
+  "ai.stub":"Bản offline","ai.s.components":"Thành phần","ai.s.attack_surface":"Bề mặt tấn công",
+  "ai.s.auth_apis":"API xác thực","ai.s.static_vs_observed":"Tĩnh và đã quan sát","ai.s.gaps":"Phần chưa quét tới",
+  "tech.sub":"{n} công nghệ · bấm để xem bằng chứng","pg.sub":"Đã crawl {n} trang","at.sub":"{n} tài nguyên",
+  "fm.sub":"{n} form","fm.none":"Không có form.","fm.sensitive":"· nhạy cảm","fm.on":"tại {p} · enctype {e}",
+  "dns.records":"Bản ghi DNS","dns.none":"không có (hoặc mục tiêu là địa chỉ IP)","dns.certs":"Chứng chỉ",
+  "gr.title":"Đồ thị quan hệ","gr.hint":"Cuộn để phóng to · kéo để di chuyển · bấm node để xem chi tiết",
+  "gr.none":"Chưa có dữ liệu đồ thị.",
+  "cmp.title":"So sánh lần quét","cmp.need":"Cần ít nhất hai lần quét để so sánh.",
+  "cmp.pick":"— chọn lần quét để so sánh —","cmp.against":"So sánh lần quét hiện tại với:",
+  "cmp.noChange":"không thay đổi","cmp.k.endpoints":"Endpoint","cmp.k.technologies":"Công nghệ","cmp.k.findings":"Phát hiện",
+  "rep.sub":"Tạo từ dữ liệu quét đã lưu","rep.json":"Mở JSON","rep.html":"Mở HTML","rep.pdf":"Mở / tải PDF",
+  "rep.custom":"⚙ Xuất tùy chỉnh…","rep.preview":"Xem trước HTML",
+  "dlg.title":"Quét mới","dlg.sub":"Chỉ quét tài sản bạn sở hữu hoặc được phép kiểm thử.","dlg.url":"URL mục tiêu",
+  "dlg.urlHelp":"Tự thêm https:// nếu bạn bỏ trống.","dlg.limits":"Giới hạn crawl","dlg.depth":"Độ sâu tối đa",
+  "dlg.pages":"Số trang tối đa","dlg.scope":"Phạm vi","dlg.checks":"Kiểm tra",
+  "dlg.browser":"Chế độ trình duyệt (chạy JS, chụp màn hình)",
+  "dlg.active":"Kiểm tra chủ động (apitest + xác minh open-redirect/XSS · chỉ khi được phép)",
+  "dlg.probe":"Dò file nhạy cảm (.git/.env… · chỉ khi được phép)",
+  "dlg.private":"Chế độ lab (cho phép mục tiêu nội bộ/loopback)",
+  "dlg.ai":"Phân tích AI khi xong (Groq nếu đã cấu hình · gửi bằng chứng quét cho nhà cung cấp)",
+  "dlg.auth":"Quét có đăng nhập (tùy chọn) — thông tin chỉ gửi tới site mục tiêu",
+  "dlg.loginUrl":"Tự đăng nhập — URL trang đăng nhập","dlg.loginUrlPh":"https://target/login (để trống nếu không dùng)",
+  "dlg.user":"Tên đăng nhập","dlg.pass":"Mật khẩu",
+  "dlg.loginHelp":"Trình duyệt ẩn sẽ tự đăng nhập và lấy phiên. Hoặc dán cookie trực tiếp bên dưới.",
+  "dlg.cookie":"Header Cookie","dlg.headers":"Header bổ sung (mỗi dòng một header, \"Tên: giá trị\")",
+  "dlg.start":"Bắt đầu quét","dlg.badUrl":"Nhập URL hợp lệ, vd. https://example.com","dlg.started":"Đã bắt đầu quét",
+  "dlg.startFail":"Không thể bắt đầu quét: {e}",
+  "x.title":"Xuất tùy chỉnh","x.sub":"Chọn định dạng và mức độ tối thiểu (tùy chọn).","x.fmt":"Định dạng",
+  "x.sev":"Mức độ tối thiểu","x.allSev":"Mọi mức độ","x.critOnly":"Chỉ critical","x.open":"Mở trong tab mới",
+  "pal.ph":"Tìm phát hiện, endpoint, công nghệ… hoặc chuyển tới mục","pal.goto":"Đến {s}","pal.section":"mục",
+  "pal.action":"hành động",
+  "prog.starting":"đang khởi động…","prog.cancelling":"Đang hủy…","prog.done":"Quét {s}","prog.running":"Đang chạy {m} ({i}/{n})",
+},
+};
+const store={get(k){try{return localStorage.getItem(k);}catch{return null;}},
+  set(k,v){try{localStorage.setItem(k,v);}catch{}}};
+let LANG=store.get("wr-lang")||((navigator.language||"en").toLowerCase().startsWith("vi")?"vi":"en");
+/** translate key, filling {placeholders} from vars */
+function t(k,vars){
+  let s=I18N[LANG]?.[k]??I18N.en[k]??k;
+  if(vars)for(const[a,b]of Object.entries(vars))s=s.split(`{${a}}`).join(String(b));
+  return s;
+}
+/** apply translations to static markup (data-i18n / -ph / -title) */
+function applyStatic(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll("[data-i18n]").forEach(n=>{n.textContent=t(n.dataset.i18n);});
+  document.querySelectorAll("[data-i18n-ph]").forEach(n=>{n.placeholder=t(n.dataset.i18nPh);});
+  document.querySelectorAll("[data-i18n-title]").forEach(n=>{
+    n.title=t(n.dataset.i18nTitle);n.setAttribute("aria-label",t(n.dataset.i18nTitle));});
+  const lb=$("#langBtn");lb.textContent=LANG==="vi"?"EN":"VI";lb.title=t("lang");lb.setAttribute("aria-label",t("lang"));
+}
+function setLang(l){LANG=l;store.set("wr-lang",l);applyStatic();renderNav();fillScanSelect();render();
+  buildSearchIndex();}
+const obs=o=>el("span",{class:"obs-"+o,title:I18N.en["obs."+o]?t("obs."+o):null},o);
+function copyBtn(text){return clickable(el("span",{class:"copy",title:t("copy")},t("copy")),
+  e=>{e.stopPropagation();navigator.clipboard?.writeText(text);toast(t("copied"),"ok");});}
 
-/* ============================ state ============================ */
+/* ============================ state + routing ============================ */
 const SECTIONS=[
-  ["Recon",["Overview","AI Analysis","Attack Surface"]],
-  ["Content",["Findings","Endpoints","JS Files","Auth Flow","Technologies","Pages","Assets","Forms"]],
-  ["Infra",["DNS / TLS","Graph"]],
-  ["Output",["Timeline","Compare","Reports"]],
+  ["start",["Home"]],
+  ["results",["Overview","AI Analysis","Findings"]],
+  ["surface",["Attack Surface","Endpoints","JS Files","Auth Flow","Forms"]],
+  ["inventory",["Technologies","Pages","Assets","DNS / TLS","Graph"]],
+  ["history",["Timeline","Compare","Reports"]],
 ];
 const FLATSECTIONS=SECTIONS.flatMap(([,items])=>items);
-const state={scanId:null,section:"Overview",ws:null,runningId:null,
+const slug=s=>s.toLowerCase().replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"");
+const BYSLUG=Object.fromEntries(FLATSECTIONS.map(s=>[slug(s),s]));
+const state={scanId:null,scans:[],section:"Home",ws:null,runningId:null,renderSeq:0,
   sevFilter:new Set(),catFilter:new Set(),confFilter:new Set(),secretsOnly:false,
   counts:{},searchIndex:[]};
+const SID=()=>state.scanId;
+function fromHash(){return BYSLUG[location.hash.replace(/^#\/?/,"")]||"Home";}
+function go(section){const h="#/"+slug(section);if(location.hash===h)route();else location.hash=h;}
+function route(){state.section=fromHash();closeNav();renderNav();render();}
+addEventListener("hashchange",route);
 
 /* ============================ theme ============================ */
 const root=document.documentElement;
-root.dataset.theme=localStorage.getItem("wr-theme")||"dark";
-$("#themeBtn").onclick=()=>{const t=root.dataset.theme==="dark"?"light":"dark";
-  root.dataset.theme=t;localStorage.setItem("wr-theme",t);};
+root.dataset.theme=store.get("wr-theme")||"dark";
+$("#themeBtn").onclick=()=>{const th=root.dataset.theme==="dark"?"light":"dark";
+  root.dataset.theme=th;store.set("wr-theme",th);};
+$("#langBtn").onclick=()=>setLang(LANG==="vi"?"en":"vi");
 
 /* ============================ nav ============================ */
 const ICONS={
+  "Home":'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
   "Overview":'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
   "Findings":'<path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M12 8v4"/>',
   "Endpoints":'<path d="M9 2v4M15 2v4M7 6h10v4a5 5 0 0 1-10 0z"/><path d="M12 15v6"/>',
@@ -466,158 +869,297 @@ const ICONS={
 };
 function iconEl(name){
   const inner=ICONS[name]||'<circle cx="12" cy="12" r="3"/>';
-  return el("span",{class:"navic",html:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`});
+  return el("span",{class:"navic","aria-hidden":"true",html:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`});
 }
 function renderNav(){
   const nav=$("#nav");nav.innerHTML="";
   for(const[grp,items] of SECTIONS){
-    nav.append(el("div",{class:"grp"},el("span",{},grp)));
+    nav.append(el("div",{class:"grp"},t("grp."+grp)));
     for(const s of items){
-      const a=el("a",{class:s===state.section?"active":"",onclick:()=>go(s)},
-        iconEl(s),el("span",{},s));
-      const c=state.counts[s]; if(c!=null) a.append(el("span",{class:"badge"},String(c)));
+      const cur=s===state.section;
+      const a=el("a",{href:"#/"+slug(s),class:cur?"active":"","aria-current":cur?"page":null},
+        iconEl(s),el("span",{},t("sec."+s)));
+      const c=state.counts[s];if(c!=null)a.append(el("span",{class:"badge"},String(c)));
       nav.append(a);
     }
   }
+  document.title=`${t("sec."+state.section)} · WebRecon`;
 }
-function go(section){state.section=section;renderNav();render();}
+const MOBILE=matchMedia("(max-width:860px)");
+/** an off-canvas (closed, mobile) nav must not be reachable by Tab */
+function syncNavInert(){$("#nav").inert=MOBILE.matches&&!$("#app").classList.contains("navopen");}
+MOBILE.addEventListener("change",syncNavInert);
+function openNav(){$("#app").classList.add("navopen");$("#navScrim").classList.add("on");
+  $("#menuBtn").setAttribute("aria-expanded","true");syncNavInert();$("#nav a.active")?.focus();}
+function closeNav(){$("#app").classList.remove("navopen");$("#navScrim").classList.remove("on");
+  $("#menuBtn").setAttribute("aria-expanded","false");syncNavInert();}
+$("#menuBtn").onclick=()=>$("#app").classList.contains("navopen")?closeNav():openNav();
+$("#navScrim").onclick=closeNav;
 
 /* ============================ drawer ============================ */
+let lastFocus=null;
 function openDrawer(title,sections){
+  lastFocus=document.activeElement;
   $("#drawerTitle").textContent=title;
   const body=$("#drawerBody");body.innerHTML="";
   for(const sec of sections){
     if(!sec) continue;
-    const box=el("div",{class:"dsec"},el("h3",{},sec.label));
+    const box=el("div",{class:"dsec"});if(sec.label)box.append(el("h3",{},sec.label));
     if(sec.rows){for(const[k,v]of sec.rows){ if(v==null||v==="") continue;
       box.append(el("div",{class:"drow"},el("span",{class:"dk"},k),el("span",{class:"dv"},v)));}}
-    if(sec.tags){box.append(el("div",{class:"taglist"},...sec.tags.map(t=>el("span",{class:"tag"},t))));}
+    if(sec.tags){box.append(el("div",{class:"taglist"},...sec.tags.map(x=>el("span",{class:"tag"},x))));}
     if(sec.evidence){for(const e of sec.evidence)
       box.append(el("div",{class:"evi"},typeof e==="string"?e:JSON.stringify(e,null,2)));}
+    if(sec.node)box.append(sec.node);
     if(sec.raw!==undefined){
       const pre=el("div",{class:"evi",style:"display:none"},JSON.stringify(sec.raw,null,2));
-      box.append(el("button",{class:"ghost",style:"font-size:12px;padding:4px 10px",
-        onclick:()=>{pre.style.display=pre.style.display==="none"?"":"none";}},"Toggle raw JSON"),pre);
+      const b=el("button",{class:"ghost",style:"font-size:12px;padding:4px 10px","aria-expanded":"false",
+        onclick:()=>{const hid=pre.style.display==="none";pre.style.display=hid?"":"none";
+          b.setAttribute("aria-expanded",String(hid));}},t("rawToggle"));
+      box.append(b,pre);
     }
     body.append(box);
   }
   $("#scrim").classList.add("on");$("#drawer").classList.add("on");
+  $("#drawer").inert=false;$("#drawer").setAttribute("aria-hidden","false");$("#drawerClose").focus();
 }
-function closeDrawer(){$("#scrim").classList.remove("on");$("#drawer").classList.remove("on");}
+function closeDrawer(){
+  if(!$("#drawer").classList.contains("on"))return;
+  $("#scrim").classList.remove("on");$("#drawer").classList.remove("on");
+  $("#drawer").setAttribute("aria-hidden","true");$("#drawer").inert=true;
+  if(lastFocus&&document.contains(lastFocus))lastFocus.focus();
+}
 $("#drawerClose").onclick=closeDrawer;$("#scrim").onclick=closeDrawer;
-addEventListener("keydown",e=>{if(e.key==="Escape"){closeDrawer();closePalette();}});
+addEventListener("keydown",e=>{
+  if(e.key==="Escape"){closeDrawer();closePalette();closeNav();}
+  if(e.key==="Tab"&&$("#drawer").classList.contains("on")){  // keep focus inside the drawer
+    const f=[...$("#drawer").querySelectorAll('button,[href],input,select,[tabindex="0"]')]
+      .filter(n=>n.offsetParent!==null);
+    if(!f.length)return;const first=f[0],last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  }
+});
 
-/* ============================ generic table ============================ */
-function skeleton(n=8){const w=el("div");for(let i=0;i<n;i++)
+/* ============================ states + tables ============================ */
+function skeleton(n=8){const w=el("div",{"aria-busy":"true"});for(let i=0;i<n;i++)
   w.append(el("div",{class:"sk",style:`width:${60+Math.floor(i%3*15)}%`}));return w;}
-function emptyState(msg="Nothing here."){return el("div",{class:"empty"},
-  el("div",{class:"big"},"∅"),el("div",{},msg));}
-function tbl(cols,rows){const t=el("table");const h=el("tr");cols.forEach(c=>h.append(el("th",{},c)));
-  t.append(el("thead",{},h));const b=el("tbody");
+/** empty state with an optional call to action {label, run} and hint */
+function emptyState(msg=t("nothing"),action=null,hint=null){
+  const n=el("div",{class:"empty"},el("div",{class:"big","aria-hidden":"true"},"∅"),el("div",{},msg));
+  if(hint)n.append(el("div",{class:"hint"},hint));
+  if(action)n.append(el("div",{class:"act"},el("button",{class:"primary",onclick:action.run},action.label)));
+  return n;
+}
+function errorState(err,retry){
+  const n=el("div",{class:"empty errbox",role:"alert"},el("div",{class:"big","aria-hidden":"true"},"!"),
+    el("div",{},t("error")),el("div",{class:"hint"},String(err?.message||err)));
+  if(retry)n.append(el("div",{class:"act"},el("button",{class:"ghost",onclick:retry},t("retry"))));
+  return n;
+}
+function pageHead(title,sub,...actions){
+  return el("div",{class:"pagehead"},el("div",{},el("h1",{},title),sub?el("div",{class:"sub"},sub):""),
+    actions.length?el("div",{class:"actions"},...actions):"");
+}
+function tbl(cols,rows){const tb=el("table");const h=el("tr");cols.forEach(c=>h.append(el("th",{scope:"col"},c)));
+  tb.append(el("thead",{},h));const b=el("tbody");
   rows.forEach(r=>{const tr=el("tr");r.cells.forEach(c=>tr.append(el("td",{},c)));
-    if(r.onclick){tr.className="clickable";tr.onclick=r.onclick;}b.append(tr);});
-  t.append(b);return t;}
+    if(r.onclick){tr.className="clickable";clickable(tr,r.onclick,{role:false});}b.append(tr);});
+  tb.append(b);return el("div",{class:"tablewrap"},tb);}
 /** searchable table with optional row click -> drawer */
 function dataTable(main,data,cols,mapRow){
   if(!data.length){main.append(emptyState());return;}
-  const inp=el("input",{placeholder:`Search ${data.length} rows…`,oninput:apply});
+  const inp=el("input",{placeholder:t("searchRows",{n:data.length}),"aria-label":t("search"),oninput:apply});
   main.append(el("div",{class:"toolbar"},inp));
   const wrap=el("div");main.append(wrap);
   function apply(){const q=inp.value.toLowerCase();
     const rows=data.filter(d=>!q||JSON.stringify(d).toLowerCase().includes(q)).map(mapRow);
-    wrap.innerHTML="";wrap.append(rows.length?tbl(cols,rows):emptyState("No matches."));}
+    wrap.innerHTML="";wrap.append(rows.length?tbl(cols,rows):emptyState(t("noMatch")));}
   apply();
+}
+/** labelled <select> filter; values are strings or [value,label]; returns [labelEl, selectEl] */
+function selFilter(label,values,onchange){
+  const opt=v=>Array.isArray(v)?el("option",{value:v[0]},v[1]):el("option",{value:v},v);
+  const s=el("select",{onchange},el("option",{value:""},t("all")),...values.map(opt));
+  return [el("label",{},label,s),s];
+}
+/** toggle chip bound to a Set; `color` is the "on" background */
+function toggleChip(set,key,text,color,onchange){
+  const chip=el("span",{class:"chip","aria-pressed":String(set.has(key))},text);
+  const paint=()=>{chip.style.cssText=set.has(key)?`background:${color};color:#fff;border-color:transparent`:"";
+    chip.setAttribute("aria-pressed",String(set.has(key)));};
+  paint();
+  return clickable(chip,()=>{set.has(key)?set.delete(key):set.add(key);paint();onchange();});
+}
+
+/* ============================ render ============================ */
+async function render(){
+  const m=$("#main");m.innerHTML="";const shell=el("div",{class:"fade"});m.append(shell);
+  const sec=state.section,seq=++state.renderSeq;
+  if(sec!=="Home"&&!state.scanId){
+    shell.append(emptyState(t("needScan"),{label:"+ "+t("newScan"),run:()=>openScanDialog()}));return;}
+  shell.append(skeleton());
+  try{
+    const node=await RENDER[sec]();
+    if(seq!==state.renderSeq)return;  // a newer navigation won the race
+    shell.innerHTML="";shell.append(node);
+  }catch(e){
+    if(seq!==state.renderSeq)return;
+    shell.innerHTML="";shell.append(errorState(e,render));toast(t("loadFailed",{e:e.message}),"err");
+  }
+}
+/* ============================ home ============================ */
+function welcomeView(){
+  const w=el("div");
+  w.append(el("div",{class:"hero"},el("h1",{},t("home.welcome")),el("p",{},t("home.intro")),
+    el("button",{class:"primary",style:"padding:11px 20px;font-size:15px",onclick:()=>openScanDialog()},
+      t("home.cta")+" →"),
+    el("div",{class:"note"},"⚠ "+t("home.note"))));
+  w.append(el("div",{class:"steps3"},...[1,2,3].map(i=>el("div",{class:"stepcard"},
+    el("div",{class:"n","aria-hidden":"true"},String(i)),el("b",{},t(`home.s${i}`)),el("span",{},t(`home.s${i}d`))))));
+  return w;
+}
+function sevBar(counts){
+  const total=SEVS.reduce((a,k)=>a+(counts[k]||0),0);
+  const bar=el("div",{class:"sevbar",role:"img",
+    "aria-label":SEVS.map(k=>`${k} ${counts[k]||0}`).join(", ")});
+  for(const k of SEVS){const v=counts[k]||0;if(!v)continue;
+    bar.append(el("i",{style:`width:${v/total*100}%;background:${riskColor(k)}`,title:`${k}: ${v}`}));}
+  const legend=el("div",{class:"sevlegend"},...SEVS.filter(k=>counts[k]).map(k=>
+    el("span",{},el("b",{style:`background:${riskColor(k)}`}),`${k} ${counts[k]}`)));
+  return el("div",{},total?bar:"",legend);
+}
+function kpi(label,value,sub,onclick,color){
+  return el("button",{class:"kpi",onclick},el("div",{class:"k"},label),
+    el("div",{class:"v",style:color?`color:${color}`:""},value),sub?el("div",{class:"s"},sub):"");
+}
+function nextItem(icon,color,title,desc,run){
+  return el("button",{class:"next",style:`--c:${color}`,onclick:run},
+    el("span",{class:"ic","aria-hidden":"true"},icon),
+    el("span",{class:"tx"},el("b",{},title),el("span",{},desc)),el("span",{class:"arrow","aria-hidden":"true"},"›"));
+}
+async function homeView(){
+  if(!state.scans.length)return welcomeView();
+  const sid=SID();
+  const [o,ai,eps,js,flow]=await Promise.all([api(`/api/scans/${sid}`),
+    api(`/api/scans/${sid}/ai`).catch(()=>({analysis:null})),
+    api(`/api/scans/${sid}/endpoints`).catch(()=>[]),api(`/api/scans/${sid}/js`).catch(()=>[]),
+    api(`/api/scans/${sid}/auth-flow`).catch(()=>({}))]);
+  const w=el("div");
+  const st=o.status==="success"?"":(["failed","cancelled"].includes(o.status)?" bad":" warn");
+  w.append(pageHead(o.target.base_url||"—",
+    el("span",{},el("span",{class:"statuspill"+st},o.status)," · "+fmtDate(o.created_at)+` · ${o.id.slice(0,8)}`),
+    el("button",{class:"ghost",onclick:()=>openScanDialog({url:o.target.base_url})},"↻ "+t("home.scanAgain")),
+    el("a",{href:`/api/scans/${sid}/report.html`,target:"_blank",rel:"noopener"},
+      el("button",{class:"ghost",tabindex:"-1"},t("home.openReport")))));
+  const risk=o.risk_level||"informational",bySev=o.findings_by_severity||{};
+  const observed=eps.filter(e=>e.observation==="observed").length;
+  const analyzed=js.filter(x=>x.analyzed).length;
+  w.append(el("div",{class:"kpis"},
+    kpi(t("kpi.risk"),risk,null,()=>go("Overview"),riskColor(risk)),
+    kpi(t("kpi.findings"),String(o.total_findings),
+      ((bySev.critical||0)+(bySev.high||0))?t("kpi.highSub",{n:(bySev.critical||0)+(bySev.high||0)}):null,
+      ()=>go("Findings")),
+    kpi(t("kpi.endpoints"),String(observed),t("kpi.of",{n:eps.length}),()=>go("Endpoints")),
+    kpi(t("kpi.js"),String(analyzed),t("kpi.of",{n:js.length}),()=>go("JS Files")),
+    kpi(t("kpi.ai"),ai.analysis?t("kpi.aiReady"):t("kpi.aiNone"),ai.analysis?ai.analysis.provider:null,
+      ()=>go("AI Analysis"),ai.analysis?"var(--ok)":"var(--muted)")));
+
+  const left=el("div"),right=el("div");
+  left.append(el("h2",{},t("home.next")));
+  const next=el("div",{class:"nextlist"});
+  const high=(bySev.critical||0)+(bySev.high||0);
+  if(high)next.append(nextItem("!","var(--crit)",t("next.high",{n:high}),t("next.highD"),()=>{
+    state.sevFilter=new Set(["critical","high"]);go("Findings");}));
+  if(!ai.analysis)next.append(nextItem("✦","var(--accent2)",t("next.ai"),t("next.aiD"),()=>go("AI Analysis")));
+  const stat=eps.filter(e=>(e.meta||{}).discovery_status==="STATIC_ONLY").length;
+  if(stat)next.append(nextItem("{ }","var(--accent)",t("next.static",{n:stat}),t("next.staticD"),()=>go("Endpoints")));
+  const maps=js.filter(x=>x.sourcemap_exposed).length;
+  if(maps)next.append(nextItem("⌥","var(--high)",t("next.map",{n:maps}),t("next.mapD"),()=>go("JS Files")));
+  if(!flow.has_session_cookie)next.append(nextItem("🔑","var(--med)",t("next.auth"),t("next.authD"),
+    ()=>openScanDialog({url:o.target.base_url,auth:true})));
+  const failed=(o.modules||[]).filter(m=>["failed","timeout"].includes(m.status)).length;
+  if(failed)next.append(nextItem("⚠","var(--high)",t("next.failed",{n:failed}),t("next.failedD"),()=>go("Overview")));
+  next.append(nextItem("⇩","var(--ok)",t("next.report"),t("next.reportD"),()=>go("Reports")));
+  left.append(next);
+
+  right.append(el("h2",{},t("home.sevMix")));
+  right.append(o.total_findings?sevBar(bySev):el("div",{class:"sub"},t("home.noFindings")));
+  right.append(el("h2",{},t("home.recent")));
+  right.append(el("div",{class:"recent"},...state.scans.slice(0,6).map(s=>el("button",{
+    class:s.id===sid?"cur":"","aria-current":s.id===sid?"true":null,onclick:()=>selectScan(s.id)},
+    el("span",{class:"t"},s.target),el("span",{class:"statuspill"+(s.status==="success"?"":" warn")},s.status),
+    el("span",{class:"d"},fmtDate(s.created_at))))));
+  w.append(el("div",{class:"homegrid"},left,right));
+  return w;
 }
 
 /* ============================ sections ============================ */
-async function render(){
-  const m=$("#main");m.innerHTML="";const shell=el("div",{class:"fade"});m.append(shell);
-  if(!state.scanId){shell.append(emptyState("No scan selected — start one with “New Scan”."));return;}
-  shell.append(skeleton());
-  try{ const build=RENDER[state.section]; const node=await build(); shell.innerHTML="";shell.append(node); }
-  catch(e){ shell.innerHTML="";shell.append(emptyState("Error: "+e.message)); toast("Load failed: "+e.message,"err"); }
-}
-const SID=()=>state.scanId;
 const RENDER={
+  Home:homeView,
   async Overview(){
     const o=await api(`/api/scans/${SID()}`);
     const w=el("div");
-    w.append(el("h1",{},o.target.base_url||"—"),
-      el("div",{class:"sub"},`${o.status} · ${o.target.hostname||""} · scan ${o.id.slice(0,8)}`));
+    w.append(pageHead(o.target.base_url||"—",
+      t("ov.sub",{status:o.status,host:o.target.hostname||"",id:o.id.slice(0,8)})));
     const risk=o.risk_level||"informational";
     w.append(el("div",{class:"riskhero"},
       el("div",{class:"riskbadge",style:`background:${riskColor(risk)}`},risk),
       severityDonut(o.findings_by_severity||{}),
-      el("div",{},el("div",{class:"k",style:"color:var(--muted);font-size:11px"},"TOTAL FINDINGS"),
+      el("div",{},el("div",{class:"k",style:"color:var(--muted);font-size:11px;text-transform:uppercase"},t("ov.total")),
         el("div",{style:"font-size:26px;font-weight:800"},String(o.total_findings)))));
     const cards=el("div",{class:"cards"});
-    for(const s of ["critical","high","medium","low","informational"])
-      cards.append(el("div",{class:"card"},el("div",{class:"k"},s),
+    for(const s of SEVS)
+      cards.append(clickable(el("div",{class:"card"},el("div",{class:"k"},s),
         el("div",{class:"v",style:`color:${(o.findings_by_severity?.[s])?riskColor(s):"var(--faint)"}`},
-          String(o.findings_by_severity?.[s]||0))));
+          String(o.findings_by_severity?.[s]||0))),()=>{state.sevFilter=new Set([s]);go("Findings");}));
     w.append(cards);
     if(o.ip_intel)w.append(ipWidget(o.ip_intel));
-    // screenshot (click opens full image in a new tab)
     const img=new Image();img.className="shot";img.src=`/api/scans/${SID()}/screenshot`;
-    img.title="Open full screenshot";
+    img.alt=t("ov.screenshot");img.title=t("ov.openShot");
     img.onclick=()=>window.open(img.src,"_blank");
-    img.onload=()=>{w.append(el("h2",{},"Screenshot"));w.append(img);};
-    w.append(el("h2",{},"Technology"));
-    if(o.technologies.length)w.append(tbl(["name","category","version","confidence"],
-      o.technologies.map(t=>({cells:[t.name,t.category,t.version||"—",
-        el("span",{class:"pill "+confClass(t.confidence)},t.confidence)]}))));
-    else w.append(el("div",{class:"sub"},"none detected"));
-    w.append(el("h2",{},"Module timing"));
+    img.onload=()=>{w.append(el("h2",{},t("ov.screenshot")));w.append(img);};
+    w.append(el("h2",{},t("ov.tech")));
+    if(o.technologies.length)w.append(tbl([t("col.name"),t("col.category"),t("col.version"),t("col.confidence")],
+      o.technologies.map(x=>({cells:[x.name,x.category,x.version||"—",
+        el("span",{class:"pill "+confClass(x.confidence)},x.confidence)]}))));
+    else w.append(el("div",{class:"sub"},t("ov.noTech")));
+    w.append(el("h2",{},t("ov.timing")));
     w.append(moduleTiming(o.modules));
     return w;
   },
   async Findings(){
     const data=await api(`/api/scans/${SID()}/findings`);
-    const w=el("div");w.append(el("h1",{},"Findings"),el("div",{class:"sub"},`${data.length} total`));
-    if(!data.length){w.append(emptyState("No findings — clean scan.")); return w;}
+    const w=el("div");w.append(pageHead(t("sec.Findings"),t("f.total",{n:data.length})));
+    if(!data.length){w.append(emptyState(t("f.clean")));return w;}
     const counts={},catCounts={},confCounts={};
     for(const f of data){counts[f.severity]=(counts[f.severity]||0)+1;
       if(f.category)catCounts[f.category]=(catCounts[f.category]||0)+1;
       if(f.confidence)confCounts[f.confidence]=(confCounts[f.confidence]||0)+1;}
     const bar=el("div",{class:"toolbar"});
-    const search=el("input",{placeholder:"Search findings…",oninput:apply});bar.append(search);
-    for(const s of ["critical","high","medium","low","informational"]){ if(!counts[s])continue;
-      const chip=el("span",{class:`chip ${s}`+(state.sevFilter.has(s)?" on":""),
-        onclick:()=>{state.sevFilter.has(s)?state.sevFilter.delete(s):state.sevFilter.add(s);
-          chip.classList.toggle("on");apply();}},`${s} ${counts[s]}`);bar.append(chip);}
-    // quick filter: Secrets & Leaks (secret_leak module findings)
+    const search=el("input",{placeholder:t("f.search"),"aria-label":t("f.search"),oninput:apply});bar.append(search);
+    for(const s of SEVS){ if(!counts[s])continue;
+      const chip=el("span",{class:`chip ${s}`+(state.sevFilter.has(s)?" on":""),"aria-pressed":String(state.sevFilter.has(s))},
+        `${s} ${counts[s]}`);
+      bar.append(clickable(chip,()=>{state.sevFilter.has(s)?state.sevFilter.delete(s):state.sevFilter.add(s);
+        chip.classList.toggle("on");chip.setAttribute("aria-pressed",String(state.sevFilter.has(s)));apply();}));}
+    const secretSet=new Set(state.secretsOnly?["on"]:[]);
     const secretCount=data.filter(isSecret).length;
-    if(secretCount){
-      const sc=el("span",{class:"chip"+(state.secretsOnly?" on":""),
-        style:state.secretsOnly?"background:var(--crit);color:#fff;border-color:transparent":"",
-        onclick:()=>{state.secretsOnly=!state.secretsOnly;
-          sc.style.cssText=state.secretsOnly?"background:var(--crit);color:#fff;border-color:transparent":"";
-          apply();}},`🔑 Secrets & Leaks ${secretCount}`);
-      bar.append(sc);
-    }
+    if(secretCount)bar.append(toggleChip(secretSet,"on",t("f.secrets",{n:secretCount}),"var(--crit)",
+      ()=>{state.secretsOnly=secretSet.has("on");apply();}));
     w.append(bar);
-    // second filter row: category + confidence facets (plain chips, AND across facets)
     const bar2=el("div",{class:"toolbar"});
-    function facet(set,key,label,count){
-      const chip=el("span",{class:"chip"+(set.has(key)?" on":""),
-        style:set.has(key)?"background:var(--accent);color:#fff;border-color:transparent":"",
-        onclick:()=>{set.has(key)?set.delete(key):set.add(key);
-          chip.classList.toggle("on");
-          chip.style.cssText=set.has(key)?"background:var(--accent);color:#fff;border-color:transparent":"";
-          apply();}},`${label} ${count}`);return chip;}
     const cats=Object.keys(catCounts).sort();
-    if(cats.length>1){bar2.append(el("span",{class:"kv"},"category:"));
-      for(const c of cats)bar2.append(facet(state.catFilter,c,c,catCounts[c]));}
+    if(cats.length>1){bar2.append(el("span",{class:"kv"},t("f.category")));
+      for(const c of cats)bar2.append(toggleChip(state.catFilter,c,`${c} ${catCounts[c]}`,"var(--accent)",apply));}
     const confs=Object.keys(confCounts).sort();
-    if(confs.length>1){bar2.append(el("span",{class:"kv",style:"margin-left:8px"},"confidence:"));
-      for(const c of confs)bar2.append(facet(state.confFilter,c,c,confCounts[c]));}
+    if(confs.length>1){bar2.append(el("span",{class:"kv",style:"margin-left:8px"},t("f.confidence")));
+      for(const c of confs)bar2.append(toggleChip(state.confFilter,c,`${c} ${confCounts[c]}`,"var(--accent)",apply));}
     if(bar2.childNodes.length)w.append(bar2);
-    const clearRow=el("div",{class:"toolbar"});
-    const summary=el("span",{class:"sub"});clearRow.append(summary,
-      el("button",{class:"ghost",style:"padding:3px 10px;font-size:12px",onclick:()=>{
-        state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();
-        state.secretsOnly=false;go("Findings");}},"Clear filters"));
-    w.append(clearRow);
+    const summary=el("span",{class:"sub","aria-live":"polite"});
+    w.append(el("div",{class:"toolbar"},summary,el("button",{class:"ghost",style:"padding:3px 10px;font-size:12px",
+      onclick:()=>{state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();
+        state.secretsOnly=false;render();}},t("clearFilters"))));
     const list=el("div");w.append(list);
     function apply(){list.innerHTML="";const q=search.value.toLowerCase();
       const items=data.filter(f=>(!state.sevFilter.size||state.sevFilter.has(f.severity))
@@ -625,172 +1167,166 @@ const RENDER={
         &&(!state.confFilter.size||state.confFilter.has(f.confidence))
         &&(!state.secretsOnly||isSecret(f))
         &&(!q||JSON.stringify(f).toLowerCase().includes(q)));
-      summary.textContent=`${items.length} of ${data.length} shown`;
-      if(!items.length){list.append(emptyState("No matching findings."));return;}
+      summary.textContent=t("shownOf",{a:items.length,b:data.length});
+      if(!items.length){list.append(emptyState(t("f.noMatch")));return;}
       for(const f of items){
-        const card=el("div",{class:"finding"});
-        const head=el("div",{class:"head",onclick:()=>card.classList.toggle("open")},
+        const cardEl=el("div",{class:"finding"});
+        const head=el("div",{class:"head","aria-expanded":"false"},
           sevPill(f.severity),el("span",{class:"name"},f.name),
           el("span",{class:"kv"},`· ${f.confidence} · `),obs(f.observation),
-          el("span",{class:"kv",style:"margin-left:auto"},f.check_id));
+          el("span",{class:"kv cid"},f.check_id));
+        clickable(head,()=>{const open=cardEl.classList.toggle("open");head.setAttribute("aria-expanded",String(open));});
         const body=el("div",{class:"body"});
         body.append(el("p",{},f.description));
-        if(f.impact)body.append(el("div",{},el("b",{},"Impact: "),f.impact));
-        if(f.recommendation)body.append(el("div",{},el("b",{},"Fix: "),f.recommendation));
+        if(f.impact)body.append(el("div",{},el("b",{},t("f.impact")),f.impact));
+        if(f.recommendation)body.append(el("div",{},el("b",{},t("f.fix")),f.recommendation));
         for(const e of f.evidence){
           const masked=e.data&&e.data.masked;
-          if(masked){  // secret finding: surface the masked value + copy button
-            body.append(el("div",{class:"evi"},
-              el("b",{},"Masked: "),el("code",{},masked),copyBtn(masked),
-              el("div",{class:"kv",style:"margin-top:4px"},`[${e.source}] ${e.url||""}`)));
-          }else{
-            body.append(el("div",{class:"evi"},
-              `[${e.source}] ${e.url||""}\n${JSON.stringify(e.data)}`));
-          }
+          if(masked)body.append(el("div",{class:"evi"},el("b",{},t("f.masked")),el("code",{},masked),copyBtn(masked),
+            el("div",{class:"kv",style:"margin-top:4px"},`[${e.source}] ${e.url||""}`)));
+          else body.append(el("div",{class:"evi"},`[${e.source}] ${e.url||""}\n${JSON.stringify(e.data)}`));
         }
         if(f.references?.length)body.append(el("div",{class:"kv",style:"margin-top:6px"},
-          ...f.references.map(r=>el("a",{href:r,target:"_blank"},r+" "))));
-        card.append(head,body);list.append(card);
+          ...f.references.map(r=>el("a",{href:r,target:"_blank",rel:"noopener"},r+" "))));
+        cardEl.append(head,body);list.append(cardEl);
       }
     }
     apply();return w;
   },
-  async Endpoints(){ return await endpointExplorer(); },
-  async "JS Files"(){ return await jsExplorer(); },
-  async "Auth Flow"(){ return await authFlowView(); },
-  async "Attack Surface"(){ return await attackSurfaceView(); },
-  async "AI Analysis"(){ return await aiView(); },
   async Technologies(){
     const d=await api(`/api/scans/${SID()}/technologies`);
-    const w=el("div");w.append(el("h1",{},"Technologies"),
-      el("div",{class:"sub"},`${d.length} detected · click for evidence`));
-    dataTable(w,d,["name","category","version","confidence"],t=>({
-      cells:[t.name,t.category,t.version||"—",el("span",{class:"pill "+confClass(t.confidence)},t.confidence)],
-      onclick:()=>openDrawer(t.name,[
-        {label:"Overview",rows:[["Name",t.name],["Category",t.category],["Version",t.version||"—"],
-          ["Confidence",el("span",{class:"pill "+confClass(t.confidence)},t.confidence)]]},
-        {label:"Evidence signals",evidence:(t.evidence||[]).map(x=>
-          `[${x.source}] ${x.detail}${x.version?"  (v"+x.version+")":""}`)},
-        {label:"Raw",raw:t}])}));
+    const w=el("div");w.append(pageHead(t("sec.Technologies"),t("tech.sub",{n:d.length})));
+    dataTable(w,d,[t("col.name"),t("col.category"),t("col.version"),t("col.confidence")],x=>({
+      cells:[x.name,x.category,x.version||"—",el("span",{class:"pill "+confClass(x.confidence)},x.confidence)],
+      onclick:()=>openDrawer(x.name,[
+        {label:t("d.overview"),rows:[[t("d.name"),x.name],[t("d.category"),x.category],[t("d.version"),x.version||"—"],
+          [t("d.conf"),el("span",{class:"pill "+confClass(x.confidence)},x.confidence)]]},
+        {label:t("d.signals"),evidence:(x.evidence||[]).map(s=>
+          `[${s.source}] ${s.detail}${s.version?"  (v"+s.version+")":""}`)},
+        {label:t("d.raw"),raw:x}])}));
     return w;
   },
   async Pages(){
     const d=await api(`/api/scans/${SID()}/pages`);
-    const w=el("div");w.append(el("h1",{},"Pages"),el("div",{class:"sub"},`${d.length} crawled`));
-    dataTable(w,d,["status","depth","title","url"],p=>({
+    const w=el("div");w.append(pageHead(t("sec.Pages"),t("pg.sub",{n:d.length})));
+    dataTable(w,d,[t("col.status"),t("col.depth"),t("col.title"),t("col.url")],p=>({
       cells:[p.status_code||"—",p.depth,p.title||"—",el("code",{},p.url)],
-      onclick:()=>openDrawer("Page",[
-        {label:"Overview",rows:[["URL",el("span",{},el("code",{},p.url),copyBtn(p.url))],
-          ["Title",p.title||"—"],["Status",String(p.status_code||"—")],["Depth",String(p.depth)]]},
-        {label:"Provenance",rows:[["Discovered from",p.discovered_from?el("code",{},p.discovered_from):"seed"]]},
-        {label:"Integrity",rows:[["SHA-256",p.content_hash?el("code",{},p.content_hash):"—"]]},
-        {label:"Raw",raw:p}])}));
+      onclick:()=>openDrawer(t("sec.Pages"),[
+        {label:t("d.overview"),rows:[["URL",el("span",{},el("code",{},p.url),copyBtn(p.url))],
+          [t("d.title"),p.title||"—"],[t("d.status"),String(p.status_code||"—")],[t("d.depth"),String(p.depth)]]},
+        {label:t("d.provenance"),rows:[[t("d.from"),p.discovered_from?el("code",{},p.discovered_from):t("d.seed")]]},
+        {label:t("d.integrity"),rows:[["SHA-256",p.content_hash?el("code",{},p.content_hash):"—"]]},
+        {label:t("d.raw"),raw:p}])}));
     return w;
   },
   async Assets(){
     const d=await api(`/api/scans/${SID()}/assets`);
-    const w=el("div");w.append(el("h1",{},"Assets"),el("div",{class:"sub"},`${d.length} discovered`));
-    dataTable(w,d,["type","observation","url"],a=>({
+    const w=el("div");w.append(pageHead(t("sec.Assets"),t("at.sub",{n:d.length})));
+    dataTable(w,d,[t("col.type"),t("col.observation"),t("col.url")],a=>({
       cells:[a.asset_type,obs(a.observation),el("code",{},a.url)],
-      onclick:()=>openDrawer("Asset",[
-        {label:"Overview",rows:[["URL",el("span",{},el("code",{},a.url),copyBtn(a.url))],
-          ["Type",a.asset_type],["Observation",obs(a.observation)],
-          ["Size",a.size_bytes?a.size_bytes+" B":"—"],
+      onclick:()=>openDrawer(t("sec.Assets"),[
+        {label:t("d.overview"),rows:[["URL",el("span",{},el("code",{},a.url),copyBtn(a.url))],
+          [t("d.type"),a.asset_type],[t("d.obs"),obs(a.observation)],
+          [t("d.size"),a.size_bytes?fmtBytes(a.size_bytes):"—"],
           ["SHA-256",a.content_hash?el("code",{},a.content_hash):"—"]]},
-        {label:"Meta",raw:a.meta||{}},{label:"Raw",raw:a}])}));
+        {label:t("d.meta"),raw:a.meta||{}},{label:t("d.raw"),raw:a}])}));
     return w;
   },
   async Forms(){
     const d=await api(`/api/scans/${SID()}/forms`);
-    const w=el("div");w.append(el("h1",{},"Forms"),el("div",{class:"sub"},`${d.length} found`));
-    if(!d.length){w.append(emptyState("No forms.")); return w;}
+    const w=el("div");w.append(pageHead(t("sec.Forms"),t("fm.sub",{n:d.length})));
+    if(!d.length){w.append(emptyState(t("fm.none")));return w;}
     for(const f of d){
       const sens=(f.inputs||[]).some(i=>/pass|otp|card|credit/i.test((i.name||"")+(i.type||"")));
       w.append(el("div",{class:"finding open"},
         el("div",{class:"head"},el("span",{class:"pill "+(sens?"high":"informational")},
           (f.method||"get").toUpperCase()),el("code",{},f.action||f.page_url),
-          sens?el("span",{class:"kv"},"· sensitive"):""),
-        el("div",{class:"body"},el("div",{class:"kv"},`on ${f.page_url} · enctype ${f.enctype||"—"}`),
-          tbl(["name","type","required"],(f.inputs||[]).map(i=>({
-            cells:[i.name||"—",i.type||"—",i.required?"yes":""]}))))));
+          sens?el("span",{class:"kv"},t("fm.sensitive")):""),
+        el("div",{class:"body"},el("div",{class:"kv"},t("fm.on",{p:f.page_url,e:f.enctype||"—"})),
+          tbl([t("col.name"),t("col.type"),t("col.required")],(f.inputs||[]).map(i=>({
+            cells:[i.name||"—",i.type||"—",i.required?t("yes"):""]}))))));
     }
     return w;
   },
   async "DNS / TLS"(){
     const [dns,certs]=await Promise.all([api(`/api/scans/${SID()}/dns`),api(`/api/scans/${SID()}/certificates`)]);
-    const w=el("div");w.append(el("h1",{},"DNS / TLS"));
-    w.append(el("h2",{},"DNS records"));
-    if(dns.length)w.append(tbl(["type","name","value"],
+    const w=el("div");w.append(pageHead("DNS / TLS"));
+    w.append(el("h2",{},t("dns.records")));
+    if(dns.length)w.append(tbl([t("col.type"),t("col.name"),t("col.value")],
       dns.map(d=>({cells:[d.record_type,d.name,el("code",{},d.value)]}))));
-    else w.append(el("div",{class:"sub"},"none (or IP-literal target)"));
-    w.append(el("h2",{},"Certificates"));
-    if(certs.length)w.append(tbl(["subject","issuer","valid until"],certs.map(c=>({
+    else w.append(el("div",{class:"sub"},t("dns.none")));
+    w.append(el("h2",{},t("dns.certs")));
+    if(certs.length)w.append(tbl([t("col.subject"),t("col.issuer"),t("col.validUntil")],certs.map(c=>({
       cells:[c.subject,c.issuer,c.not_after||"—"],
       onclick:()=>openDrawer("Certificate",[
-        {label:"Subject / Issuer",rows:[["Subject",c.subject],["Issuer",c.issuer]]},
-        {label:"Validity",rows:[["Not before",c.not_before||"—"],["Not after",c.not_after||"—"]]},
+        {label:t("d.subjIssuer"),rows:[["Subject",c.subject],["Issuer",c.issuer]]},
+        {label:t("d.validity"),rows:[[t("d.notBefore"),c.not_before||"—"],[t("d.notAfter"),c.not_after||"—"]]},
         {label:"SAN",tags:c.san||[]},
-        {label:"Details",raw:c.details||{}},{label:"Raw",raw:c}])}))));
-    else w.append(el("div",{class:"sub"},"none"));
+        {label:t("d.details"),raw:c.details||{}},{label:t("d.raw"),raw:c}])}))));
+    else w.append(el("div",{class:"sub"},t("none")));
     return w;
   },
   async Graph(){ return await graphView(); },
   async Timeline(){ return await eventTimelineView(); },
   async Compare(){ return await compareView(); },
   async Reports(){ return reportsView(); },
+  async Endpoints(){ return await endpointExplorer(); },
+  async "JS Files"(){ return await jsExplorer(); },
+  async "Auth Flow"(){ return await authFlowView(); },
+  async "Attack Surface"(){ return await attackSurfaceView(); },
+  async "AI Analysis"(){ return await aiView(); },
 };
 function confClass(c){return (c==="confirmed"||c==="high")?"low":"informational";}
-function isSecret(f){return f.module==="secret_leak"||(f.check_id||"").startsWith("secret.");}
+function isSecret(f){return f.module==="secret_leak"||(f.check_id||"").startsWith("secret.")
+  ||(f.check_id||"").startsWith("exposure.secret.");}
 
 /* ---- IP & Infrastructure widget (Overview) ---- */
 function flagEmoji(cc){ if(!cc||cc.length!==2)return "🌐";
   return String.fromCodePoint(...[...cc.toUpperCase()].map(c=>0x1F1E6+c.charCodeAt(0)-65)); }
 function ipWidget(ii){
-  const w=el("div");w.append(el("h2",{},"IP & Infrastructure"));
+  const w=el("div");w.append(el("h2",{},t("ip.title")));
   const p=(ii.ips&&ii.ips[0])||{};
   const coords=(p.latitude!=null&&p.longitude!=null)?`${p.latitude}, ${p.longitude}`:"—";
   const badges=el("div",{class:"toolbar",style:"margin:0 0 10px"});
   if(ii.edge_cdn)badges.append(el("span",{class:"pill low"},"Edge: "+ii.edge_cdn));
   if(p.provider)badges.append(el("span",{class:"pill informational"},p.provider));
   if(!p.provider&&p.ip)badges.append(el("span",{class:"pill informational"},"Bare-Metal"));
-  if(ii.origin_exposed)badges.append(el("span",{class:"pill high"},"⚠ Origin IP exposed"));
+  if(ii.origin_exposed)badges.append(el("span",{class:"pill high"},t("ip.origin")));
   const rows=[
     ["IP",p.ip?el("span",{},el("code",{},p.ip),copyBtn(p.ip)):"—"],
-    ["Reverse DNS",p.ptr?el("code",{},p.ptr):"—"],
-    ["Country",`${flagEmoji(p.country_code)} ${p.country||p.country_code||"—"}`],
-    ["City / Region",[p.city,p.region].filter(Boolean).join(", ")||"—"],
-    ["Coordinates",coords],
-    ["Timezone",p.timezone||"—"],
-    ["ISP / Org",p.isp||p.org||"—"],
+    [t("ip.reverse"),p.ptr?el("code",{},p.ptr):"—"],
+    [t("ip.country"),`${flagEmoji(p.country_code)} ${p.country||p.country_code||"—"}`],
+    [t("ip.city"),[p.city,p.region].filter(Boolean).join(", ")||"—"],
+    [t("ip.coords"),coords],[t("ip.tz"),p.timezone||"—"],
+    [t("ip.isp"),p.isp||p.org||"—"],
     ["ASN",p.asn?`AS${p.asn}${p.as_name?" · "+p.as_name:""}`:"—"],
   ];
-  const card=el("div",{class:"card",style:"min-width:min(560px,100%);width:100%"});
-  card.append(badges);
+  const c=el("div",{class:"card",style:"min-width:min(560px,100%);width:100%"});
+  c.append(badges);
   const grid=el("div");
-  for(const [k,v] of rows)grid.append(el("div",{class:"drow"},
-    el("div",{class:"dk"},k),el("div",{class:"dv"},v)));
-  card.append(grid);w.append(card);return w;
+  for(const [k,v] of rows)grid.append(el("div",{class:"drow"},el("div",{class:"dk"},k),el("div",{class:"dv"},v)));
+  c.append(grid);w.append(c);return w;
 }
 
 /* ---- small SVG charts ---- */
 function severityDonut(counts){
-  const order=["critical","high","medium","low","informational"];
-  const total=order.reduce((s,k)=>s+(counts[k]||0),0);
+  const total=SEVS.reduce((s,k)=>s+(counts[k]||0),0);
   const NS="http://www.w3.org/2000/svg",R=34,C=2*Math.PI*R;
   const svg=document.createElementNS(NS,"svg");svg.setAttribute("width",92);svg.setAttribute("height",92);
-  svg.setAttribute("viewBox","0 0 92 92");
+  svg.setAttribute("viewBox","0 0 92 92");svg.setAttribute("role","img");
+  svg.setAttribute("aria-label",SEVS.map(k=>`${k} ${counts[k]||0}`).join(", "));
   const track=document.createElementNS(NS,"circle");
   for(const[a,v]of Object.entries({cx:46,cy:46,r:R,fill:"none",stroke:"var(--panel3)","stroke-width":11}))
     track.setAttribute(a,v);svg.append(track);
   let off=0;
-  if(total){for(const k of order){const v=counts[k]||0;if(!v)continue;const frac=v/total;
+  if(total){for(const k of SEVS){const v=counts[k]||0;if(!v)continue;const frac=v/total;
     const c=document.createElementNS(NS,"circle");
     for(const[a,val]of Object.entries({cx:46,cy:46,r:R,fill:"none",stroke:riskColor(k),
       "stroke-width":11,"stroke-dasharray":`${frac*C} ${C}`,"stroke-dashoffset":-off*C,
       transform:"rotate(-90 46 46)"}))c.setAttribute(a,val);svg.append(c);off+=frac;}}
-  const t=document.createElementNS(NS,"text");t.setAttribute("x",46);t.setAttribute("y",50);
-  t.setAttribute("text-anchor","middle");t.setAttribute("font-size","20");t.setAttribute("font-weight","800");
-  t.textContent=String(total);svg.append(t);
+  const tx=document.createElementNS(NS,"text");tx.setAttribute("x",46);tx.setAttribute("y",50);
+  tx.setAttribute("text-anchor","middle");tx.setAttribute("font-size","20");tx.setAttribute("font-weight","800");
+  tx.textContent=String(total);svg.append(tx);
   return svg;
 }
 function moduleTiming(modules){
@@ -798,51 +1334,49 @@ function moduleTiming(modules){
   const w=el("div",{class:"modgrid"});
   for(const m of modules){const dc=m.status==="success"?"ok":(m.status==="failed"||m.status==="timeout")?"fail":"";
     const pct=Math.round((m.duration_ms||0)/max*100);
-    w.append(el("div",{class:"modcell"},el("span",{class:"dot "+dc}),
+    w.append(el("div",{class:"modcell",title:m.error||m.status},el("span",{class:"dot "+dc}),
       el("span",{style:"flex:1"},m.module),
       el("span",{class:"bar",style:"width:60px"},el("i",{style:`width:${pct}%`})),
       el("span",{class:"kv"},m.duration_ms?Math.round(m.duration_ms)+"ms":m.status)));}
   return w;
 }
+/* ============================ graph ============================ */
 /* Force-directed layout: repulsion between all nodes + springs along edges +
    gentle centering, then a collision pass so circles never overlap. Deterministic
    (golden-angle seed, no RNG) so the graph is stable across re-renders. */
 function forceLayout(nodes,edges,W,H,radius){
-  const cx=W/2,cy=H/2,N=nodes.length,P={},M=26;           // M = viewport margin
+  const cx=W/2,cy=H/2,N=nodes.length,P={},M=26;
   const deg={};for(const e of edges){deg[e.source]=(deg[e.source]||0)+1;deg[e.target]=(deg[e.target]||0)+1;}
-  // Pin the single highest-degree node at the centre so hub/star graphs stay
-  // symmetric instead of drifting to one side.
   const hub=nodes.reduce((a,b)=>(deg[b.id]||0)>(deg[a.id]||0)?b:a,nodes[0]);
   nodes.forEach((n,i)=>{const a=i*2.399963267,r=20*Math.sqrt(i+0.5);
     P[n.id]={x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};});
   if(hub)P[hub.id]={x:cx,y:cy};
   const E=edges.filter(e=>P[e.source]&&P[e.target]);
   const area=(W-2*M)*(H-2*M);
-  const k=Math.min(160,1.15*Math.sqrt(area/(N+1)));        // ideal edge length (FR)
+  const k=Math.min(160,1.15*Math.sqrt(area/(N+1)));
   const iters=N>160?140:320;
-  let temp=(W-2*M)/6;                                      // max step, cools each pass
+  let temp=(W-2*M)/6;
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
   for(let it=0;it<iters;it++){
     const dsp={};nodes.forEach(n=>dsp[n.id]={x:0,y:0});
-    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){             // repulsion  k²/d
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
       const a=P[nodes[i].id],b=P[nodes[j].id];
       let dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||0.01,f=k*k/d;
       const ux=dx/d,uy=dy/d,A=dsp[nodes[i].id],B=dsp[nodes[j].id];
       A.x+=ux*f;A.y+=uy*f;B.x-=ux*f;B.y-=uy*f;}
-    for(const e of E){                                     // attraction  d²/k
+    for(const e of E){
       const a=P[e.source],b=P[e.target];
       let dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||0.01,f=d*d/k;
       const ux=dx/d,uy=dy/d;
       dsp[e.source].x-=ux*f;dsp[e.source].y-=uy*f;dsp[e.target].x+=ux*f;dsp[e.target].y+=uy*f;}
-    for(const n of nodes){if(n===hub){P[n.id].x=cx;P[n.id].y=cy;continue;}  // hub pinned
+    for(const n of nodes){if(n===hub){P[n.id].x=cx;P[n.id].y=cy;continue;}
       const p=P[n.id],d=dsp[n.id];
-      const m=Math.hypot(d.x,d.y)||0.01;                   // step ≤ temperature
+      const m=Math.hypot(d.x,d.y)||0.01;
       p.x+=d.x/m*Math.min(m,temp);p.y+=d.y/m*Math.min(m,temp);
-      p.x+=(cx-p.x)*0.01;p.y+=(cy-p.y)*0.01;               // gentle centering
-      p.x=clamp(p.x,M,W-M);p.y=clamp(p.y,M,H-M);}          // stay inside the box
+      p.x+=(cx-p.x)*0.01;p.y+=(cy-p.y)*0.01;
+      p.x=clamp(p.x,M,W-M);p.y=clamp(p.y,M,H-M);}
     temp*=0.97;
   }
-  // Collision resolution: separate any pair closer than r1+r2+pad (kept in-box).
   for(let pass=0;pass<60;pass++){let moved=false;
     for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
       const a=P[nodes[i].id],b=P[nodes[j].id];
@@ -854,62 +1388,57 @@ function forceLayout(nodes,edges,W,H,radius){
     if(!moved)break;}
   const out={};for(const n of nodes)out[n.id]=[P[n.id].x,P[n.id].y];return out;
 }
+const NODE_COLOR={domain:"#4da3ff",ip:"#22c3ee",technology:"#7c5cff",endpoint:"#3ddc97",page:"#94a3b8",
+  asset:"#a78bfa",form:"#f472b6",dns:"#f2c14e",certificate:"#ff784e",finding:"#ff4d6d"};
 async function graphView(){
   const g=await api(`/api/scans/${SID()}/graph`);const w=el("div");
-  w.append(el("h1",{},"Relationship Graph"));
-  const color={domain:"#4da3ff",technology:"#7c5cff",endpoint:"#3ddc97",dns:"#f2c14e",certificate:"#ff784e"};
+  w.append(pageHead(t("gr.title"),t("gr.hint")));
+  if(!g.nodes.length){w.append(emptyState(t("gr.none")));return w;}
+  const present=new Set(g.nodes.map(n=>n.type));
   const legend=el("div",{class:"legend"});
-  for(const[k,v]of Object.entries(color))legend.append(el("span",{},el("b",{style:`background:${v}`}),k));
+  for(const[k,v]of Object.entries(NODE_COLOR))if(present.has(k))
+    legend.append(el("span",{},el("b",{style:`background:${v}`}),k));
   w.append(legend);
-  if(!g.nodes.length){w.append(emptyState("No graph data."));return w;}
-  w.append(el("div",{class:"sub",style:"margin:-4px 0 8px"},
-    "Scroll to zoom · drag to pan · click a node for detail"));
-  const W=Math.min($("#main").clientWidth-10,980),H=560,cx=W/2,cy=H/2,NS="http://www.w3.org/2000/svg";
+  const W=Math.max(300,Math.min($("#main").clientWidth-40,980)),H=W<600?420:560,NS="http://www.w3.org/2000/svg";
   const svg=document.createElementNS(NS,"svg");svg.setAttribute("width",W);svg.setAttribute("height",H);
+  svg.setAttribute("role","img");svg.setAttribute("aria-label",t("gr.title"));
   svg.style.cssText="border:1px solid var(--border);border-radius:12px;background:var(--panel);"+
     "cursor:grab;touch-action:none;display:block;max-width:100%";
-  const root=document.createElementNS(NS,"g");svg.append(root);  // pan/zoom transform target
-  // degree count per node (drives node size + which labels we show)
+  const rootG=document.createElementNS(NS,"g");svg.append(rootG);
   const deg={};for(const e of g.edges){deg[e.source]=(deg[e.source]||0)+1;deg[e.target]=(deg[e.target]||0)+1;}
   const radius=n=>n.type==="domain"?11:Math.min(10,4.5+(deg[n.id]||0)*0.7);
   const pos=forceLayout(g.nodes,g.edges,W,H,radius);
-  // edges first (under nodes)
   for(const e of g.edges){const a=pos[e.source],b=pos[e.target];if(!a||!b)continue;
     const l=document.createElementNS(NS,"line");
     for(const[k,v]of Object.entries({x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--border)","stroke-width":0.8}))
-      l.setAttribute(k,v);root.append(l);}
-  // show a text label only for hubs / the domain node, so labels don't collide.
+      l.setAttribute(k,v);rootG.append(l);}
   const labelDeg=[...g.nodes].map(n=>deg[n.id]||0).sort((a,b)=>b-a);
-  const labelCut=labelDeg[Math.min(labelDeg.length-1,14)]||0;  // ~top 15 by degree
+  const labelCut=labelDeg[Math.min(labelDeg.length-1,14)]||0;
+  const maxDeg=Math.max(...Object.values(deg),0);
   for(const n of g.nodes){const p=pos[n.id];if(!p)continue;const[x,y]=p;
     const c=document.createElementNS(NS,"circle");
-    for(const[k,v]of Object.entries({cx:x,cy:y,r:radius(n),fill:color[n.type]||"#8a93a6",
+    for(const[k,v]of Object.entries({cx:x,cy:y,r:radius(n),fill:NODE_COLOR[n.type]||"#8a93a6",
       stroke:"var(--panel)","stroke-width":1.5}))c.setAttribute(k,v);
     c.style.cursor="pointer";
-    const tt=document.createElementNS(NS,"title");tt.textContent=n.label;c.append(tt);
+    const tt=document.createElementNS(NS,"title");tt.textContent=`${n.type}: ${n.label}`;c.append(tt);
     c.addEventListener("click",ev=>{ev.stopPropagation();
       const nbrs=g.edges.filter(e=>e.source===n.id||e.target===n.id)
         .map(e=>e.source===n.id?e.target:e.source);
       openDrawer(n.label||n.id,[
-        {label:"Node",rows:[["Type",n.type],["Label",n.label||"—"],
-          ["Connections",String(deg[n.id]||0)]]},
-        {label:"Neighbors",tags:[...new Set(nbrs)].slice(0,40)},
-        {label:"Raw",raw:n}]);});
-    root.append(c);
-    const isHub=n.type==="domain"||(deg[n.id]||0)===Math.max(...Object.values(deg),0);
+        {label:t("d.node"),rows:[[t("d.type"),n.type],[t("d.label"),n.label||"—"],
+          [t("d.connections"),String(deg[n.id]||0)]]},
+        {label:t("d.neighbors"),tags:[...new Set(nbrs)].slice(0,40)},
+        {label:t("d.raw"),raw:n}]);});
+    rootG.append(c);
+    const isHub=n.type==="domain"||(deg[n.id]||0)===maxDeg;
     if(isHub||(deg[n.id]||0)>=Math.max(2,labelCut)){
-      const t=document.createElementNS(NS,"text");
-      if(isHub){t.setAttribute("x",x);t.setAttribute("y",y+radius(n)+14);
-        t.setAttribute("text-anchor","middle");t.setAttribute("font-size","11.5");}
-      else{t.setAttribute("x",x+radius(n)+4);t.setAttribute("y",y+3.5);
-        t.setAttribute("font-size","10");}
-      // halo (stroke painted behind the fill) keeps text legible over lines/nodes
-      t.style.cssText="pointer-events:none;paint-order:stroke;stroke:var(--panel);"+
+      const tx=document.createElementNS(NS,"text");
+      if(isHub){tx.setAttribute("x",x);tx.setAttribute("y",y+radius(n)+14);
+        tx.setAttribute("text-anchor","middle");tx.setAttribute("font-size","11.5");}
+      else{tx.setAttribute("x",x+radius(n)+4);tx.setAttribute("y",y+3.5);tx.setAttribute("font-size","10");}
+      tx.style.cssText="pointer-events:none;paint-order:stroke;stroke:var(--panel);"+
         "stroke-width:3.5px;stroke-linejoin:round;font-weight:600";
-      t.textContent=(n.label||"").slice(0,36);root.append(t);}}
-  // pan + zoom via a single transform on the root group.
-  // Auto-fit: frame the laid-out node bbox to fill the canvas (with padding),
-  // so a tightly-clustered graph still reads large instead of a dot in the middle.
+      tx.textContent=(n.label||"").slice(0,36);rootG.append(tx);}}
   const XS=g.nodes.map(n=>pos[n.id]?.[0]).filter(v=>v!=null);
   const YS=g.nodes.map(n=>pos[n.id]?.[1]).filter(v=>v!=null);
   const view={x:0,y:0,k:1};
@@ -919,15 +1448,15 @@ async function graphView(){
     view.k=Math.max(.4,Math.min((W-2*pad)/bw,(H-2*pad)/bh,2.4));
     view.x=pad-minX*view.k+(W-2*pad-bw*view.k)/2;
     view.y=pad-minY*view.k+(H-2*pad-bh*view.k)/2;}
-  function apply(){root.setAttribute("transform",`translate(${view.x} ${view.y}) scale(${view.k})`);}
+  function apply(){rootG.setAttribute("transform",`translate(${view.x} ${view.y}) scale(${view.k})`);}
   apply();
   svg.addEventListener("wheel",ev=>{ev.preventDefault();
     const r=svg.getBoundingClientRect(),mx=ev.clientX-r.left,my=ev.clientY-r.top;
     const f=ev.deltaY<0?1.12:1/1.12,nk=Math.min(6,Math.max(.3,view.k*f));
-    // zoom toward the cursor
     view.x=mx-(mx-view.x)*(nk/view.k);view.y=my-(my-view.y)*(nk/view.k);view.k=nk;apply();},{passive:false});
   let drag=null;
-  svg.addEventListener("pointerdown",ev=>{drag={x:ev.clientX-view.x,y:ev.clientY-view.y};
+  svg.addEventListener("pointerdown",ev=>{if(ev.target.tagName==="circle")return;
+    drag={x:ev.clientX-view.x,y:ev.clientY-view.y};
     svg.style.cursor="grabbing";svg.setPointerCapture(ev.pointerId);});
   svg.addEventListener("pointermove",ev=>{if(!drag)return;
     view.x=ev.clientX-drag.x;view.y=ev.clientY-drag.y;apply();});
@@ -935,50 +1464,52 @@ async function graphView(){
     try{svg.releasePointerCapture(ev.pointerId);}catch{}});
   w.append(svg);return w;
 }
+
+/* ============================ compare + reports ============================ */
 async function compareView(){
-  const w=el("div");w.append(el("h1",{},"Compare Scans"));
-  const scans=(await api("/api/scans")).filter(s=>s.id!==SID());
-  if(!scans.length){w.append(emptyState("Need at least two scans to compare."));return w;}
-  const sel=el("select",{},el("option",{value:""},"— pick a scan to compare against —"),
-    ...scans.map(s=>el("option",{value:s.id},`${s.target} · ${s.created_at.slice(0,16).replace("T"," ")}`)));
-  w.append(el("div",{class:"toolbar"},el("span",{class:"sub"},"Compare current scan against:"),sel));
+  const w=el("div");w.append(pageHead(t("cmp.title")));
+  const scans=state.scans.filter(s=>s.id!==SID());
+  if(!scans.length){w.append(emptyState(t("cmp.need"),{label:"+ "+t("newScan"),run:()=>openScanDialog()}));return w;}
+  const sel=el("select",{"aria-label":t("cmp.against")},el("option",{value:""},t("cmp.pick")),
+    ...scans.map(s=>el("option",{value:s.id},`${s.target} · ${fmtDate(s.created_at)}`)));
+  w.append(el("div",{class:"toolbar"},el("span",{class:"sub"},t("cmp.against")),sel));
   const out=el("div");w.append(out);
   sel.onchange=async()=>{ if(!sel.value){out.innerHTML="";return;}
     out.innerHTML="";out.append(skeleton(4));
-    const d=await api(`/api/scans/${SID()}/diff?against=${sel.value}`);out.innerHTML="";
-    const grid=el("div",{class:"grid2"});
-    for(const key of ["endpoints","technologies","findings"]){
-      const col=el("div",{class:"diffcol"});col.append(el("h2",{},key));
-      const {added,removed}=d[key];
-      if(!added.length&&!removed.length)col.append(el("div",{class:"sub"},"no change"));
-      added.forEach(x=>col.append(el("div",{class:"add"},"+ "+x)));
-      removed.forEach(x=>col.append(el("div",{class:"rem"},"− "+x)));grid.append(col);}
-    out.append(grid);};
+    try{
+      const d=await api(`/api/scans/${SID()}/diff?against=${encodeURIComponent(sel.value)}`);out.innerHTML="";
+      const grid=el("div",{class:"grid2"});
+      for(const key of ["endpoints","technologies","findings"]){
+        const col=el("div",{class:"diffcol"});col.append(el("h2",{},t("cmp.k."+key)));
+        const {added,removed}=d[key];
+        if(!added.length&&!removed.length)col.append(el("div",{class:"sub"},t("cmp.noChange")));
+        added.forEach(x=>col.append(el("div",{class:"add"},"+ "+x)));
+        removed.forEach(x=>col.append(el("div",{class:"rem"},"− "+x)));grid.append(col);}
+      out.append(grid);
+    }catch(e){out.innerHTML="";out.append(errorState(e,()=>sel.onchange()));}};
   return w;
 }
-/* ===================== v0.4.0 explorers ===================== */
-const uniq=a=>[...new Set(a.filter(x=>x!=null&&x!==""))].sort();
-const fmtBytes=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB";
-function hostOf(u){try{return new URL(u,location.href).hostname;}catch{return "";}}
-function shortPath(u){try{const x=new URL(u,location.href);return x.pathname+(x.search||"");}catch{return u;}}
-/** labelled <select> filter; values are strings or [value,label]; returns [labelEl, selectEl] */
-function selFilter(label,values,onchange){
-  const opt=v=>Array.isArray(v)?el("option",{value:v[0]},v[1]):el("option",{value:v},v);
-  const s=el("select",{onchange},el("option",{value:""},"all"),...values.map(opt));
-  return [el("label",{},label,s),s];
+function reportsView(){
+  const w=el("div");w.append(pageHead(t("sec.Reports"),t("rep.sub")));
+  const base=`/api/scans/${SID()}/report`;
+  const link=(href,cls,label)=>el("a",{href,target:"_blank",rel:"noopener"},el("button",{class:cls,tabindex:"-1"},label));
+  w.append(el("div",{class:"btnrow"},
+    link(`${base}.json`,"ghost",t("rep.json")),link(`${base}.html`,"ghost",t("rep.html")),
+    link(`${base}.pdf`,"primary",t("rep.pdf")),
+    el("button",{class:"ghost",onclick:()=>$("#exportDialog").showModal()},t("rep.custom"))));
+  w.append(el("h2",{},t("rep.preview")),el("iframe",{class:"preview",src:`${base}.html`,title:t("rep.preview")}));
+  return w;
 }
-/** toggle chip bound to a Set; `color` is the "on" background */
-function toggleChip(set,key,text,color,onchange){
-  const chip=el("span",{class:"chip",onclick:()=>{set.has(key)?set.delete(key):set.add(key);
-    chip.style.cssText=set.has(key)?`background:${color};color:#fff;border-color:transparent`:"";onchange();}},text);
-  return chip;
-}
-function card(k,v){return el("div",{class:"card"},el("div",{class:"k"},k),
-  el("div",{class:"v",style:"font-size:19px"},v));}
-
-/* ---- Endpoint Explorer ---- */
-const statusLabel=s=>({STATIC_ONLY:"static only",DYNAMIC_ONLY:"dynamic only",
-  STATIC_AND_DYNAMIC:"static + dynamic"})[s]||s||"—";
+$("#x_cancel").onclick=()=>$("#exportDialog").close();
+$("#x_open").onclick=()=>{
+  if(!SID()){toast(t("needScan"),"err");return;}
+  const fmt=$("#x_fmt").value,sev=$("#x_sev").value;
+  const q=sev?`?min_severity=${encodeURIComponent(sev)}`:"";
+  window.open(`/api/scans/${SID()}/report.${fmt}${q}`,"_blank");
+  $("#exportDialog").close();
+};
+/* ============================ endpoint explorer ============================ */
+const statusLabel=s=>s?t("st."+s):"—";
 const AUTH_PARAM=new Set(["token","authentication"]);
 async function endpointExplorer(){
   const [d,flow]=await Promise.all([api(`/api/scans/${SID()}/endpoints`),
@@ -987,22 +1518,21 @@ async function endpointExplorer(){
   const rows=d.map(e=>{const params=e.meta?.params||[];
     return {...e,host:hostOf(e.url),status:e.meta?.discovery_status||"",params,
       pclasses:uniq(params.map(p=>p.classification)),
-      auth:role[e.url]||(params.some(p=>AUTH_PARAM.has(p.classification))?"auth param":"")};});
-  const w=el("div");w.append(el("h1",{},"Endpoint Explorer"),
-    el("div",{class:"sub"},`${d.length} endpoints · click a row for parameters and provenance`));
-  if(!d.length){w.append(emptyState("No endpoints."));return w;}
+      auth:role[e.url]||(params.some(p=>AUTH_PARAM.has(p.classification))?t("ep.authParam"):"")};});
+  const w=el("div");w.append(pageHead(t("ep.title"),t("ep.sub",{n:d.length})));
+  if(!d.length){w.append(emptyState(t("ep.none")));return w;}
   const f={};const bar=el("div",{class:"filters"});
-  const q=el("input",{placeholder:"Search URL…",oninput:apply});bar.append(el("label",{},"search",q));
+  const q=el("input",{placeholder:t("ep.search"),oninput:apply});bar.append(el("label",{},t("search"),q));
   const add=(key,label,values)=>{const [lab,sel]=selFilter(label,values,()=>{f[key]=sel.value;apply();});
     if(values.length)bar.append(lab);};
-  add("host","host",uniq(rows.map(r=>r.host)));
-  add("method","method",uniq(rows.map(r=>r.method||"—")));
-  add("auth","auth",["auth-related","non-auth"]);
-  add("status","static / dynamic",uniq(rows.map(r=>r.status)).map(v=>[v,statusLabel(v)]));
-  add("ptype","param type",uniq(rows.flatMap(r=>r.pclasses)));
-  add("observation","confidence",["observed","referenced","potential"]);
+  add("host",t("flt.host"),uniq(rows.map(r=>r.host)));
+  add("method",t("flt.method"),uniq(rows.map(r=>r.method||"—")));
+  add("auth",t("flt.auth"),[["auth-related",t("flt.authRel")],["non-auth",t("flt.nonAuth")]]);
+  add("status",t("flt.status"),uniq(rows.map(r=>r.status)).map(v=>[v,statusLabel(v)]));
+  add("ptype",t("flt.ptype"),uniq(rows.flatMap(r=>r.pclasses)));
+  add("observation",t("flt.conf"),["observed","referenced","potential"]);
   w.append(bar);
-  const summary=el("div",{class:"sub"});const wrap=el("div");w.append(summary,wrap);
+  const summary=el("div",{class:"sub","aria-live":"polite"});const wrap=el("div");w.append(summary,wrap);
   function apply(){
     const ql=q.value.toLowerCase();
     const out=rows.filter(r=>(!ql||r.url.toLowerCase().includes(ql))
@@ -1010,10 +1540,11 @@ async function endpointExplorer(){
       &&(!f.auth||(f.auth==="auth-related")===!!r.auth)
       &&(!f.status||r.status===f.status)&&(!f.ptype||r.pclasses.includes(f.ptype))
       &&(!f.observation||r.observation===f.observation));
-    summary.textContent=`${out.length} of ${rows.length} shown`;
+    summary.textContent=t("shownOf",{a:out.length,b:rows.length});
     wrap.innerHTML="";
-    if(!out.length){wrap.append(emptyState("No matching endpoints."));return;}
-    wrap.append(tbl(["confidence","method","url","discovery","params","auth"],out.map(r=>({
+    if(!out.length){wrap.append(emptyState(t("noMatch")));return;}
+    wrap.append(tbl([t("col.confidence"),t("col.method"),t("col.url"),t("col.discovery"),t("col.params"),t("col.auth")],
+      out.map(r=>({
       cells:[obs(r.observation),r.method||"—",el("code",{},r.url),
         el("span",{class:"kv"},statusLabel(r.status)),
         el("div",{class:"taglist"},...r.pclasses.slice(0,4).map(c=>el("span",{class:"tag"},c))),
@@ -1024,32 +1555,31 @@ async function endpointExplorer(){
 }
 function endpointDrawer(e){
   openDrawer("Endpoint",[
-    {label:"Overview",rows:[["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],
-      ["Host",e.host||"—"],["Kind",e.kind],["Method",e.method||"—"],["Confidence",obs(e.observation)],
-      ["Discovery",statusLabel(e.status)],["Auth",e.auth||"—"],
-      ["In scope",String(e.meta?.in_scope??"—")]]},
-    e.params.length?{label:`Parameters (${e.params.length})`,rows:e.params.map(p=>[p.name,
+    {label:t("d.overview"),rows:[["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],
+      [t("d.host"),e.host||"—"],[t("d.kind"),e.kind],[t("d.method"),e.method||"—"],[t("d.conf"),obs(e.observation)],
+      [t("d.discovery"),statusLabel(e.status)],[t("d.auth"),e.auth||"—"],
+      [t("d.inScope"),e.meta?.in_scope==null?"—":t(e.meta.in_scope?"yes":"no")]]},
+    e.params.length?{label:t("d.params",{n:e.params.length}),rows:e.params.map(p=>[p.name,
       el("span",{},el("span",{class:"tag"},p.classification),
         el("span",{class:"kv"},` ${p.source||""} · ${Math.round((p.confidence||0)*100)}%`))])}:null,
-    {label:"Sources",tags:(e.meta?.sources||(e.source?e.source.split(","):[]))},
-    {label:"Raw",raw:e}]);
+    {label:t("d.sources"),tags:(e.meta?.sources||(e.source?e.source.split(","):[]))},
+    {label:t("d.raw"),raw:e}]);
 }
 
-/* ---- JS Explorer ---- */
+/* ============================ JS explorer ============================ */
 async function jsExplorer(){
   const d=await api(`/api/scans/${SID()}/js`);
-  const w=el("div");w.append(el("h1",{},"JS Explorer"),
-    el("div",{class:"sub"},`${d.length} scripts · ${d.filter(x=>x.analyzed).length} fetched and analyzed`));
-  if(!d.length){w.append(emptyState("No JavaScript files."));return w;}
-  const FLAGS={analyzed:["analyzed",x=>x.analyzed],map:["source map",x=>x.sourcemap_exposed],
-    eps:["has endpoints",x=>x.endpoints.length+x.ast_calls.length>0],secrets:["has secrets",x=>x.secrets>0]};
+  const w=el("div");w.append(pageHead(t("js.title"),t("js.sub",{n:d.length,a:d.filter(x=>x.analyzed).length})));
+  if(!d.length){w.append(emptyState(t("js.none")));return w;}
+  const FLAGS={analyzed:["js.fAnalyzed",x=>x.analyzed],map:["js.fMap",x=>x.sourcemap_exposed],
+    eps:["js.fEps",x=>x.endpoints.length+x.ast_calls.length>0],secrets:["js.fSecrets",x=>x.secrets>0]};
   const on=new Set();const bar=el("div",{class:"filters"});
-  const q=el("input",{placeholder:"Search file or hash…",oninput:apply});bar.append(el("label",{},"search",q));
-  const [hl,hs]=selFilter("host",uniq(d.map(x=>x.host)),apply);bar.append(hl);
+  const q=el("input",{placeholder:t("js.search"),oninput:apply});bar.append(el("label",{},t("search"),q));
+  const [hl,hs]=selFilter(t("flt.host"),uniq(d.map(x=>x.host)),apply);bar.append(hl);
   const fw=uniq(d.flatMap(x=>x.frameworks));
-  const [fl,fs]=selFilter("framework",fw,apply);if(fw.length)bar.append(fl);
+  const [fl,fs]=selFilter(t("flt.framework"),fw,apply);if(fw.length)bar.append(fl);
   for(const[k,[label,test]]of Object.entries(FLAGS)){const n=d.filter(test).length;
-    if(n)bar.append(toggleChip(on,k,`${label} ${n}`,"var(--accent)",apply));}
+    if(n)bar.append(toggleChip(on,k,`${t(label)} ${n}`,"var(--accent)",apply));}
   w.append(bar);
   const wrap=el("div");w.append(wrap);
   function apply(){const ql=q.value.toLowerCase();
@@ -1057,14 +1587,15 @@ async function jsExplorer(){
       &&(!hs.value||x.host===hs.value)&&(!fs.value||x.frameworks.includes(fs.value))
       &&[...on].every(k=>FLAGS[k][1](x)));
     wrap.innerHTML="";
-    if(!out.length){wrap.append(emptyState("No matching files."));return;}
-    wrap.append(tbl(["file","size","framework","endpoints","source map","secrets","sha-256"],out.map(x=>({
+    if(!out.length){wrap.append(emptyState(t("noMatch")));return;}
+    wrap.append(tbl([t("col.file"),t("col.size"),t("col.framework"),t("col.endpoints"),t("col.sourcemap"),
+      t("col.secrets"),t("col.sha")],out.map(x=>({
       cells:[el("code",{},shortPath(x.url)),x.size!=null?fmtBytes(x.size):"—",
-        el("div",{class:"taglist"},...x.frameworks.slice(0,3).map(t=>el("span",{class:"tag"},t))),
-        x.analyzed?`${x.endpoints.length} regex · ${x.ast_calls.length} ast`:el("span",{class:"kv"},"not fetched"),
+        el("div",{class:"taglist"},...x.frameworks.slice(0,3).map(f=>el("span",{class:"tag"},f))),
+        x.analyzed?t("js.calls",{a:x.endpoints.length,b:x.ast_calls.length}):el("span",{class:"kv"},t("js.notFetched")),
         x.sourcemap_exposed?el("span",{class:"pill "+(x.reconstructed_files?"medium":"low")},
-          x.reconstructed_files?`exposed · ${x.reconstructed_files} src`:"exposed")
-          :(x.sourcemap?el("span",{class:"kv"},"referenced"):"—"),
+          x.reconstructed_files?t("js.exposedN",{n:x.reconstructed_files}):t("js.exposed"))
+          :(x.sourcemap?el("span",{class:"kv"},t("js.referenced")):"—"),
         x.secrets?el("span",{class:"pill high"},String(x.secrets)):"—",
         x.sha256?el("code",{},x.sha256.slice(0,12)):"—"],
       onclick:()=>jsDrawer(x)}))));}
@@ -1072,235 +1603,241 @@ async function jsExplorer(){
 }
 function jsDrawer(x){
   openDrawer(shortPath(x.url),[
-    {label:"File",rows:[["URL",el("span",{},el("code",{},x.url),copyBtn(x.url))],["Host",x.host||"—"],
-      ["Size",x.size!=null?fmtBytes(x.size):"—"],
+    {label:t("d.file"),rows:[["URL",el("span",{},el("code",{},x.url),copyBtn(x.url))],[t("d.host"),x.host||"—"],
+      [t("d.size"),x.size!=null?fmtBytes(x.size):"—"],
       ["SHA-256",x.sha256?el("span",{},el("code",{},x.sha256),copyBtn(x.sha256)):"—"],
-      ["Observation",obs(x.observation)],["Truncated",x.truncated?"yes":"no"],
-      ["GraphQL",x.graphql?"referenced":"—"],["Secrets",x.secrets?`${x.secrets} (see Findings, masked)`:"none"]]},
-    {label:"Source map",rows:[["Referenced",x.sourcemap?el("code",{},x.sourcemap):"—"],
-      ["Exposed",x.sourcemap_exposed?"yes":"no"],["Reconstructed",String(x.reconstructed_files||0)+" file(s)"]]},
-    x.frameworks.length?{label:"Framework clues",tags:x.frameworks}:null,
-    x.ast_calls.length?{label:`AST calls (${x.ast_calls.length})`,rows:x.ast_calls.slice(0,100).map(c=>[
+      [t("d.obs"),obs(x.observation)],[t("d.truncated"),t(x.truncated?"yes":"no")],
+      ["GraphQL",x.graphql?t("js.graphql"):"—"],[t("d.secrets"),x.secrets?t("d.secretsN",{n:x.secrets}):t("none")]]},
+    {label:"Source map",rows:[[t("d.referenced"),x.sourcemap?el("code",{},x.sourcemap):"—"],
+      [t("d.exposed"),t(x.sourcemap_exposed?"yes":"no")],[t("d.rebuilt"),t("d.files",{n:x.reconstructed_files||0})]]},
+    x.frameworks.length?{label:t("d.frameworks"),tags:x.frameworks}:null,
+    x.ast_calls.length?{label:t("d.ast",{n:x.ast_calls.length}),rows:x.ast_calls.slice(0,100).map(c=>[
       (c.method||c.kind||"?").toUpperCase(),el("span",{},el("code",{},c.url),
         el("span",{class:"kv"},` · ${c.kind}${c.line?` · L${c.line}:${c.col}`:""} · ${Math.round((c.confidence||0)*100)}%`))])}:null,
-    x.endpoints.length?{label:`Regex endpoints (${x.endpoints.length})`,tags:x.endpoints.slice(0,100)}:null,
-    x.websockets.length?{label:"WebSockets",tags:x.websockets}:null,
-    {label:"Raw",raw:x}]);
+    x.endpoints.length?{label:t("d.regex",{n:x.endpoints.length}),tags:x.endpoints.slice(0,100)}:null,
+    x.websockets.length?{label:t("d.ws"),tags:x.websockets}:null,
+    {label:t("d.raw"),raw:x}]);
 }
 
-/* ---- Attack-surface tree ---- */
+/* ============================ attack surface ============================ */
 const TYPE_ICON={domain:"◎",group:"▤",host:"⌂",path:"/",endpoint:"⇄",page:"▢",form:"✎",
   asset:"◆",technology:"⚙",ip:"⌖",dns:"≡",certificate:"⚿"};
 function countLeaves(n){return n.children.length?n.children.reduce((a,c)=>a+countLeaves(c),0):1;}
+const nodeLabel=n=>n.type==="group"&&I18N.en["as.grp."+n.label]?t("as.grp."+n.label):n.label;
 async function attackSurfaceView(){
-  const t=await api(`/api/scans/${SID()}/attack-surface`);
-  const w=el("div");w.append(el("h1",{},"Attack Surface"),
-    el("div",{class:"sub"},`${t.label} · ${t.finding_count} finding(s) · severity rolls up from every branch`));
-  if(!t.children.length){w.append(emptyState("No attack-surface data."));return w;}
-  const all=[];(function walk(n,d){all.push([n,d]);n.children.forEach(c=>walk(c,d+1));})(t,0);
+  const tr=await api(`/api/scans/${SID()}/attack-surface`);
+  const w=el("div");w.append(pageHead(t("as.title"),t("as.sub",{t:tr.label,n:tr.finding_count})));
+  if(!tr.children.length){w.append(emptyState(t("as.none")));return w;}
+  const all=[];(function walk(n,d){all.push([n,d]);n.children.forEach(c=>walk(c,d+1));})(tr,0);
   const open=new Set(all.filter(([,d])=>d<2).map(([n])=>n.id));
   const risky=new Set();
-  const box=el("div",{class:"tree"});
+  const box=el("div",{class:"tree",role:"tree"});
   w.append(el("div",{class:"toolbar"},
-    el("button",{class:"ghost",onclick:()=>{all.forEach(([n])=>open.add(n.id));draw();}},"Expand all"),
-    el("button",{class:"ghost",onclick:()=>{open.clear();open.add(t.id);draw();}},"Collapse all"),
+    el("button",{class:"ghost",onclick:()=>{all.forEach(([n])=>open.add(n.id));draw();}},t("as.expandAll")),
+    el("button",{class:"ghost",onclick:()=>{open.clear();open.add(tr.id);draw();}},t("as.collapseAll")),
     el("button",{class:"ghost",onclick:()=>{all.forEach(([n])=>{if(n.finding_count)open.add(n.id);});draw();}},
-      "Expand risky branches"),
-    toggleChip(risky,"on","Only branches with findings","var(--crit)",draw)),box);
+      t("as.expandRisky")),
+    toggleChip(risky,"on",t("as.onlyRisky"),"var(--crit)",draw)),box);
+  let focusId=null;
   function nodeEl(n){
     const has=n.children.length>0,isOpen=open.has(n.id);
     const right=el("span",{class:"tright"});
     if(has)right.append(el("span",{class:"kv"},String(countLeaves(n))));
     if(n.max_severity)right.append(el("span",{class:"pill "+n.max_severity},`${n.max_severity} · ${n.finding_count}`));
-    if(has)right.append(el("span",{class:"copy",title:"Details",
-      onclick:ev=>{ev.stopPropagation();surfaceDrawer(n);}},"details"));
-    const row=el("div",{class:"tnode",onclick:()=>{
-        if(!has){surfaceDrawer(n);return;} isOpen?open.delete(n.id):open.add(n.id);draw();}},
-      el("span",{class:"tcaret"},has?(isOpen?"▾":"▸"):""),
-      el("span",{class:"ticon"},TYPE_ICON[n.type]||"•"),
-      el("span",{class:"tl-label",style:(n.type==="group"||n.type==="domain")?"font-weight:700":""},n.label),
+    if(has)right.append(clickable(el("span",{class:"copy",title:t("details")},t("details")),
+      ev=>{ev.stopPropagation();surfaceDrawer(n);}));
+    const row=el("div",{class:"tnode",role:"treeitem","aria-expanded":has?String(isOpen):null,"data-id":n.id},
+      el("span",{class:"tcaret","aria-hidden":"true"},has?(isOpen?"▾":"▸"):""),
+      el("span",{class:"ticon","aria-hidden":"true"},TYPE_ICON[n.type]||"•"),
+      el("span",{class:"tl-label",style:(n.type==="group"||n.type==="domain")?"font-weight:700":""},nodeLabel(n)),
       el("span",{class:"ttype"},n.type),right);
+    clickable(row,()=>{focusId=n.id;if(!has){surfaceDrawer(n);return;}
+      isOpen?open.delete(n.id):open.add(n.id);draw();},{role:false});
     const node=el("div",{},row);
-    if(has&&isOpen){const kids=el("div",{class:"tkids"});
+    if(has&&isOpen){const kids=el("div",{class:"tkids",role:"group"});
       for(const c of n.children)if(!risky.size||c.finding_count)kids.append(nodeEl(c));
       node.append(kids);}
     return node;
   }
-  function draw(){box.innerHTML="";box.append(nodeEl(t));}
+  function draw(){box.innerHTML="";box.append(nodeEl(tr));
+    if(focusId)box.querySelector(`[data-id="${CSS.escape(focusId)}"]`)?.focus();}
   draw();return w;
 }
 function surfaceDrawer(n){
   const props=Object.entries(n.props||{}).filter(([,v])=>v!=null&&v!==""&&typeof v!=="object");
-  openDrawer(n.label,[
-    {label:"Node",rows:[["Type",n.type],["Children",String(n.children.length)],
-      ["Findings (subtree)",String(n.finding_count)],
-      ["Max severity",n.max_severity?sevPill(n.max_severity):"—"],...props.map(([k,v])=>[k,String(v)])]},
-    n.props?.params?.length?{label:"Parameters",rows:n.props.params.map(p=>[p.name,
+  openDrawer(nodeLabel(n),[
+    {label:t("d.node"),rows:[[t("d.type"),n.type],[t("d.children"),String(n.children.length)],
+      [t("d.subtreeF"),String(n.finding_count)],
+      [t("d.maxSev"),n.max_severity?sevPill(n.max_severity):"—"],...props.map(([k,v])=>[k,String(v)])]},
+    n.props?.params?.length?{label:t("d.params",{n:n.props.params.length}),rows:n.props.params.map(p=>[p.name,
       `${p.classification} · ${p.source||""}`])}:null,
-    n.findings.length?{label:`Findings on this node (${n.findings.length})`,
-      rows:[...n.findings.map(f=>[sevPill(f.severity||"informational"),f.label]),
-        ["",el("button",{class:"ghost",onclick:()=>{closeDrawer();go("Findings");}},"Open Findings →")]]}:null,
-    {label:"Raw",raw:{...n,children:n.children.length}}]);
+    n.findings.length?{label:t("d.onNode",{n:n.findings.length}),
+      rows:n.findings.map(f=>[sevPill(f.severity||"informational"),f.label]),
+      node:el("button",{class:"ghost",style:"margin-top:8px",onclick:()=>{closeDrawer();go("Findings");}},
+        t("openFindings"))}:null,
+    {label:t("d.raw"),raw:{...n,children:n.children.length}}]);
 }
 
-/* ---- Auth-flow view ---- */
+/* ============================ auth flow ============================ */
 const AUTH_ROLE_ORDER=["login","register","authorize","callback","token","identity","reset","logout"];
 const roleRank=r=>{const i=AUTH_ROLE_ORDER.indexOf(r);return i<0?AUTH_ROLE_ORDER.length:i;};
 async function authFlowView(){
   const f=await api(`/api/scans/${SID()}/auth-flow`);
-  const w=el("div");w.append(el("h1",{},"Authentication Flow"),
-    el("div",{class:"sub"},"Detection-only model inferred from endpoints, forms and cookies — nothing is submitted."));
+  const w=el("div");w.append(pageHead(t("au.title"),t("au.sub")));
   const eps=f.endpoints||[];
-  w.append(el("div",{class:"cards"},card("flow type",f.kind||"unknown"),
-    card("confidence",Math.round((f.confidence||0)*100)+"%"),
-    card("login form",f.has_login_form?"yes":"no"),card("session cookie",f.has_session_cookie?"yes":"no"),
-    card("auth endpoints",String(eps.length))));
-  w.append(el("h2",{},"Inferred flow"));
+  w.append(el("div",{class:"cards"},card(t("au.type"),f.kind||"unknown"),
+    card(t("au.conf"),Math.round((f.confidence||0)*100)+"%"),
+    card(t("au.form"),t(f.has_login_form?"yes":"no")),card(t("au.cookie"),t(f.has_session_cookie?"yes":"no")),
+    card(t("au.eps"),String(eps.length))));
+  w.append(el("h2",{},t("au.flow")));
   if(f.steps?.length)w.append(el("ol",{class:"steps"},...f.steps.map(s=>el("li",{},s))));
-  else w.append(el("div",{class:"sub"},"No ordered authentication steps could be inferred."));
-  w.append(el("h2",{},"Auth-related endpoints"));
-  if(!eps.length){w.append(emptyState("No authentication endpoints detected."));return w;}
+  else w.append(el("div",{class:"sub"},t("au.noSteps")));
+  w.append(el("h2",{},t("au.epsTitle")));
+  if(!eps.length){w.append(emptyState(t("au.noEps")));return w;}
   const sorted=[...eps].sort((a,b)=>roleRank(a.role)-roleRank(b.role));
-  w.append(tbl(["role","method","url","confidence"],sorted.map(e=>({
+  w.append(tbl([t("col.role"),t("col.method"),t("col.url"),t("col.confidence")],sorted.map(e=>({
     cells:[el("span",{class:"tag"},e.role),e.method||"—",el("code",{},e.url),obs(e.observation)],
-    onclick:()=>openDrawer("Auth endpoint",[{label:"Endpoint",rows:[["Role",e.role],
-      ["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],["Method",e.method||"—"],
-      ["Confidence",obs(e.observation)]]}])}))));
+    onclick:()=>openDrawer(t("au.endpoint"),[{label:"Endpoint",rows:[[t("d.role"),e.role],
+      ["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],[t("d.method"),e.method||"—"],
+      [t("d.conf"),obs(e.observation)]]}])}))));
   return w;
 }
 
-/* ---- Event timeline ---- */
+/* ============================ event timeline ============================ */
 const KIND_COLOR={scan:"var(--accent)",module:"var(--info)",auth:"var(--accent2)",
   discovered:"var(--low)",observed:"var(--ok)",finding:"var(--high)"};
 async function eventTimelineView(){
   const ev=await api(`/api/scans/${SID()}/timeline`);
-  const w=el("div");w.append(el("h1",{},"Event Timeline"),
-    el("div",{class:"sub"},`${ev.length} events · what was discovered, observed and found, in order`));
-  if(!ev.length){w.append(emptyState("No timeline recorded for this scan (scans before v0.4.0 have none)."));return w;}
+  const w=el("div");w.append(pageHead(t("tl.title"),t("tl.sub",{n:ev.length})));
+  if(!ev.length){w.append(emptyState(t("tl.none")));return w;}
   const t0=Date.parse(ev[0].ts);
   const offset=e=>"+"+((Date.parse(e.ts)-t0)/1000).toFixed(2)+"s";
   const kinds={};for(const e of ev)kinds[e.kind]=(kinds[e.kind]||0)+1;
   const on=new Set();const bar=el("div",{class:"filters"});
-  const q=el("input",{placeholder:"Search events…",oninput:apply});bar.append(el("label",{},"search",q));
-  const [ml,modSel]=selFilter("module",uniq(ev.map(e=>e.module)),apply);bar.append(ml);
+  const q=el("input",{placeholder:t("tl.search"),oninput:apply});bar.append(el("label",{},t("search"),q));
+  const [ml,modSel]=selFilter(t("flt.module"),uniq(ev.map(e=>e.module)),apply);bar.append(ml);
   for(const k of Object.keys(KIND_COLOR))if(kinds[k])
     bar.append(toggleChip(on,k,`${k} ${kinds[k]}`,KIND_COLOR[k],apply));
   w.append(bar);
-  const summary=el("div",{class:"sub"});const list=el("div",{class:"tl"});w.append(summary,list);
+  const summary=el("div",{class:"sub","aria-live":"polite"});const list=el("div",{class:"tl"});w.append(summary,list);
   const PAGE=400;let limit=PAGE;
   function apply(){limit=PAGE;draw();}
   function draw(){const ql=q.value.toLowerCase();
     const out=ev.filter(e=>(!on.size||on.has(e.kind))&&(!modSel.value||e.module===modSel.value)
       &&(!ql||(e.label+" "+JSON.stringify(e.data)).toLowerCase().includes(ql)));
-    summary.textContent=`${out.length} of ${ev.length} shown`;
+    summary.textContent=t("shownOf",{a:out.length,b:ev.length});
     list.innerHTML="";
-    if(!out.length){list.append(emptyState("No matching events."));return;}
+    if(!out.length){list.append(emptyState(t("noMatch")));return;}
     for(const e of out.slice(0,limit)){
       const c=e.kind==="finding"?riskColor(e.data?.severity):(KIND_COLOR[e.kind]||"var(--faint)");
-      list.append(el("div",{class:"tlrow",style:`--kc:${c}`,onclick:()=>openDrawer(e.label,[
-          {label:"Event",rows:[["#",String(e.seq)],["Time",e.ts],["Offset",offset(e)],
-            ["Kind",e.kind],["Module",e.module||"pipeline"]]},
-          {label:"Data",evidence:[e.data||{}]}])},
+      list.append(clickable(el("div",{class:"tlrow",style:`--kc:${c}`},
         el("span",{class:"tlt"},offset(e)),
         el("span",{class:"kbadge"},e.kind==="finding"?(e.data?.severity||"finding"):e.kind),
-        el("span",{class:"kv tmod"},e.module||"pipeline"),el("span",{class:"tlabel",title:e.label},e.label)));}
+        el("span",{class:"kv tmod"},e.module||"pipeline"),el("span",{class:"tlabel",title:e.label},e.label)),
+        ()=>openDrawer(e.label,[
+          {label:t("d.event"),rows:[["#",String(e.seq)],[t("d.time"),e.ts],[t("d.offset"),offset(e)],
+            [t("d.kind"),e.kind],[t("d.module"),e.module||"pipeline"]]},
+          {label:t("d.data"),evidence:[e.data||{}]}])));}
     if(out.length>limit)list.append(el("button",{class:"ghost",style:"margin:10px 0",
-      onclick:()=>{limit+=PAGE;draw();}},`Show ${Math.min(PAGE,out.length-limit)} more`));
+      onclick:()=>{limit+=PAGE;draw();}},t("showMore",{n:Math.min(PAGE,out.length-limit)})));
   }
   draw();return w;
 }
 
-/* ---- AI analysis (G8) ---- */
-const AI_TITLES={components:"Components",attack_surface:"Attack surface",auth_apis:"Authentication APIs",
-  static_vs_observed:"Static vs observed",gaps:"Coverage gaps"};
+/* ============================ AI analysis ============================ */
+const AI_SECTIONS=["components","attack_surface","auth_apis","static_vs_observed","gaps"];
+let aiPoll=null;
 async function aiView(){
-  const r=await api(`/api/scans/${SID()}/ai`);
-  const w=el("div");w.append(el("h1",{},"AI Analysis"),
-    el("div",{class:"sub"},"Every claim cites scan evidence — click an ID to inspect it. "+
-      "The model sees normalized evidence only, never the raw site."));
-  const opts=r.groq_available?[["groq","Groq"],["stub","Offline stub"]]:[["stub","Offline stub"]];
-  const prov=el("select",{},...opts.map(([v,l])=>el("option",{value:v},l)));
-  const btn=el("button",{class:"primary",onclick:run},r.analysis?"Re-run analysis":"Run AI analysis");
-  const bar=el("div",{class:"toolbar"},el("span",{class:"sub"},"Provider"),prov,btn);
-  if(!r.groq_available)bar.append(el("span",{class:"kv"},"Set GROQ_API_KEY (e.g. in .env) to enable Groq."));
+  clearTimeout(aiPoll);
+  const sid=SID();
+  const r=await api(`/api/scans/${sid}/ai`);
+  const w=el("div");w.append(pageHead(t("sec.AI Analysis"),t("ai.sub")));
+  const opts=r.groq_available?[["groq","Groq"],["stub",t("ai.stub")]]:[["stub",t("ai.stub")]];
+  const prov=el("select",{"aria-label":t("ai.provider")},...opts.map(([v,l])=>el("option",{value:v},l)));
+  const btn=el("button",{class:"primary",onclick:run},r.analysis?t("ai.rerun"):t("ai.run"));
+  const bar=el("div",{class:"toolbar"},el("span",{class:"sub"},t("ai.provider")),prov,btn);
+  if(!r.groq_available)bar.append(el("span",{class:"kv"},t("ai.noKey")));
   w.append(bar);
-  const out=el("div");w.append(out);
-  if(r.analysis)renderAi(out,r.analysis);else out.append(emptyState("No analysis yet for this scan."));
+  const out=el("div",{"aria-live":"polite"});w.append(out);
+  if(r.analysis)renderAi(out,r.analysis);
+  else if(r.running){out.append(emptyState(t("ai.bg")));
+    aiPoll=setTimeout(()=>{if(state.section==="AI Analysis"&&SID()===sid)render();},3000);}
+  else out.append(emptyState(t("ai.none"),{label:t("ai.run"),run},t("ai.noneHint")));
   async function run(){
-    btn.disabled=true;btn.textContent="Analyzing…";out.innerHTML="";out.append(skeleton(6));
+    btn.disabled=true;btn.textContent=t("ai.running");out.innerHTML="";out.append(skeleton(6));
     try{
-      const res=await fetch(`/api/scans/${SID()}/ai?provider=${encodeURIComponent(prov.value)}`,{method:"POST"});
+      const res=await fetch(`/api/scans/${sid}/ai?provider=${encodeURIComponent(prov.value)}`,{method:"POST"});
       const j=await res.json();if(!res.ok)throw new Error(j.detail||String(res.status));
-      out.innerHTML="";renderAi(out,j.analysis);toast("AI analysis complete","ok");btn.textContent="Re-run analysis";
-    }catch(e){out.innerHTML="";out.append(emptyState("AI analysis failed: "+e.message));
-      toast("AI analysis failed","err");btn.textContent="Run AI analysis";}
+      out.innerHTML="";renderAi(out,j.analysis);toast(t("ai.done"),"ok");btn.textContent=t("ai.rerun");
+      refreshCounts();
+    }catch(e){out.innerHTML="";out.append(errorState(e,run));
+      toast(t("ai.failed"),"err");btn.textContent=t("ai.run");}
     finally{btn.disabled=false;}
   }
   return w;
 }
 function renderAi(out,a){
   const ev=a.evidence||{};
-  const chips=ids=>el("span",{class:"evchips"},...ids.map(id=>el("span",{class:"evchip",
-    title:ev[id]?.summary||id,onclick:()=>evidenceDrawer(id,ev[id])},id)));
+  const chips=ids=>el("span",{class:"evchips"},...ids.map(id=>clickable(el("span",{class:"evchip",
+    title:ev[id]?.summary||id},id),()=>evidenceDrawer(id,ev[id]))));
   out.append(el("div",{class:"sub",style:"margin-bottom:8px"},
-    `${a.provider} · ${a.model} · ${(a.created_at||"").slice(0,19).replace("T"," ")}`+
-    (a.rejected_claims?` · ${a.rejected_claims} unsupported claim(s) dropped`:"")));
+    `${a.provider} · ${a.model} · ${fmtDate(a.created_at)}`+
+    (a.rejected_claims?` · ${t("ai.dropped",{n:a.rejected_claims})}`:"")));
   if(a.app_summary)out.append(el("div",{class:"riskhero"},el("div",{},
-    el("div",{class:"kv",style:"text-transform:uppercase;letter-spacing:.06em;font-size:11px"},"What this app is"),
+    el("div",{class:"kv",style:"text-transform:uppercase;letter-spacing:.06em;font-size:11px"},t("ai.what")),
     el("div",{style:"font-size:15px;margin-top:4px"},a.app_summary.text," ",chips(a.app_summary.evidence)))));
-  for(const[k,title]of Object.entries(AI_TITLES)){
-    const cl=a.sections?.[k]||[];out.append(el("h2",{},title));
-    if(!cl.length){out.append(el("div",{class:"sub"},"Nothing grounded in the evidence."));continue;}
+  for(const k of AI_SECTIONS){
+    const cl=a.sections?.[k]||[];out.append(el("h2",{},t("ai.s."+k)));
+    if(!cl.length){out.append(el("div",{class:"sub"},t("ai.nothing")));continue;}
     out.append(el("ul",{class:"claims"},...cl.map(c=>el("li",{},c.text," ",chips(c.evidence)))));
   }
 }
 function evidenceDrawer(id,item){
-  if(!item){openDrawer(id,[{label:"Evidence",rows:[["ID",id],["Status","not in snapshot"]]}]);return;}
+  if(!item){openDrawer(id,[{label:t("d.evidence"),rows:[["ID",id],[t("d.status"),t("d.notInSnap")]]}]);return;}
   openDrawer(`${id} · ${item.kind}`,[
-    {label:"Evidence",rows:[["ID",id],["Kind",item.kind],["Summary",item.summary]]},
-    {label:"Data",evidence:[item.data||{}]},
-    item.kind==="finding"?{label:"",rows:[["",el("button",{class:"ghost",
-      onclick:()=>{closeDrawer();go("Findings");}},"Open Findings →")]]}:null]);
+    {label:t("d.evidence"),rows:[["ID",id],[t("d.kind"),item.kind],[t("d.summary"),item.summary]]},
+    {label:t("d.data"),evidence:[item.data||{}],
+      node:item.kind==="finding"?el("button",{class:"ghost",style:"margin-top:8px",
+        onclick:()=>{closeDrawer();go("Findings");}},t("openFindings")):null}]);
 }
-
-function reportsView(){
-  const w=el("div");w.append(el("h1",{},"Reports"),el("div",{class:"sub"},"Generated from stored scan data"));
-  const base=`/api/scans/${SID()}/report`;
-  w.append(el("div",{class:"btnrow"},
-    el("a",{href:`${base}.json`,target:"_blank"},el("button",{class:"ghost"},"Open JSON")),
-    el("a",{href:`${base}.html`,target:"_blank"},el("button",{class:"ghost"},"Open HTML")),
-    el("a",{href:`${base}.pdf`,target:"_blank"},el("button",{class:"primary"},"Open / Download PDF")),
-    el("button",{class:"ghost",onclick:()=>$("#exportDialog").showModal()},"⚙ Custom export…")));
-  w.append(el("h2",{},"HTML preview"),el("iframe",{class:"preview",src:`${base}.html`}));
-  return w;
-}
-$("#x_cancel").onclick=()=>$("#exportDialog").close();
-$("#x_open").onclick=()=>{
-  if(!SID()){toast("No scan selected","err");return;}
-  const fmt=$("#x_fmt").value,sev=$("#x_sev").value;
-  const q=sev?`?min_severity=${encodeURIComponent(sev)}`:"";
-  window.open(`/api/scans/${SID()}/report.${fmt}${q}`,"_blank");
-  $("#exportDialog").close();
-};
-
 /* ============================ scans + progress ============================ */
-async function loadScans(keep){
-  const scans=await api("/api/scans");const sel=$("#scanSelect");sel.innerHTML="";
-  if(!scans.length){sel.append(el("option",{},"— no scans —"));return scans;}
-  for(const s of scans)sel.append(el("option",{value:s.id},
-    `${s.target}  ·  ${s.status}  ·  ${s.findings} findings  ·  ${s.created_at.slice(0,16).replace("T"," ")}`));
-  sel.onchange=()=>{state.scanId=sel.value;refreshCounts().then(render);};
-  if(!keep||!scans.find(s=>s.id===state.scanId))state.scanId=scans[0].id;
-  sel.value=state.scanId;return scans;
+function fillScanSelect(){
+  const sel=$("#scanSelect");sel.innerHTML="";
+  if(!state.scans.length){sel.append(el("option",{value:""},t("noScans")));sel.disabled=true;return;}
+  sel.disabled=false;
+  for(const s of state.scans)sel.append(el("option",{value:s.id},
+    `${s.target}  ·  ${s.status}  ·  ${t("selFindings",{n:s.findings})}  ·  ${fmtDate(s.created_at)}`));
+  sel.value=state.scanId||"";
 }
+async function loadScans(keep=true){
+  state.scans=await api("/api/scans");
+  if(!state.scans.length)state.scanId=null;
+  else if(!keep||!state.scans.find(s=>s.id===state.scanId)){
+    const saved=store.get("wr-scan");
+    state.scanId=(state.scans.find(s=>s.id===saved)||state.scans[0]).id;
+  }
+  fillScanSelect();
+  return state.scans;
+}
+function selectScan(id){
+  state.scanId=id;store.set("wr-scan",id);$("#scanSelect").value=id;
+  state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();state.secretsOnly=false;
+  refreshCounts().then(render);
+}
+$("#scanSelect").onchange=e=>selectScan(e.target.value);
 async function refreshCounts(){
   state.counts={};
-  try{const o=await api(`/api/scans/${SID()}`);state.counts.Findings=o.total_findings;
-    state.counts.Technologies=o.technologies.length;}catch{}
-  try{state.counts.Endpoints=(await api(`/api/scans/${SID()}/endpoints`)).length;}catch{}
-  try{state.counts["JS Files"]=(await api(`/api/scans/${SID()}/js`)).length;}catch{}
+  const sid=SID();
+  if(sid){
+    const [o,eps,js]=await Promise.all([api(`/api/scans/${sid}`).catch(()=>null),
+      api(`/api/scans/${sid}/endpoints`).catch(()=>null),api(`/api/scans/${sid}/js`).catch(()=>null)]);
+    if(SID()!==sid)return;  // scan switched while loading
+    if(o){state.counts.Findings=o.total_findings;state.counts.Technologies=o.technologies.length;}
+    if(eps)state.counts.Endpoints=eps.length;
+    if(js)state.counts["JS Files"]=js.length;
+  }
   renderNav();
-  buildSearchIndex();  // refresh Ctrl+K global search (fire-and-forget)
+  buildSearchIndex();
 }
 /* Build a lightweight cross-section index the command palette searches. */
 async function buildSearchIndex(){
@@ -1310,69 +1847,99 @@ async function buildSearchIndex(){
     try{for(const r of await api(`/api/scans/${sid}/${path}`))idx.push({...map(r),section});}catch{}
   };
   await Promise.all([
-    grab("findings","Findings",f=>({label:f.name,hint:`finding · ${f.severity}`,
-      text:`${f.name} ${f.check_id} ${f.category||""}`})),
-    grab("endpoints","Endpoints",e=>({label:e.url,hint:`endpoint · ${e.method||"?"}`,text:e.url})),
-    grab("technologies","Technologies",t=>({label:t.name,hint:"technology",
-      text:`${t.name} ${t.category||""}`})),
-    grab("pages","Pages",p=>({label:p.title||p.url,hint:"page",text:`${p.title||""} ${p.url}`})),
-    grab("js","JS Files",x=>({label:x.url,hint:"script",text:`${x.url} ${x.sha256||""}`})),
+    grab("findings","Findings",f=>({label:f.name,hint:`${t("hint.finding")} · ${f.severity}`,text:`${f.name} ${f.check_id} ${f.category||""}`})),
+    grab("endpoints","Endpoints",e=>({label:e.url,hint:`${t("hint.endpoint")} · ${e.method||"?"}`,text:e.url})),
+    grab("technologies","Technologies",x=>({label:x.name,hint:t("hint.technology"),text:`${x.name} ${x.category||""}`})),
+    grab("pages","Pages",p=>({label:p.title||p.url,hint:t("hint.page"),text:`${p.title||""} ${p.url}`})),
+    grab("js","JS Files",x=>({label:x.url,hint:t("hint.script"),text:`${x.url} ${x.sha256||""}`})),
   ]);
-  if(SID()===sid)state.searchIndex=idx;  // ignore stale responses after a scan switch
+  if(SID()===sid)state.searchIndex=idx;
 }
-$("#newScanBtn").onclick=()=>$("#scanDialog").showModal();
+
+/* ---- new scan dialog ---- */
+function openScanDialog(prefill={}){
+  if(prefill.url)$("#f_url").value=prefill.url;
+  $("#f_authBox").open=!!prefill.auth;
+  $("#f_err").textContent="";
+  $("#scanDialog").showModal();
+  (prefill.auth?$("#f_login_url"):$("#f_url")).focus();
+}
+/** accept "example.com" (→ https://), reject anything that is not http(s) */
+function normalizeTarget(raw){
+  let v=(raw||"").trim();if(!v)return null;
+  if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(v))v="https://"+v;
+  try{const u=new URL(v);return /^https?:$/.test(u.protocol)&&u.hostname?u.href:null;}catch{return null;}
+}
+$("#newScanBtn").onclick=()=>openScanDialog();
 $("#cancelDialog").onclick=()=>$("#scanDialog").close();
+$("#f_url").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#startScanBtn").click();}});
 $("#startScanBtn").onclick=async()=>{
+  const url=normalizeTarget($("#f_url").value);
+  if(!url){$("#f_err").textContent=t("dlg.badUrl");$("#f_url").focus();return;}
+  $("#f_err").textContent="";
   const headers=($("#f_headers").value||"").split("\n").map(s=>s.trim()).filter(Boolean);
-  const body={url:$("#f_url").value.trim(),depth:+$("#f_depth").value,max_pages:+$("#f_pages").value,
+  const num=(id,d)=>{const v=parseInt($(id).value,10);return Number.isFinite(v)&&v>=0?v:d;};
+  const body={url,depth:num("#f_depth",3),max_pages:Math.max(1,num("#f_pages",300)),
     browser:$("#f_browser").checked,allow_private:$("#f_private").checked,
     active:$("#f_active").checked,probe:$("#f_probe").checked,scope_mode:$("#f_scope").value,
     cookie:$("#f_cookie").value.trim()||null,headers,
     login_url:$("#f_login_url").value.trim()||null,
     login_user:$("#f_login_user").value.trim()||null,
     login_pass:$("#f_login_pass").value||null,ai:$("#f_ai").checked};
-  if(!body.url){$("#f_url").focus();return;}
-  $("#scanDialog").close();
-  try{const {scan_id}=await fetch("/api/scans",{method:"POST",headers:{"content-type":"application/json"},
-    body:JSON.stringify(body)}).then(r=>r.json());toast("Scan started","ok");watch(scan_id);}
-  catch(e){toast("Could not start scan","err");}
+  const btn=$("#startScanBtn");btn.disabled=true;
+  try{
+    const res=await fetch("/api/scans",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify(body)});
+    const j=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(j.detail||String(res.status));
+    $("#scanDialog").close();
+    $("#f_login_pass").value="";  // never keep the password around in the form
+    toast(t("dlg.started"),"ok");watch(j.scan_id);
+  }catch(e){$("#f_err").textContent=t("dlg.startFail",{e:e.message});}
+  finally{btn.disabled=false;}
 };
 $("#cancelBtn").onclick=()=>{ if(state.runningId){fetch(`/api/scans/${state.runningId}/cancel`,{method:"POST"});
-  toast("Cancelling…");}};
+  toast(t("prog.cancelling"));}};
 function watch(scanId){
-  state.runningId=scanId;$("#cancelBtn").style.display="";
-  const prog=$("#progress"),bar=el("i"),wrap=el("span",{class:"bar"},bar),label=el("span",{},"starting…");
+  state.runningId=scanId;$("#cancelBtn").hidden=false;
+  const prog=$("#progress"),bar=el("i"),wrap=el("span",{class:"bar"},bar),
+    label=el("span",{class:"lbl"},t("prog.starting"));
   prog.innerHTML="";prog.append(el("span",{class:"dot run"}),wrap,label);
   if(state.ws)state.ws.close();
-  const ws=new WebSocket(`ws://${location.host}/api/scans/${scanId}/events`);state.ws=ws;
+  const ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/api/scans/${scanId}/events`);
+  state.ws=ws;
   ws.onmessage=m=>{const ev=JSON.parse(m.data);
     if(ev.module==="_done"){bar.style.width="100%";label.textContent=ev.status;
       prog.querySelector(".dot").className="dot "+(ev.status==="done"?"ok":"fail");
-      $("#cancelBtn").style.display="none";toast("Scan "+ev.status,ev.status==="done"?"ok":"err");
-      loadScans().then(()=>{state.scanId=scanId;$("#scanSelect").value=scanId;refreshCounts().then(render);});
+      $("#cancelBtn").hidden=true;state.runningId=null;
+      toast(t("prog.done",{s:ev.status}),ev.status==="done"?"ok":"err");
+      ws.close();
+      loadScans().then(()=>{if(state.scans.find(s=>s.id===scanId)){state.scanId=scanId;store.set("wr-scan",scanId);
+        fillScanSelect();}
+        refreshCounts().then(()=>go("Home"));});
       setTimeout(()=>{prog.innerHTML="";},4000);return;}
     const pct=ev.total?Math.round((ev.index+1)/ev.total*100):0;
-    bar.style.width=pct+"%";label.textContent=`${ev.module} (${ev.index+1}/${ev.total})`;};
+    bar.style.width=pct+"%";label.textContent=t("prog.running",{m:ev.module,i:ev.index+1,n:ev.total});};
   ws.onerror=()=>{prog.querySelector(".dot")?.classList.add("fail");};
 }
 
 /* ============================ command palette ============================ */
-const PAL=$("#palette"),PALIN=$("#palInput"),PALRES=$("#palResults");let palSel=0,palItems=[];
-function openPalette(){buildPalette("");PAL.classList.add("on");PALIN.value="";PALIN.focus();}
-function closePalette(){PAL.classList.remove("on");}
+const PAL=$("#palette"),PALIN=$("#palInput"),PALRES=$("#palResults");let palSel=0,palItems=[],palPrev=null;
+function openPalette(){palPrev=document.activeElement;buildPalette("");PAL.classList.add("on");PALIN.value="";PALIN.focus();}
+function closePalette(){if(!PAL.classList.contains("on"))return;PAL.classList.remove("on");palPrev?.focus?.();}
 $("#paletteBtn").onclick=openPalette;
 addEventListener("keydown",e=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openPalette();}});
 function buildPalette(q){
   const actions=[
-    ...FLATSECTIONS.map(s=>({label:"Go to "+s,hint:"section",run:()=>go(s)})),
-    {label:"New Scan",hint:"action",run:()=>$("#scanDialog").showModal()},
-    {label:"Custom export…",hint:"action",run:()=>$("#exportDialog").showModal()},
-    {label:"Toggle theme",hint:"action",run:()=>$("#themeBtn").click()},
-    {label:"Open Reports",hint:"action",run:()=>go("Reports")},
+    ...FLATSECTIONS.map(s=>({label:t("pal.goto",{s:t("sec."+s)}),hint:t("pal.section"),run:()=>go(s)})),
+    {label:t("newScan"),hint:t("pal.action"),run:()=>openScanDialog()},
+    {label:t("x.title")+"…",hint:t("pal.action"),run:()=>$("#exportDialog").showModal()},
+    {label:t("theme"),hint:t("pal.action"),run:()=>$("#themeBtn").click()},
+    {label:t("lang"),hint:t("pal.action"),run:()=>$("#langBtn").click()},
   ];
   const ql=q.toLowerCase();
   let items=actions.filter(a=>a.label.toLowerCase().includes(ql));
-  if(ql){  // global search across the current scan's data
+  if(ql){
     const hits=state.searchIndex
       .filter(d=>(d.text||d.label||"").toLowerCase().includes(ql))
       .slice(0,40)
@@ -1382,8 +1949,9 @@ function buildPalette(q){
   palItems=items.slice(0,60);palSel=0;drawPalette();
 }
 function drawPalette(){PALRES.innerHTML="";palItems.forEach((a,i)=>{
-  PALRES.append(el("div",{class:"palitem"+(i===palSel?" sel":""),
-    onclick:()=>{closePalette();a.run();}},a.label,el("span",{class:"hint"},a.hint)));});}
+  PALRES.append(el("div",{class:"palitem"+(i===palSel?" sel":""),role:"option","aria-selected":String(i===palSel),
+    onclick:()=>{closePalette();a.run();}},a.label,el("span",{class:"hint"},a.hint)));});
+  PALRES.querySelector(".sel")?.scrollIntoView({block:"nearest"});}
 PALIN.oninput=()=>buildPalette(PALIN.value);
 PALIN.onkeydown=e=>{
   if(e.key==="ArrowDown"){palSel=Math.min(palSel+1,palItems.length-1);drawPalette();e.preventDefault();}
@@ -1393,8 +1961,12 @@ PALIN.onkeydown=e=>{
 PAL.onclick=e=>{if(e.target===PAL)closePalette();};
 
 /* ============================ boot ============================ */
+applyStatic();
+syncNavInert();
+state.section=fromHash();
 renderNav();
-loadScans().then(()=>refreshCounts()).then(render);
+loadScans().then(()=>refreshCounts()).then(render)
+  .catch(e=>{$("#main").innerHTML="";$("#main").append(errorState(e,()=>location.reload()));});
 </script>
 </body>
 </html>

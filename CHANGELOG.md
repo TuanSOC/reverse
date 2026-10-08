@@ -4,6 +4,41 @@ All notable changes to WebRecon are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/) and this project adheres to
 semantic versioning.
 
+## [Unreleased] — v0.4.0 intelligence + hardening
+
+### Added
+- Web application intelligence: JS AST endpoint extraction, parameter
+  classification, source-map reconstruction, unified asset graph, auth-flow
+  model, scan event timeline, attack-surface tree.
+- Grounded AI analysis (`webrecon ai`, `scan --ai`, `/api/scans/{id}/ai`) via
+  Groq or an offline stub; every claim cites evidence IDs.
+- Dashboard: Home hub with next steps, EN/VI language toggle, Endpoint / JS /
+  Auth-flow explorers, attack-surface tree, event timeline, AI panel, hash
+  routing, mobile navigation, keyboard and screen-reader support.
+
+### Security
+- Credentials (password, cookies, auth headers) are masked in the stored scan
+  config and in JSON reports.
+- Auto-login refuses login URLs off the target's site or blocked by the SSRF
+  guard; every request of the login browser is re-checked by the SSRF guard;
+  subdomain cookies are no longer sent to the parent host.
+- Nested config sections only read `WEBRECON_<SECTION>_*` environment
+  variables (bare `USERNAME`/`PASSWORD`/`COOKIE` no longer leak in); login
+  URLs and database URLs are scrubbed in the stored config and timeline.
+
+### Changed
+- Auto-login only accepts a login page on the target host or a parent/child
+  domain of it (siblings such as `sso.example.com` for `app.example.com` are
+  refused — scan `example.com` or use `--cookie` instead).
+
+### Fixed
+- Groq errors of any body shape no longer crash `scan --ai`; live progress
+  reports completion before the AI step; bad AI providers fail fast.
+- Node AST parser is killed on timeout; reconstructed sources parse
+  concurrently; AST URL templates with an unresolved base are no longer stored
+  as endpoints; session-cookie detection no longer matches `csrftoken` or
+  `visid_*`; a hinted username field at index 0 is no longer skipped.
+
 ## [0.3.0] — 2026-09-23
 
 IP intelligence & deep security assessment.
