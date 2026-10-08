@@ -286,10 +286,18 @@ class GroqAnalyzer:
 
 
 def _error_message(resp: Any) -> str:
+    """Best-effort detail from an error body of any shape (dict/str/list/HTML)."""
     try:
-        msg = resp.json().get("error", {}).get("message") or ""
+        body: Any = resp.json()
     except ValueError:
-        msg = resp.text[:200]
+        body = resp.text
+    msg: Any = None
+    if isinstance(body, dict):
+        err = body.get("error")
+        msg = err.get("message") if isinstance(err, dict) else err
+        msg = msg if msg is not None else body.get("message")
+    if msg is None:
+        msg = body if isinstance(body, str) else json.dumps(body)
     return _scrub(str(msg))[:300] or "no detail"
 
 
@@ -325,7 +333,7 @@ def get_analyzer(provider: str | None = None) -> AiAnalyzer:
     """Pick an analyzer: explicit ``provider``, else Groq when a key exists, else stub."""
     load_env_file()
     choice = (provider or os.environ.get("WEBRECON_AI_PROVIDER") or "").lower()
-    if not choice:
+    if choice in ("", "auto"):
         choice = "groq" if os.environ.get("GROQ_API_KEY") else "stub"
     if choice == "stub":
         return StubAnalyzer()

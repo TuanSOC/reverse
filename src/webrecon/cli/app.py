@@ -224,6 +224,14 @@ def scan(
 
     if ai and no_db:
         console.print("[yellow]--ai needs the database; skipping AI analysis (--no-db).[/]")
+    if ai and not no_db:  # fail fast on a bad provider/missing key, before scanning
+        from ..intel.ai import AiError, get_analyzer
+
+        try:
+            get_analyzer(ai_provider)
+        except AiError as exc:
+            console.print(f"[red]AI analysis unavailable:[/] {exc}")
+            raise typer.Exit(2) from None
 
     async def _run() -> tuple[dict, dict, dict | None]:
         db = None if no_db else await init_db(database_url)

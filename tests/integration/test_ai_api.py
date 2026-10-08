@@ -83,3 +83,11 @@ def test_ai_cli_stub(mock_site: str, tmp_path) -> None:
 
     shown = CliRunner().invoke(cli, ["ai", sid[:8], "--show", "--database-url", url])
     assert shown.exit_code == 0 and "deterministic-v1" in shown.output
+
+
+def test_start_scan_rejects_bad_ai_provider(tmp_path) -> None:
+    with TestClient(create_app(_db_url(tmp_path))) as client:
+        r = client.post("/api/scans", json={"url": "http://203.0.113.1/", "ai": True,
+                                             "ai_provider": "nope"})
+        assert r.status_code == 400 and "unknown AI provider" in r.json()["detail"]
+        assert client.get("/api/scans").json() == []  # nothing was started

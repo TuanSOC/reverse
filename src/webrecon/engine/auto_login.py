@@ -47,10 +47,9 @@ def rank_login_fields(inputs: list[dict]) -> LoginFields:
 
     candidates = range(pwd) if pwd is not None else range(len(inputs))
     textlike = [idx for idx in candidates if is_textlike(inputs[idx])]
-    user = (
-        next((idx for idx in textlike if hinted(inputs[idx])), None)  # best hint
-        or (textlike[-1] if textlike else None)                        # nearest before pwd
-    )
+    user = next((idx for idx in textlike if hinted(inputs[idx])), None)  # best hint
+    if user is None and textlike:  # (index 0 is a valid hit — no truthiness test)
+        user = textlike[-1]  # nearest before pwd
     if user is None:  # last resort: any textlike field anywhere
         user = next((idx for idx, i in enumerate(inputs) if is_textlike(i)), None)
     return LoginFields(user, pwd)
@@ -66,14 +65,50 @@ def login_succeeded(before_url: str, after_url: str, password_still_present: boo
     return False
 
 
+def login_host_allowed(login_host: str, target_host: str) -> bool:
+    """Is the login page on the target's own site?
+
+    Credentials are only typed into the target host itself or a parent/child
+    domain of it (``example.com`` ↔ ``sso.example.com``). Siblings are refused:
+    without a public-suffix list ``a.herokuapp.com`` and ``b.herokuapp.com`` are
+    different tenants. IP literals must match exactly.
+    """
+    login = (login_host or "").lower().strip(".").strip("[]")
+    target = (target_host or "").lower().strip(".").strip("[]")
+    if not login or not target:
+        return False
+    if login == target:
+        return True  # incl. single-label lab hosts (localhost, docker names)
+    if _is_ip(login) or _is_ip(target):
+        return False
+    # parent/child only, and never a bare TLD as the "parent"
+    if "." not in login or "." not in target:
+        return False
+    return login.endswith("." + target) or target.endswith("." + login)
+
+
+def _is_ip(host: str) -> bool:
+    import ipaddress
+
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return True
+
+
 def cookies_to_header(cookies: list[dict], host: str) -> str:
-    """Serialize Playwright cookies whose domain matches ``host`` into 'k=v; …'."""
+    """Serialize Playwright cookies a browser would send to ``host`` into 'k=v; …'.
+
+    Browser semantics: a cookie for ``example.com`` reaches ``sso.example.com``,
+    but a cookie scoped to ``sso.example.com`` never reaches ``example.com``.
+    """
     host = (host or "").lower().lstrip(".")
     parts = []
     seen: set[str] = set()
     for c in cookies:
         dom = str(c.get("domain") or "").lower().lstrip(".")
-        if not dom or not (host == dom or host.endswith("." + dom) or dom.endswith("." + host)):
+        if not dom or not (host == dom or host.endswith("." + dom)):
             continue
         name = c.get("name")
         if name and name not in seen:
@@ -100,6 +135,10 @@ async def capture_session_cookies(cfg, target_host: str, log) -> str:
                     user_agent=cfg.http.user_agent,
                     ignore_https_errors=not cfg.http.verify_tls,
                 )
+                # The pipeline vetted the login URL; this re-checks every request
+                # the page makes (redirect hops, subresources, script fetches) so
+                # the browser can't be steered to an internal/metadata address.
+                await page.route("**/*", _ssrf_gate(cfg))
                 before = auth.login_url or ""
                 try:
                     await page.goto(before, wait_until=bcfg.wait_until,
@@ -153,6 +192,31 @@ async def capture_session_cookies(cfg, target_host: str, log) -> str:
     except Exception as exc:  # noqa: BLE001 - never crash the scan on login problems
         log.warning("auto-login error", error=f"{type(exc).__name__}: {exc}")
         return ""
+
+
+def _ssrf_gate(cfg):
+    """Playwright route handler: abort requests the SSRF guard blocks."""
+    from ..core.errors import SsrfBlockedError
+    from .ssrf_guard import SsrfGuard
+
+    guard = SsrfGuard(allow_private_targets=cfg.scope.allow_private_targets)
+
+    async def _gate(route) -> None:
+        url = route.request.url
+        if not url.startswith(("http://", "https://")):
+            await route.continue_()  # data:/blob: never leave the browser
+            return
+        try:
+            await guard.check_url(url)
+        except SsrfBlockedError:
+            await route.abort()
+            return
+        except Exception:  # noqa: BLE001 - unresolvable host etc.: fail closed
+            await route.abort()
+            return
+        await route.continue_()
+
+    return _gate
 
 
 async def _submit(page, auth, handles, fields) -> None:

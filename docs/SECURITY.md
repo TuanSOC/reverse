@@ -71,7 +71,9 @@ weaponize them.
 | Rate limiting | engine (P2) | Conservative defaults (≤ a few req/s), per-host concurrency, 429 backoff. |
 | Response size cap | HTTP engine | 10 MiB hard cap; decompression-bomb protection to prevent memory exhaustion. |
 | Secret redaction | `core/logging.py` | Authorization/cookie/token values are never written to logs. |
-| Cookie masking | UI/reports (later) | Sensitive cookie values are masked, never shown in full. |
+| Credential masking | `ScanConfig.redacted_dump()` | Passwords, cookies (supplied or captured) and auth-header values are replaced by `***` before the config is stored in the database or written to any report. |
+| Auto-login guard | `Pipeline._auto_login` | The login URL must be on the target's site (same host, parent/child, or sibling under the same parent domain) and pass the SSRF guard before a browser opens it; captured cookies follow browser domain rules. |
+| AI data boundary | `intel/ai/` | The model receives normalized evidence only (query values masked, form values and evidence payloads dropped), never the raw site. `GROQ_API_KEY` is read from the environment / gitignored `.env`, scrubbed from errors and never persisted or exposed by the API. |
 | No code execution | whole tool | Downloaded JS/HTML is parsed/analyzed statically; JS only ever runs inside the sandboxed Playwright browser, never in the tool process. |
 | Strict schemas | `core/models.py` | `extra="forbid"` on all models; report output is escaped to prevent stored XSS. |
 

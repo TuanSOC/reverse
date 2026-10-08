@@ -27,7 +27,7 @@ class ScopeMode(str, Enum):
 class ScopeConfig(BaseSettings):
     """Boundary the engine must respect on every request (§4)."""
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", env_prefix="WEBRECON_SCOPE_")
 
     mode: ScopeMode = ScopeMode.SAME_DOMAIN
     allowed_hosts: list[str] = Field(default_factory=list)
@@ -45,7 +45,7 @@ class ScopeConfig(BaseSettings):
 class RateLimitConfig(BaseSettings):
     """Conservative-by-default politeness controls (§34)."""
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", env_prefix="WEBRECON_RATE_")
 
     requests_per_second: float = 3.0
     concurrency: int = 5
@@ -59,7 +59,7 @@ class RateLimitConfig(BaseSettings):
 class HttpConfig(BaseSettings):
     """Shared HTTP engine settings (§5)."""
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", env_prefix="WEBRECON_HTTP_")
 
     timeout_seconds: float = 20.0
     max_response_bytes: int = 10 * 1024 * 1024  # 10 MiB hard cap (§35)
@@ -77,7 +77,7 @@ class HttpConfig(BaseSettings):
 class CrawlConfig(BaseSettings):
     """Crawler behavior knobs (§7)."""
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", env_prefix="WEBRECON_CRAWL_")
 
     # Politely honor robots.txt disallow rules by default (§16).
     respect_robots: bool = True
@@ -95,7 +95,7 @@ class CrawlConfig(BaseSettings):
 class JsConfig(BaseSettings):
     """JavaScript-analysis knobs (§8/§9)."""
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", env_prefix="WEBRECON_JS_")
 
     # Cap how many in-scope JS files to download and analyze.
     max_files: int = 50
@@ -108,7 +108,7 @@ class JsConfig(BaseSettings):
 class BrowserConfig(BaseSettings):
     """Headless-browser (Playwright) options (§20)."""
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", env_prefix="WEBRECON_BROWSER_")
 
     # Capture a full-page screenshot of the rendered target.
     screenshots: bool = True
@@ -132,7 +132,7 @@ class AuthConfig(BaseSettings):
     logged or persisted.
     """
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", env_prefix="WEBRECON_AUTH_")
 
     login_url: str | None = None
     username: str | None = None
@@ -189,3 +189,46 @@ class ScanConfig(BaseSettings):
 
         data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
         return cls(**data)
+
+    def redacted_dump(self) -> dict:
+        """JSON dump safe to persist or report: credentials replaced by ``***``.
+
+        Covers the auto-login password, the session cookie (operator-supplied or
+        captured by auto-login) and every extra auth header value. Unset values
+        stay ``None``/empty so the dump still shows *whether* auth was used.
+        """
+        data = self.model_dump(mode="json")
+        if data["auth"].get("password"):
+            data["auth"]["password"] = _MASK
+        if data["http"].get("cookie"):
+            data["http"]["cookie"] = _MASK
+        data["http"]["auth_headers"] = {k: _MASK for k in data["http"].get("auth_headers") or {}}
+        if data["auth"].get("login_url"):
+            data["auth"]["login_url"] = scrub_url(data["auth"]["login_url"])
+        data["database_url"] = _mask_db_password(data.get("database_url") or "")
+        return data
+
+
+_MASK = "***"
+
+
+def scrub_url(url: str) -> str:
+    """Drop ``user:pass@`` and mask query values (tokens often ride in URLs)."""
+    from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+    try:
+        p = urlsplit(url)
+    except ValueError:
+        return _MASK
+    netloc = p.netloc.rsplit("@", 1)[-1]
+    query = urlencode([(k, "*") for k, _ in parse_qsl(p.query, keep_blank_values=True)], safe="*")
+    return urlunsplit((p.scheme, netloc, p.path, query, p.fragment))
+
+
+def _mask_db_password(url: str) -> str:
+    try:
+        from sqlalchemy.engine import make_url
+
+        return make_url(url).render_as_string(hide_password=True)
+    except Exception:  # noqa: BLE001 - never fail a dump over a malformed URL
+        return url if "@" not in url else _MASK

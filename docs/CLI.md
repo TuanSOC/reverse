@@ -28,6 +28,13 @@ List stored scans (id prefix, target, status, findings, created).
 Regenerate a report from a stored scan (accepts an 8-char id prefix). With no
 export flag, prints a one-line risk summary.
 
+### `webrecon ai SCAN_ID [--provider groq|stub] [--show] [--json P] [--database-url URL]`
+Evidence-cited AI analysis of a stored scan (accepts an 8-char id prefix).
+Uses Groq when `GROQ_API_KEY` is set (environment or a gitignored `.env`),
+otherwise the deterministic offline stub. `--show` prints the latest stored
+analysis without calling a provider. Every claim lists the evidence IDs it is
+based on.
+
 ## Extra `scan` options
 
 | Option | Meaning |
@@ -43,6 +50,8 @@ export flag, prints a one-line risk summary.
 | `--active` | Active assessment (`apitest` + `active_verify`): DB errors, error-based SQLi susceptibility, data exposure, unauth access, GraphQL introspection, plus canary-confirmed open-redirect & reflected-XSS. GET-only, observed endpoints only, budget-capped, detection/confirmation-level (no payload execution or data extraction). Authorized targets only. |
 | `--cookie "k=v; k2=v2"` | Authenticated scan: raw Cookie header sent **only to the target host** (never third parties) so the crawler/browser/active checks reach behind a login. Authorized targets only. |
 | `--header "Name: value"` / `-H` | Extra request header (repeatable), e.g. `Authorization`. Sent **only to the target host**. |
+| `--login-url U --login-user N --login-pass P` | Auto-login: a headless browser logs in and the session is reused. The login page must be on the target's own site and pass the SSRF guard; otherwise the scan continues unauthenticated. The password is never stored or reported. |
+| `--ai` / `--ai-provider groq\|stub` | After the scan, run the AI analysis (sends normalized scan evidence to the provider). A bad provider or missing key fails fast (exit 2) before scanning. |
 | `--html P` / `--pdf P` | Also write HTML / PDF report. |
 | `--no-db` | Don't persist to the database. |
 

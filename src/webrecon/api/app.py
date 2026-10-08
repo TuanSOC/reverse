@@ -73,6 +73,13 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
 
     @app.post("/api/scans")
     async def start_scan(req: StartScanRequest) -> dict[str, Any]:
+        if req.ai:  # reject a bad provider now, not after a full scan
+            from ..intel.ai import AiError, get_analyzer
+
+            try:
+                get_analyzer(req.ai_provider)
+            except AiError as exc:
+                raise HTTPException(400, str(exc)) from None
         scan_id = await app.state.manager.start(req)
         return {"scan_id": scan_id}
 
@@ -142,7 +149,8 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
 
         # Only a boolean about the key ever leaves the server.
         return {"analysis": await latest_analysis(db(), scan_id),
-                "groq_available": groq_available()}
+                "groq_available": groq_available(),
+                "running": scan_id in app.state.manager.ai_running}
 
     @app.post("/api/scans/{scan_id}/ai")
     async def ai_run(scan_id: str, provider: str | None = None) -> dict:
@@ -251,6 +259,8 @@ class _SimpleManager:
         self._subscribers: dict[str, list[asyncio.Queue]] = {}
         self._cancels: dict[str, CancellationToken] = {}
         self.status: dict[str, str] = {}
+        #: scans whose post-scan AI analysis is still running (dashboard hint)
+        self.ai_running: set[str] = set()
 
     def cancel(self, scan_id: str) -> bool:
         token = self._cancels.get(scan_id)
@@ -306,24 +316,29 @@ class _SimpleManager:
         try:
             await pipeline.run(url, scan_id=scan_id, cancellation=token)
             self.status[scan_id] = "done"
-            if ai_provider is not None:
-                await self._run_ai(scan_id, None if ai_provider == "auto" else ai_provider)
         except Exception as exc:  # noqa: BLE001
             self.status[scan_id] = f"error: {exc}"
         finally:
+            # Signal completion first: the AI step below may take a while and
+            # must not keep live-progress subscribers waiting.
             for q in list(self._subscribers.get(scan_id, [])):
                 q.put_nowait({"module": "_done", "status": self.status.get(scan_id, "done"),
                               "index": 0, "total": 0})
+        if ai_provider is not None and self.status.get(scan_id) == "done":
+            await self._run_ai(scan_id, None if ai_provider == "auto" else ai_provider)
 
     async def _run_ai(self, scan_id: str, provider: str | None) -> None:
         """Best-effort post-scan AI analysis; a failure never fails the scan."""
         from ..core.logging import get_logger
         from ..intel.ai import analyze_scan
 
+        self.ai_running.add(scan_id)
         try:
             await analyze_scan(self.db, scan_id, provider=provider)
         except Exception as exc:  # noqa: BLE001 - the scan itself already succeeded
             get_logger("ai").warning("ai analysis failed", scan_id=scan_id, error=str(exc))
+        finally:
+            self.ai_running.discard(scan_id)
 
     def progress(self, scan_id: str) -> list[dict]:
         return self._progress.get(scan_id, [])

@@ -18,7 +18,7 @@ import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from ..core.config import ScanConfig
+from ..core.config import ScanConfig, scrub_url
 from ..core.context import CancellationToken, ScanContext
 from ..core.enums import ModuleStatus
 from ..core.errors import ScanCancelledError
@@ -121,7 +121,7 @@ class Pipeline:
                     try:
                         if not scan_persisted and ctx.target is not None:
                             await self.repo.create_target_and_scan(
-                                ctx.target, ctx.scan_id, self.config.model_dump(mode="json")
+                                ctx.target, ctx.scan_id, self.config.redacted_dump()
                             )
                             scan_persisted = True
                             # Expose the repository to modules for domain
@@ -161,22 +161,41 @@ class Pipeline:
         auth = self.config.auth
         if not auth.enabled or self.config.http.cookie:
             return
-        from ..engine.auto_login import capture_session_cookies, host_of
+        from ..core.errors import SsrfBlockedError
+        from ..engine import auto_login
 
-        log.info("auto-login starting", login_url=auth.login_url)
-        host = host_of(input_url) or host_of(auth.login_url or "")
-        cookie = await capture_session_cookies(self.config, host, log)
+        login_url = auth.login_url or ""
+        host = auto_login.host_of(input_url)
+        # The headless browser is outside the scope-gated HTTP engine, so vet the
+        # login URL here: same site as the target, and not an SSRF target.
+        reason = None
+        if not auto_login.login_host_allowed(auto_login.host_of(login_url), host):
+            reason = "login URL is not on the target's site"
+        else:
+            guard = SsrfGuard(allow_private_targets=self.config.scope.allow_private_targets)
+            try:
+                await guard.check_url(login_url)
+            except SsrfBlockedError as exc:
+                reason = f"login URL blocked by SSRF guard: {exc.reason}"
+        if reason:
+            log.warning("auto-login refused", login_url=scrub_url(login_url), reason=reason)
+            ctx.event("auth", "Auto-login refused; scanning unauthenticated",
+                      {"login_url": scrub_url(login_url), "authenticated": False, "reason": reason})
+            return
+
+        log.info("auto-login starting", login_url=scrub_url(login_url))
+        cookie = await auto_login.capture_session_cookies(self.config, host, log)
         # Timeline data names the login URL only — never the cookie values.
         if cookie:
             self.config.http.cookie = cookie
             ctx.shared["authenticated"] = True
             log.info("auto-login session captured", cookie_count=cookie.count("="))
             ctx.event("auth", "Auto-login session captured",
-                      {"login_url": auth.login_url, "authenticated": True})
+                      {"login_url": scrub_url(login_url), "authenticated": True})
         else:
             log.warning("auto-login did not capture a session; scanning unauthenticated")
             ctx.event("auth", "Auto-login failed; scanning unauthenticated",
-                      {"login_url": auth.login_url, "authenticated": False})
+                      {"login_url": scrub_url(login_url), "authenticated": False})
 
     async def _run_module(self, ctx: ScanContext, name: str) -> ModuleResult:
         module_cls = self.registry.get(name)

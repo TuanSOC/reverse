@@ -125,3 +125,30 @@ def _oauth_steps(roles: set[str]) -> list[str]:
     if "identity" in roles:
         steps.append("App fetches the user profile")
     return steps
+
+
+# Name tokens that identify a session/auth cookie, and ones that never do.
+_SESSION_TOKENS = frozenset({
+    "session", "sessionid", "sess", "sessid", "sid", "jsessionid", "phpsessid",
+    "auth", "authtoken", "token", "jwt", "logged", "access",
+})
+_NOT_SESSION_TOKENS = frozenset({"csrf", "csrftoken", "xsrf"})
+# Framework names that are not token-shaped: Drupal SESS<hash>/SSESS<hash>,
+# classic ASP ASPSESSIONID…, ASP.NET forms auth, ColdFusion CFID/CFTOKEN.
+_SESSION_NAME = re.compile(
+    r"^(?:s?sess[0-9a-f]{6,}|aspsessionid\w*|\.?aspxauth|cfid|cftoken)$", re.I)
+
+
+def is_session_cookie(name: str) -> bool:
+    """Does a cookie *name* look like a session/auth cookie?
+
+    Matches whole name tokens (split on ``_ - .``) so ``visid_incap_1`` or
+    ``consider`` do not match ``sid``, and CSRF cookies are never sessions.
+    """
+    if _SESSION_NAME.match(name or ""):
+        return True
+    spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name or "")  # sessionToken
+    tokens = {t for t in re.split(r"[_\-.]+", spaced.lower()) if t}
+    if not tokens or tokens & _NOT_SESSION_TOKENS:
+        return False
+    return bool(tokens & _SESSION_TOKENS)

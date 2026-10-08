@@ -183,6 +183,7 @@ def test_get_analyzer_selection(monkeypatch, tmp_path) -> None:
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     monkeypatch.delenv("WEBRECON_AI_PROVIDER", raising=False)
     assert isinstance(get_analyzer(), StubAnalyzer)
+    assert isinstance(get_analyzer("auto"), StubAnalyzer)  # explicit "auto" == default
     with pytest.raises(AiError):
         get_analyzer("groq")  # no key
     with pytest.raises(AiError):

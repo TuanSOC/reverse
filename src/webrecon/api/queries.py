@@ -6,7 +6,6 @@ the SQLAlchemy ORM (bound parameters — threat T6).
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from sqlalchemy import func, select
@@ -260,13 +259,9 @@ async def diff_scans(db: Database, scan_id: str, against_id: str) -> dict[str, A
     }
 
 
-_SESSION_COOKIE = re.compile(
-    r"session|sess|sid|auth|token|jsessionid|phpsessid|connect\.sid|csrftoken", re.I)
-
-
 async def get_auth_flow(db: Database, scan_id: str) -> dict[str, Any]:
     """Build the detection-only authentication-flow model for a scan."""
-    from ..intel.auth_flow import build_auth_flow
+    from ..intel.auth_flow import build_auth_flow, is_session_cookie
     from ..storage.models import Cookie
 
     endpoints = await get_endpoints(db, scan_id)
@@ -279,7 +274,7 @@ async def get_auth_flow(db: Database, scan_id: str) -> dict[str, Any]:
         cookies = (
             await s.execute(select(Cookie).where(Cookie.scan_id == scan_id))
         ).scalars().all()
-    has_session_cookie = any(_SESSION_COOKIE.search(c.name or "") for c in cookies)
+    has_session_cookie = any(is_session_cookie(c.name or "") for c in cookies)
     flow = build_auth_flow(
         endpoints, has_login_form=has_login_form, has_session_cookie=has_session_cookie)
     return flow.to_dict()

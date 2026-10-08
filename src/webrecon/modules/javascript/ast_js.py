@@ -10,6 +10,7 @@ the AST layer is an enrichment, never a hard dependency.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import shutil
 from dataclasses import dataclass
@@ -48,9 +49,18 @@ async def extract_calls(js_source: str) -> list[JsCall]:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
         )
+    except (OSError, ValueError):
+        return []
+    try:
         out, _ = await asyncio.wait_for(proc.communicate(input=data), timeout=_TIMEOUT)
     except (TimeoutError, OSError, ValueError):
         return []
+    finally:
+        # Timeout, module timeout or scan cancel: never leave a parser running.
+        if proc.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
+            await asyncio.shield(proc.wait())
     return _parse_output(out)
 
 

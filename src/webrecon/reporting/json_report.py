@@ -69,7 +69,7 @@ def build_report(ctx: ScanContext) -> dict[str, Any]:
         "scan_id": ctx.scan_id,
         "target": ctx.target.model_dump(mode="json") if ctx.target else None,
         "risk": risk_dict,
-        "config": ctx.config.model_dump(mode="json"),
+        "config": ctx.config.redacted_dump(),  # credentials masked
         "modules": [
             {
                 "module": r.module,

@@ -136,7 +136,7 @@ class ApiDiscoveryModule(ScannerModule):
             # AST-extracted calls carry an HTTP method + normalized path.
             for call in getattr(a, "ast_calls", []) or []:
                 url = call.get("url") or ""
-                if not url:
+                if not url or _placeholder_base(url):
                     continue
                 abs_url = url if url.startswith(("http", "ws")) else urljoin(base, url)
                 agg.add(abs_url, Observation.REFERENCED, "javascript",
@@ -266,3 +266,21 @@ class ApiDiscoveryModule(ScannerModule):
         if storage is None:
             return
         await storage.save_endpoints(ctx.scan_id, endpoints)
+
+
+def _placeholder_base(url: str) -> bool:
+    """True when an AST URL template has an unresolved base or host.
+
+    ``{apiBase}/users`` or ``https://{host}/x`` would become fake paths on the
+    target; path templates such as ``/api/users/{id}`` or ``/{version}/users``
+    (usually built from a constant) are kept.
+    """
+    from urllib.parse import urlsplit
+
+    if url.startswith("{"):
+        return True
+    try:
+        p = urlsplit(url)
+    except ValueError:
+        return True
+    return "{" in p.scheme or "{" in p.netloc

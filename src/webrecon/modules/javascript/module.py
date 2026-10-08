@@ -11,6 +11,7 @@ Nothing downloaded is executed; JS is treated as inert text (threat T5).
 
 from __future__ import annotations
 
+import asyncio
 from urllib.parse import urljoin
 
 from ...core.enums import (
@@ -31,6 +32,8 @@ _HIGH_SECRETS = {"aws_access_key_id", "private_key", "stripe_live_key", "github_
 
 # Key under which JS analyses are published for the API-discovery module.
 JS_ANALYSIS_KEY = "js_analysis"
+# Concurrent Node parsers for source-map reconstructed files.
+_AST_CONCURRENCY = 4
 
 
 @default_registry.register
@@ -238,10 +241,18 @@ class JavaScriptModule(ScannerModule):
         analysis.reconstructed_files = len(files)
         masked_secrets: list[dict] = []
         endpoints: list[dict] = []
-        for path, content in files:
+        # One parser per source, a few at a time (sequential spawns were slow).
+        sem = asyncio.Semaphore(_AST_CONCURRENCY)
+
+        async def _calls(content: str):
+            async with sem:
+                return await extract_calls(content)
+
+        all_calls = await asyncio.gather(*(_calls(content) for _, content in files))
+        for (path, content), calls in zip(files, all_calls, strict=True):
             for hit in find_secrets(content):  # already masked
                 masked_secrets.append({"file": path, "kind": hit.kind, "match": hit.masked})
-            for call in await extract_calls(content):
+            for call in calls:
                 endpoints.append({"file": path, "method": call.method, "url": call.url})
         # Feed reconstructed endpoints into the shared JS analysis for the api module.
         analysis.ast_calls = (analysis.ast_calls or []) + [
