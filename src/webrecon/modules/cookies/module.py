@@ -101,6 +101,8 @@ class CookiesModule(ScannerModule):
         for c in cookies:
             self._analyze(result, c, resp.url, is_https, base_host)
 
+        if ctx.storage is not None and cookies:
+            await ctx.storage.save_cookies(ctx.scan_id, cookies)
         result.mark_finished(ModuleStatus.SUCCESS)
         return result
 

@@ -34,6 +34,7 @@ from .analysis import (
     extract_dmarc,
     extract_spf,
     is_dkim_record,
+    resolve_state,
     spf_is_permissive,
 )
 
@@ -91,7 +92,7 @@ class DnsModule(ScannerModule):
         # Dangling CNAME: a CNAME target that fails to resolve.
         for cname in data.records.get("CNAME", []):
             tgt = cname.rstrip(".")
-            if tgt and not await self._resolves(resolver, tgt):
+            if tgt and await resolve_state(resolver, tgt) == "nxdomain":
                 data.dangling_cnames.append(tgt)
 
         await self._persist(ctx, data)

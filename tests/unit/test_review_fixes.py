@@ -143,7 +143,9 @@ def test_done_is_signalled_before_ai_runs(monkeypatch) -> None:
 
     class _Pipe:
         async def run(self, url, **kw):
-            return None
+            from webrecon.core.config import ScanConfig as _C
+
+            return ScanContext(config=_C())
 
     asyncio.run(mgr._run(_Pipe(), "http://x", "sid", CancellationToken(), "stub"))
     # `_done` was already queued when the AI step started, and running was flagged

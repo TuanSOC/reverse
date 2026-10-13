@@ -33,11 +33,13 @@ def test_extracts_analytics_cloud_and_sourcemap() -> None:
 
 
 def test_secret_detected_and_masked() -> None:
-    a = analyze_js("https://ex.com/app.js", SAMPLE_JS)
+    # A real-shaped key (AWS's documentation example AKIAIOSFODNN7EXAMPLE is ignored).
+    a = analyze_js("https://ex.com/app.js", SAMPLE_JS + '\nvar k2="AKIAZZZZ1111WWWW2222";')
     kinds = {s.kind for s in a.secrets}
     assert "aws_access_key_id" in kinds
     # The raw key must never appear in the masked evidence.
-    assert all("AKIAIOSFODNN7EXAMPLE" not in s.masked for s in a.secrets)
+    assert all("AKIAZZZZ1111WWWW2222" not in s.masked for s in a.secrets)
+    assert analyze_js("u", 'var k="AKIAIOSFODNN7EXAMPLE";').secrets == []
 
 
 def test_hash_is_stable() -> None:

@@ -82,14 +82,17 @@ class Pipeline:
         ctx.shared["input_url"] = input_url
         selected = selected or (self.config.enabled_modules or None)
         order = self.registry.resolution_order(selected)
+        ctx.shared["module_order"] = tuple(order)  # lets modules defer to later ones
         total = len(order)
-        log.info("scan starting", scan_id=ctx.scan_id, url=input_url, modules=order)
-        ctx.event("scan", f"Scan started: {input_url}", {"url": input_url, "modules": order})
+        shown_url = scrub_url(input_url)  # no user:pass@ / query tokens in logs or events
+        log.info("scan starting", scan_id=ctx.scan_id, url=shown_url, modules=order)
+        ctx.event("scan", f"Scan started: {shown_url}", {"url": shown_url, "modules": order})
 
         guard = SsrfGuard(allow_private_targets=self.config.scope.allow_private_targets)
         rate = RateLimiter(self.config.rate)
 
         scan_persisted = False
+        cancelled = False
         events_saved = 0  # timeline cursor: ctx.events[:events_saved] are persisted
         async with HttpEngine(self.config.http, rate, guard, scope=None) as http:
             ctx.http = http
@@ -101,6 +104,7 @@ class Pipeline:
                     self._emit(ScanProgress(name, index, total, ModuleStatus.CANCELLED))
                     log.warning("scan cancelled", scan_id=ctx.scan_id, at=name)
                     ctx.event("scan", f"Scan cancelled before {name}", {"at": name})
+                    cancelled = True
                     break
 
                 ctx.current_module = name
@@ -137,7 +141,8 @@ class Pipeline:
 
                 self._emit(ScanProgress(name, index, total, result.status))
 
-        overall = self._overall_status(ctx)
+        overall = "cancelled" if cancelled else self._overall_status(ctx)
+        ctx.shared["overall_status"] = overall  # read by the API manager / CLI
         ctx.event("scan", f"Scan finished: {overall}", {
             "status": overall, "findings": len(ctx.all_findings()),
             "events_dropped": ctx.events_dropped,

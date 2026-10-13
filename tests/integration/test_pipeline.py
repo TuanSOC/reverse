@@ -26,7 +26,7 @@ ALL_MODULES = {
     "target", "scope", "http", "crawler", "dns", "tls", "headers", "cookies",
     "cors", "technology", "javascript", "browser", "exposure", "subdomains",
     "api", "apitest", "dom_security", "forms_auth", "ip_intel", "secret_leak",
-    "active_verify", "security",
+    "active_verify", "ratelimit", "security",
 }
 
 

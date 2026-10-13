@@ -77,3 +77,25 @@ def is_dkim_record(txt: str) -> bool:
     """True when a TXT looks like a DKIM key record (v=DKIM1 or a p= public key)."""
     clean = unquote_txt(txt).lower()
     return "v=dkim1" in clean or "p=" in clean
+
+async def resolve_state(resolver, name: str) -> str:
+    """``"resolves"``, ``"nxdomain"`` (name does not exist) or ``"unknown"``.
+
+    Timeouts / SERVFAIL / no nameservers are *unknown* — never evidence that a
+    name is dangling. A name with records of other types (NoAnswer) exists.
+    """
+    import dns.exception
+    import dns.resolver
+
+    unknown = False
+    for rtype in ("A", "AAAA", "CNAME"):
+        try:
+            if await resolver.resolve(name, rtype):
+                return "resolves"
+        except dns.resolver.NXDOMAIN:
+            return "nxdomain"
+        except dns.resolver.NoAnswer:
+            continue
+        except (dns.exception.DNSException, Exception):  # noqa: BLE001 - never crash the scan
+            unknown = True
+    return "unknown" if unknown else "resolves"

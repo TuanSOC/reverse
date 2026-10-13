@@ -70,6 +70,12 @@
   .flow-step-card .step-role{font-weight:700;font-size:13.5px;color:var(--fg)}
   .flow-step-card .step-url{font:11px var(--mono);color:var(--accent);word-break:break-all}
   .flow-step-card .step-desc{font-size:12px;color:var(--muted);line-height:1.4}
+  .flow-step-card .step-foot{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px}
+  .flow-step-card .step-foot .step-url{margin:0}
+  .statdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+  .statdot.ok{background:var(--ok);box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 70%,transparent);animation:statpulse 1.8s infinite}
+  .statdot.ref{background:var(--accent)} .statdot.pot{background:var(--faint)}
+  @keyframes statpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 55%,transparent)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
   .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:22px;opacity:.7;padding:0 4px;flex:0 0 auto}
 
   /* Quick Switcher Trigger & Modal */
@@ -86,6 +92,12 @@
   .switcher-opt{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.1s;border:1px solid transparent;
     width:100%;text-align:left;background:transparent;color:inherit;font:inherit}
   .switcher-opt:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .switcher-row{display:flex;align-items:center;gap:4px}
+  .switcher-row .switcher-opt{flex:1;min-width:0}
+  .switcher-del{flex:0 0 auto;background:transparent;border:1px solid transparent;border-radius:9px;
+    color:var(--faint);padding:8px 10px;cursor:pointer;font-size:14px;transition:.12s}
+  .switcher-del:hover{color:var(--crit);border-color:color-mix(in srgb,var(--crit) 40%,transparent);background:color-mix(in srgb,var(--crit) 10%,transparent)}
+  .switcher-del.confirm{color:#fff;background:var(--crit);border-color:transparent;font-weight:700;font-size:11.5px}
   .switcher-opt:hover,.switcher-opt.selected{background:color-mix(in srgb,var(--accent) 12%,var(--panel2));border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
   .switcher-opt .s-info{flex:1;min-width:0}
   .switcher-opt .s-title{font-weight:700;font-size:13.5px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -244,7 +256,7 @@
   .brand span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   header::before{content:"";width:26px;height:26px;border-radius:8px;background:var(--grad);
     box-shadow:0 6px 18px -6px var(--accent);margin-right:2px;flex:0 0 auto;
-    -webkit-mask:linear-gradient(#000,#000);position:relative}
+    mask:linear-gradient(#000,#000);-webkit-mask:linear-gradient(#000,#000);position:relative}
   /* buttons + inputs */
   button,select,input{border-radius:10px;transition:.16s cubic-bezier(.2,.7,.2,1)}
   button:hover{transform:translateY(-1px)}
@@ -408,6 +420,11 @@
   .kpi .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
   .kpi .v{font-size:24px;font-weight:800;margin-top:4px;letter-spacing:-.02em;text-transform:capitalize}
   .kpi .s{color:var(--muted);font-size:12px;margin-top:2px}
+  .kpi{position:relative}
+  .kpi .khead{display:flex;align-items:center;gap:8px}
+  .kpi .kicon{width:30px;height:30px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;background:color-mix(in srgb,var(--kc,var(--accent)) 16%,transparent);color:var(--kc,var(--accent))}
+  .kpi .kring{position:absolute;top:12px;right:12px}
+  .kpi .kring text{fill:var(--fg)}
   .sevbar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--panel3);margin:8px 0}
   .sevbar i{display:block;height:100%}
   .sevlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
@@ -438,6 +455,14 @@
   .fielderr{color:var(--crit);font-size:12px;min-height:16px;margin-top:4px}
   dialog{max-height:92vh;overflow:auto}
   #navScrim{z-index:34;top:56px}
+  .dot.warn{background:var(--med)}
+  /* sticky table headers need a non-scrolling wrapper; only phones scroll tables sideways */
+  @media (min-width:861px){.tablewrap{overflow-x:visible}}
+  /* role badges: fixed light text tints are unreadable on white — darker text in light theme */
+  :root[data-theme="light"] .role-login{color:#1d4ed8} :root[data-theme="light"] .role-logout{color:#be123c}
+  :root[data-theme="light"] .role-identity{color:#6d28d9} :root[data-theme="light"] .role-reset{color:#b45309}
+  :root[data-theme="light"] .role-authorize{color:#0e7490} :root[data-theme="light"] .role-token{color:#047857}
+  :root[data-theme="light"] .role-callback{color:#be185d} :root[data-theme="light"] .role-register{color:#4d7c0f}
   :root[data-theme="light"] nav a.active{color:var(--accent)}
   .finding>.head{flex-wrap:wrap} .finding .name{flex:1 1 220px;min-width:0}
   .finding .head .cid{margin-left:auto}
@@ -477,7 +502,7 @@
     <button class="icon menu" id="menuBtn" data-i18n-title="menu" aria-controls="nav" aria-expanded="false">☰</button>
     <div class="brand">WEB<span>RECON</span></div>
     <div class="scan-switcher" id="scanSwitcherWrap">
-      <button class="switcher-trigger" id="switcherTrigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-i18n-title="switchScan">
+      <button class="switcher-trigger" id="switcherTrigger" type="button" aria-haspopup="dialog" aria-expanded="false" data-i18n-tip="switchScan">
         <span class="dot ok" id="switcherDot"></span>
         <span class="s-target" id="switcherLabel" data-i18n="selectScan">Select a scan</span>
         <span class="s-badge" id="switcherBadge">—</span>
@@ -493,7 +518,7 @@
     <button class="icon" id="themeBtn" data-i18n-title="theme">◐</button>
     <button class="primary" id="newScanBtn"><span aria-hidden="true">+</span> <span class="lbl" data-i18n="newScan">New Scan</span></button>
   </header>
-  <nav id="nav" aria-label="Sections"></nav>
+  <nav id="nav" data-i18n-aria="navLabel"></nav>
   <main id="main" tabindex="-1"></main>
 </div>
 <div class="scrim" id="navScrim"></div>
@@ -559,9 +584,9 @@
     <option value="html">HTML</option><option value="pdf">PDF</option></select>
   <label for="x_sev" data-i18n="x.sev">Minimum severity</label>
   <select id="x_sev"><option value="" data-i18n="x.allSev">All severities</option>
-    <option value="informational">Informational +</option>
-    <option value="low">Low +</option><option value="medium">Medium +</option>
-    <option value="high">High +</option><option value="critical" data-i18n="x.critOnly">Critical only</option></select>
+    <option value="informational" data-i18n="x.sevInfo">Informational +</option>
+    <option value="low" data-i18n="x.sevLow">Low +</option><option value="medium" data-i18n="x.sevMed">Medium +</option>
+    <option value="high" data-i18n="x.sevHigh">High +</option><option value="critical" data-i18n="x.critOnly">Critical only</option></select>
   <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
     <button class="ghost" id="x_cancel" data-i18n="cancel">Cancel</button>
     <button class="primary" id="x_open" data-i18n="x.open">Open in new tab</button>
@@ -570,12 +595,12 @@
 
 <!-- command palette -->
 <div id="palette" role="dialog" aria-modal="true"><div class="palbox">
-  <input id="palInput" data-i18n-ph="pal.ph" autocomplete="off" aria-label="Command palette">
+  <input id="palInput" data-i18n-ph="pal.ph" autocomplete="off" data-i18n-aria="palette">
   <div class="palresults" id="palResults" role="listbox"></div>
 </div></div>
 
 <!-- quick switcher modal -->
-<dialog id="switcherModal" class="switcher-modal" aria-labelledby="switcherInput">
+<dialog id="switcherModal" class="switcher-modal" data-i18n-aria="switchScan">
   <div class="switcher-search-box">
     <span style="color:var(--accent);font-size:16px" aria-hidden="true">🔍</span>
     <input type="text" id="switcherInput" data-i18n-ph="switchPh" autocomplete="off"
@@ -612,7 +637,22 @@ const riskColor=s=>({critical:"var(--crit)",high:"var(--high)",medium:"var(--med
   low:"var(--low)",informational:"var(--info)"})[s]||"var(--info)";
 const SEVS=["critical","high","medium","low","informational"];
 const sevPill=s=>el("span",{class:`pill ${s}`},s);
-const fmtDate=s=>(s||"").slice(0,16).replace("T"," ");
+const METHOD_CLASS={GET:"m-get",POST:"m-post",PUT:"m-put",DELETE:"m-delete",PATCH:"m-patch"};
+/** colored HTTP-method badge, shared across Endpoints / Attack Surface / Timeline / Auth Flow */
+const methodBadge=m=>{const mu=String(m||"").toUpperCase();
+  return mu?el("span",{class:"m-badge "+(METHOD_CLASS[mu]||"m-other")},mu):el("span",{class:"kv"},"\u2014");};
+/** scan status → ok | warn (partial, unknown) | fail | run (still in progress) */
+function statusKind(s){s=String(s||"");
+  if(s==="success"||s==="done")return "ok";
+  if(["failed","cancelled","timeout"].includes(s)||s.startsWith("error"))return "fail";
+  if(["running","pending"].includes(s))return "run";
+  return "warn";}
+const pillCls=s=>({ok:"",fail:" bad",run:" warn",warn:" warn"})[statusKind(s)];
+/** "YYYY-MM-DD HH:MM" in the viewer's local time (API timestamps are UTC). */
+const fmtDate=s=>{
+  if(!s)return "";const d=new Date(s);if(isNaN(d))return String(s).slice(0,16).replace("T"," ");
+  const p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;};
 const uniq=a=>[...new Set(a.filter(x=>x!=null&&x!==""))].sort();
 const fmtBytes=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB";
 function hostOf(u){try{return new URL(u,location.href).hostname;}catch{return "";}}
@@ -648,7 +688,14 @@ en:{
   "home.scanAgain":"Scan again","home.openReport":"Open report","home.next":"Next steps",
   "home.recent":"Recent scans","home.sevMix":"Findings by severity","home.noFindings":"No findings — clean scan.",
   "kpi.risk":"Risk","kpi.findings":"Findings","kpi.endpoints":"Endpoints observed","kpi.js":"Scripts analyzed",
-  "kpi.ai":"AI summary","switchScan":"Switch scan",
+  "kpi.ai":"AI summary","switchScan":"Switch scan","navLabel":"Sections",
+  "del.title":"Delete this scan","del.confirm":"Delete?","del.done":"Scan deleted",
+  "del.fail":"Could not delete: {e}","del.running":"Cancel the scan before deleting it.",
+  "d.endpoint":"Endpoint","d.cert":"Certificate","d.subject":"Subject","d.issuer":"Issuer",
+  "d.sourcemap":"Source map","ip.edge":"Edge CDN: {c}","ip.bare":"Bare-metal / self-hosted",
+  "x.sevInfo":"Informational +","x.sevLow":"Low +","x.sevMed":"Medium +","x.sevHigh":"High +",
+  "prog.finished":"done","prog.failed":"failed",
+  "prog.lost":"Lost connection to the scan — it may still be running; refresh to check.",
   "switchPh":"Search scans by domain, status or date…","au.unknownRole":"unknown",
   "au.k.form":"Login form","au.k.login":"Credential submit","au.k.session":"Session cookie",
   "au.k.identity":"Identity lookup","au.k.logout":"Logout","au.k.redirect":"Redirect to IdP",
@@ -782,7 +829,14 @@ vi:{
   "home.scanAgain":"Quét lại","home.openReport":"Mở báo cáo","home.next":"Việc nên làm tiếp",
   "home.recent":"Các lần quét gần đây","home.sevMix":"Phát hiện theo mức độ","home.noFindings":"Không có phát hiện — lần quét sạch.",
   "kpi.risk":"Mức rủi ro","kpi.findings":"Phát hiện","kpi.endpoints":"Endpoint đã gọi được","kpi.js":"Script đã phân tích",
-  "kpi.ai":"Tóm tắt AI","switchScan":"Chuyển lần quét",
+  "kpi.ai":"Tóm tắt AI","switchScan":"Chuyển lần quét","navLabel":"Các mục",
+  "del.title":"Xóa lần quét này","del.confirm":"Xóa?","del.done":"Đã xóa lần quét",
+  "del.fail":"Không xóa được: {e}","del.running":"Hãy hủy lần quét trước khi xóa.",
+  "d.endpoint":"Endpoint","d.cert":"Chứng chỉ","d.subject":"Chủ thể","d.issuer":"Nơi cấp",
+  "d.sourcemap":"Source map","ip.edge":"CDN biên: {c}","ip.bare":"Máy chủ riêng / tự host",
+  "x.sevInfo":"Informational trở lên","x.sevLow":"Low trở lên","x.sevMed":"Medium trở lên","x.sevHigh":"High trở lên",
+  "prog.finished":"xong","prog.failed":"thất bại",
+  "prog.lost":"Mất kết nối tới lần quét — có thể vẫn đang chạy; tải lại trang để kiểm tra.",
   "switchPh":"Tìm lần quét theo tên miền, trạng thái hoặc ngày…","au.unknownRole":"không rõ",
   "au.k.form":"Form đăng nhập","au.k.login":"Gửi thông tin đăng nhập","au.k.session":"Cookie phiên",
   "au.k.identity":"Tra cứu danh tính","au.k.logout":"Đăng xuất","au.k.redirect":"Chuyển tới IdP",
@@ -905,6 +959,9 @@ function applyStatic(){
   document.querySelectorAll("[data-i18n-ph]").forEach(n=>{n.placeholder=t(n.dataset.i18nPh);});
   document.querySelectorAll("[data-i18n-title]").forEach(n=>{
     n.title=t(n.dataset.i18nTitle);n.setAttribute("aria-label",t(n.dataset.i18nTitle));});
+  // tooltip only (keeps a button's visible text as its accessible name)
+  document.querySelectorAll("[data-i18n-tip]").forEach(n=>{n.title=t(n.dataset.i18nTip);});
+  document.querySelectorAll("[data-i18n-aria]").forEach(n=>{n.setAttribute("aria-label",t(n.dataset.i18nAria));});
   const lb=$("#langBtn");lb.textContent=LANG==="vi"?"EN":"VI";lb.title=t("lang");lb.setAttribute("aria-label",t("lang"));
 }
 function setLang(l){LANG=l;store.set("wr-lang",l);applyStatic();renderNav();fillScanSelect();render();
@@ -930,7 +987,12 @@ const state={scanId:null,scans:[],section:"Home",ws:null,runningId:null,renderSe
 const SID=()=>state.scanId;
 function fromHash(){return BYSLUG[location.hash.replace(/^#\/?/,"")]||"Home";}
 function go(section){const h="#/"+slug(section);if(location.hash===h)route();else location.hash=h;}
-function route(){state.section=fromHash();closeNav();renderNav();render();}
+async function route(){
+  state.section=fromHash();closeDrawer();closeNav(false);renderNav();
+  await render();
+  // renderNav() rebuilt the focused link; land keyboard/screen-reader users on the content
+  if(!document.activeElement||document.activeElement===document.body)$("#main").focus({preventScroll:true});
+}
 addEventListener("hashchange",route);
 
 /* ============================ theme ============================ */
@@ -984,8 +1046,11 @@ function syncNavInert(){$("#nav").inert=MOBILE.matches&&!$("#app").classList.con
 MOBILE.addEventListener("change",syncNavInert);
 function openNav(){$("#app").classList.add("navopen");$("#navScrim").classList.add("on");
   $("#menuBtn").setAttribute("aria-expanded","true");syncNavInert();$("#nav a.active")?.focus();}
-function closeNav(){$("#app").classList.remove("navopen");$("#navScrim").classList.remove("on");
-  $("#menuBtn").setAttribute("aria-expanded","false");syncNavInert();}
+function closeNav(restoreFocus=true){
+  const hadFocus=$("#nav").contains(document.activeElement);
+  $("#app").classList.remove("navopen");$("#navScrim").classList.remove("on");
+  $("#menuBtn").setAttribute("aria-expanded","false");syncNavInert();
+  if(restoreFocus&&hadFocus&&MOBILE.matches)$("#menuBtn").focus();}
 $("#menuBtn").onclick=()=>$("#app").classList.contains("navopen")?closeNav():openNav();
 $("#navScrim").onclick=closeNav;
 
@@ -1122,9 +1187,32 @@ function sevBar(counts){
     el("span",{},el("b",{style:`background:${riskColor(k)}`}),`${k} ${counts[k]}`)));
   return el("div",{},total?bar:"",legend);
 }
-function kpi(label,value,sub,onclick,color){
-  return el("button",{class:"kpi",onclick},el("div",{class:"k"},label),
+function kpi(label,value,sub,onclick,color,opts={}){
+  const head=el("div",{class:"khead"});
+  if(opts.icon)head.append(el("span",{class:"kicon","aria-hidden":"true",
+    style:color?`--kc:${color}`:""},opts.icon));
+  head.append(el("div",{class:"k"},label));
+  const node=el("button",{class:"kpi",onclick},head,
     el("div",{class:"v",style:color?`color:${color}`:""},value),sub?el("div",{class:"s"},sub):"");
+  if(opts.ratio!=null)node.append(confRing(opts.ratio,color));
+  return node;
+}
+/** small percentage ring (confidence / coverage meter) */
+function confRing(frac,color){
+  frac=Math.max(0,Math.min(1,frac||0));
+  const NS="http://www.w3.org/2000/svg",R=13,C=2*Math.PI*R;
+  const svg=document.createElementNS(NS,"svg");svg.setAttribute("class","kring");
+  svg.setAttribute("width",34);svg.setAttribute("height",34);svg.setAttribute("viewBox","0 0 34 34");
+  svg.setAttribute("role","img");svg.setAttribute("aria-label",Math.round(frac*100)+"%");
+  const circle=(stroke,dash)=>{const c=document.createElementNS(NS,"circle");
+    const a={cx:17,cy:17,r:R,fill:"none",stroke,"stroke-width":4};
+    if(dash!=null)Object.assign(a,{"stroke-dasharray":`${dash} ${C}`,
+      transform:"rotate(-90 17 17)","stroke-linecap":"round"});
+    for(const[k,v]of Object.entries(a))c.setAttribute(k,v);return c;};
+  svg.append(circle("var(--panel3)"),circle(color||"var(--accent)",frac*C));
+  const tx=document.createElementNS(NS,"text");tx.setAttribute("x",17);tx.setAttribute("y",20.5);
+  tx.setAttribute("text-anchor","middle");tx.setAttribute("font-size","9");tx.setAttribute("font-weight","700");
+  tx.textContent=Math.round(frac*100)+"%";svg.append(tx);return svg;
 }
 function nextItem(icon,color,title,desc,run){
   return el("button",{class:"next",style:`--c:${color}`,onclick:run},
@@ -1139,7 +1227,7 @@ async function homeView(){
     api(`/api/scans/${sid}/endpoints`).catch(()=>[]),api(`/api/scans/${sid}/js`).catch(()=>[]),
     api(`/api/scans/${sid}/auth-flow`).catch(()=>({}))]);
   const w=el("div");
-  const st=o.status==="success"?"":(["failed","cancelled"].includes(o.status)?" bad":" warn");
+  const st=pillCls(o.status);
   w.append(pageHead(o.target.base_url||"—",
     el("span",{},el("span",{class:"statuspill"+st},o.status)," · "+fmtDate(o.created_at)+` · ${o.id.slice(0,8)}`),
     el("button",{class:"ghost",onclick:()=>openScanDialog({url:o.target.base_url})},"↻ "+t("home.scanAgain")),
@@ -1149,14 +1237,16 @@ async function homeView(){
   const observed=eps.filter(e=>e.observation==="observed").length;
   const analyzed=js.filter(x=>x.analyzed).length;
   w.append(el("div",{class:"kpis"},
-    kpi(t("kpi.risk"),risk,null,()=>go("Overview"),riskColor(risk)),
+    kpi(t("kpi.risk"),risk,null,()=>go("Overview"),riskColor(risk),{icon:"◉"}),
     kpi(t("kpi.findings"),String(o.total_findings),
       ((bySev.critical||0)+(bySev.high||0))?t("kpi.highSub",{n:(bySev.critical||0)+(bySev.high||0)}):null,
-      ()=>go("Findings")),
-    kpi(t("kpi.endpoints"),String(observed),t("kpi.of",{n:eps.length}),()=>go("Endpoints")),
-    kpi(t("kpi.js"),String(analyzed),t("kpi.of",{n:js.length}),()=>go("JS Files")),
+      ()=>go("Findings"),null,{icon:"⚑"}),
+    kpi(t("kpi.endpoints"),String(observed),t("kpi.of",{n:eps.length}),()=>go("Endpoints"),null,
+      {icon:"⇄",ratio:eps.length?observed/eps.length:0}),
+    kpi(t("kpi.js"),String(analyzed),t("kpi.of",{n:js.length}),()=>go("JS Files"),null,
+      {icon:"{ }",ratio:js.length?analyzed/js.length:0}),
     kpi(t("kpi.ai"),ai.analysis?t("kpi.aiReady"):t("kpi.aiNone"),ai.analysis?ai.analysis.provider:null,
-      ()=>go("AI Analysis"),ai.analysis?"var(--ok)":"var(--muted)")));
+      ()=>go("AI Analysis"),ai.analysis?"var(--ok)":"var(--muted)",{icon:"✦"})));
 
   const left=el("div"),right=el("div");
   left.append(el("h2",{},t("home.next")));
@@ -1181,7 +1271,7 @@ async function homeView(){
   right.append(el("h2",{},t("home.recent")));
   right.append(el("div",{class:"recent"},...state.scans.slice(0,6).map(s=>el("button",{
     class:s.id===sid?"cur":"","aria-current":s.id===sid?"true":null,onclick:()=>selectScan(s.id)},
-    el("span",{class:"t"},s.target),el("span",{class:"statuspill"+(s.status==="success"?"":" warn")},s.status),
+    el("span",{class:"t"},s.target),el("span",{class:"statuspill"+pillCls(s.status)},s.status),
     el("span",{class:"d"},fmtDate(s.created_at))))));
   w.append(el("div",{class:"homegrid"},left,right));
   return w;
@@ -1202,10 +1292,13 @@ const RENDER={
       el("div",{},el("div",{class:"k",style:"color:var(--muted);font-size:11px;text-transform:uppercase"},t("ov.total")),
         el("div",{style:"font-size:26px;font-weight:800"},String(o.total_findings)))));
     const cards=el("div",{class:"cards"});
-    for(const s of SEVS)
-      cards.append(clickable(el("div",{class:"card"},el("div",{class:"k"},s),
-        el("div",{class:"v",style:`color:${(o.findings_by_severity?.[s])?riskColor(s):"var(--faint)"}`},
-          String(o.findings_by_severity?.[s]||0))),()=>{state.sevFilter=new Set([s]);go("Findings");}));
+    for(const s of SEVS){
+      const n=o.findings_by_severity?.[s]||0;
+      const c=el("div",{class:"card"},el("div",{class:"k"},s),
+        el("div",{class:"v",style:`color:${n?riskColor(s):"var(--faint)"}`},String(n)));
+      // a zero-count filter would show an empty list with no visible chip to undo it
+      cards.append(n?clickable(c,()=>{state.sevFilter=new Set([s]);go("Findings");}):c);
+    }
     w.append(cards);
     if(o.ip_intel)w.append(ipWidget(o.ip_intel));
     const img=new Image();img.className="shot";img.src=`/api/scans/${SID()}/screenshot`;
@@ -1351,8 +1444,8 @@ const RENDER={
     w.append(el("h2",{},t("dns.certs")));
     if(certs.length)w.append(tbl([t("col.subject"),t("col.issuer"),t("col.validUntil")],certs.map(c=>({
       cells:[c.subject,c.issuer,c.not_after||"—"],
-      onclick:()=>openDrawer("Certificate",[
-        {label:t("d.subjIssuer"),rows:[["Subject",c.subject],["Issuer",c.issuer]]},
+      onclick:()=>openDrawer(t("d.cert"),[
+        {label:t("d.subjIssuer"),rows:[[t("d.subject"),c.subject],[t("d.issuer"),c.issuer]]},
         {label:t("d.validity"),rows:[[t("d.notBefore"),c.not_before||"—"],[t("d.notAfter"),c.not_after||"—"]]},
         {label:"SAN",tags:c.san||[]},
         {label:t("d.details"),raw:c.details||{}},{label:t("d.raw"),raw:c}])}))));
@@ -1381,9 +1474,9 @@ function ipWidget(ii){
   const p=(ii.ips&&ii.ips[0])||{};
   const coords=(p.latitude!=null&&p.longitude!=null)?`${p.latitude}, ${p.longitude}`:"—";
   const badges=el("div",{class:"toolbar",style:"margin:0 0 10px"});
-  if(ii.edge_cdn)badges.append(el("span",{class:"pill low"},"Edge: "+ii.edge_cdn));
+  if(ii.edge_cdn)badges.append(el("span",{class:"pill low"},t("ip.edge",{c:ii.edge_cdn})));
   if(p.provider)badges.append(el("span",{class:"pill informational"},p.provider));
-  if(!p.provider&&p.ip)badges.append(el("span",{class:"pill informational"},"Bare-Metal"));
+  if(!p.provider&&p.ip)badges.append(el("span",{class:"pill informational"},t("ip.bare")));
   if(ii.origin_exposed)badges.append(el("span",{class:"pill high"},t("ip.origin")));
   const rows=[
     ["IP",p.ip?el("span",{},el("code",{},p.ip),copyBtn(p.ip)):"—"],
@@ -1638,7 +1731,7 @@ async function endpointExplorer(){
     if(!out.length){wrap.append(emptyState(t("noMatch")));return;}
     wrap.append(tbl([t("col.confidence"),t("col.method"),t("col.url"),t("col.discovery"),t("col.params"),t("col.auth")],
       out.map(r=>({
-      cells:[obs(r.observation),r.method||"—",el("code",{},r.url),
+      cells:[obs(r.observation),methodBadge(r.method),el("span",{},el("code",{},r.url),copyBtn(r.url)),
         el("span",{class:"kv"},statusLabel(r.status)),
         el("div",{class:"taglist"},...r.pclasses.slice(0,4).map(c=>el("span",{class:"tag"},c))),
         r.auth?el("span",{class:"pill medium"},r.auth):""],
@@ -1647,7 +1740,7 @@ async function endpointExplorer(){
   apply();return w;
 }
 function endpointDrawer(e){
-  openDrawer("Endpoint",[
+  openDrawer(t("d.endpoint"),[
     {label:t("d.overview"),rows:[["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],
       [t("d.host"),e.host||"—"],[t("d.kind"),e.kind],[t("d.method"),e.method||"—"],[t("d.conf"),obs(e.observation)],
       [t("d.discovery"),statusLabel(e.status)],[t("d.auth"),e.auth||"—"],
@@ -1701,7 +1794,7 @@ function jsDrawer(x){
       ["SHA-256",x.sha256?el("span",{},el("code",{},x.sha256),copyBtn(x.sha256)):"—"],
       [t("d.obs"),obs(x.observation)],[t("d.truncated"),t(x.truncated?"yes":"no")],
       ["GraphQL",x.graphql?t("js.graphql"):"—"],[t("d.secrets"),x.secrets?t("d.secretsN",{n:x.secrets}):t("none")]]},
-    {label:"Source map",rows:[[t("d.referenced"),x.sourcemap?el("code",{},x.sourcemap):"—"],
+    {label:t("d.sourcemap"),rows:[[t("d.referenced"),x.sourcemap?el("code",{},x.sourcemap):"—"],
       [t("d.exposed"),t(x.sourcemap_exposed?"yes":"no")],[t("d.rebuilt"),t("d.files",{n:x.reconstructed_files||0})]]},
     x.frameworks.length?{label:t("d.frameworks"),tags:x.frameworks}:null,
     x.ast_calls.length?{label:t("d.ast",{n:x.ast_calls.length}),rows:x.ast_calls.slice(0,100).map(c=>[
@@ -1742,7 +1835,9 @@ async function attackSurfaceView(){
     const row=el("div",{class:"tnode",role:"treeitem","aria-expanded":has?String(isOpen):null,"data-id":n.id},
       el("span",{class:"tcaret","aria-hidden":"true"},has?(isOpen?"▾":"▸"):""),
       el("span",{class:"ticon","aria-hidden":"true"},TYPE_ICON[n.type]||"•"),
-      el("span",{class:"tl-label",style:(n.type==="group"||n.type==="domain")?"font-weight:700":""},nodeLabel(n)),
+      el("span",{class:"tl-label",style:(n.type==="group"||n.type==="domain")?"font-weight:700":""},
+        ...(n.type==="endpoint"&&n.props&&n.props.method
+          ?[methodBadge(n.props.method)," ",nodeLabel(n).replace(n.props.method+" ","")]:[nodeLabel(n)])),
       el("span",{class:"ttype"},n.type),right);
     clickable(row,()=>{focusId=n.id;if(!has){surfaceDrawer(n);return;}
       isOpen?open.delete(n.id):open.add(n.id);draw();},{role:false});
@@ -1788,6 +1883,7 @@ async function authFlowView(){
     card("⇄ "+t("au.eps"),String(eps.length))));
 
   w.append(el("h2",{},t("au.flow")));
+  const epByRole={};for(const e of eps)if(!epByRole[e.role])epByRole[e.role]=e;
   if(f.steps?.length){
     const pipe=el("div",{class:"auth-pipeline"});
     f.steps.forEach((s,idx)=>{
@@ -1804,6 +1900,11 @@ async function authFlowView(){
       );
       const desc=el("div",{class:"step-desc"},known?t("au.d."+key):s);
       card.append(head,desc);
+      const ep=epByRole[key];  // §2.2: show the real endpoint's method + observed status
+      if(ep){const sk={observed:"ok",referenced:"ref",potential:"pot"}[ep.observation]||"pot";
+        card.append(el("div",{class:"step-foot"},methodBadge(ep.method),
+          el("span",{class:"statdot "+sk,title:ep.observation,role:"img","aria-label":ep.observation}),
+          el("span",{class:"step-url",title:ep.url},shortPath(ep.url))));}
       pipe.append(card);
     });
     w.append(pipe);
@@ -1814,12 +1915,6 @@ async function authFlowView(){
   w.append(el("h2",{},t("au.epsTitle")));
   if(!eps.length){w.append(emptyState(t("au.noEps")));return w;}
 
-  const methodBadge=m=>{
-    if(!m)return el("span",{class:"kv"},"—");
-    const mu=m.toUpperCase();
-    const cls=({GET:"m-get",POST:"m-post",PUT:"m-put",DELETE:"m-delete",PATCH:"m-patch"})[mu]||"m-other";
-    return el("span",{class:`m-badge ${cls}`},mu);
-  };
   const roleBadge=r=>{
     const cls=AUTH_ROLE_ORDER.includes(r)?`role-${r}`:"role-unknown";
     return el("span",{class:`role-badge ${cls}`},r||t("au.unknownRole"));
@@ -1833,7 +1928,7 @@ async function authFlowView(){
       el("span",{},el("code",{},e.url),copyBtn(e.url)),
       obs(e.observation)
     ],
-    onclick:()=>openDrawer(t("au.endpoint"),[{label:"Endpoint",rows:[[t("d.role"),e.role],
+    onclick:()=>openDrawer(t("au.endpoint"),[{label:t("d.endpoint"),rows:[[t("d.role"),e.role],
       ["URL",el("span",{},el("code",{},e.url),copyBtn(e.url))],[t("d.method"),e.method||"—"],
       [t("d.conf"),obs(e.observation)]]}])}))));
   return w;
@@ -1870,7 +1965,10 @@ async function eventTimelineView(){
       list.append(clickable(el("div",{class:"tlrow",style:`--kc:${c}`},
         el("span",{class:"tlt"},offset(e)),
         el("span",{class:"kbadge"},e.kind==="finding"?(e.data?.severity||"finding"):e.kind),
-        el("span",{class:"kv tmod"},e.module||"pipeline"),el("span",{class:"tlabel",title:e.label},e.label)),
+        el("span",{class:"kv tmod"},e.module||"pipeline"),
+        el("span",{class:"tlabel",title:e.label},
+          ...(e.data?.entity==="endpoint"&&e.data?.method
+            ?[methodBadge(e.data.method)," ",e.label]:[e.label]))),
         ()=>openDrawer(e.label,[
           {label:t("d.event"),rows:[["#",String(e.seq)],[t("d.time"),e.ts],[t("d.offset"),offset(e)],
             [t("d.kind"),e.kind],[t("d.module"),e.module||"pipeline"]]},
@@ -1957,7 +2055,7 @@ function fillScanSelect(){
   if(cur){
     if(trigTarget) trigTarget.textContent=cur.target;
     if(trigBadge) trigBadge.textContent=t("selFindings",{n:cur.findings});
-    if(trigDot) trigDot.className=`dot ${cur.status==="success"?"ok":["failed","cancelled"].includes(cur.status)?"fail":"run"}`;
+    if(trigDot) trigDot.className=`dot ${statusKind(cur.status)}`;
   }
 }
 async function loadScans(keep=true){
@@ -1970,11 +2068,12 @@ async function loadScans(keep=true){
   fillScanSelect();
   return state.scans;
 }
+function resetFilters(){
+  state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();state.secretsOnly=false;}
 function selectScan(id){
   state.scanId=id;store.set("wr-scan",id);
   const sel=$("#scanSelect");if(sel)sel.value=id;
-  fillScanSelect();
-  state.sevFilter.clear();state.catFilter.clear();state.confFilter.clear();state.secretsOnly=false;
+  fillScanSelect();resetFilters();
   refreshCounts().then(render);
 }
 $("#scanSelect")&&( $("#scanSelect").onchange=e=>selectScan(e.target.value) );
@@ -1995,6 +2094,8 @@ function switcherClosed(){
   const tr=$("#switcherTrigger");tr.setAttribute("aria-expanded","false");tr.focus();}
 function closeSwitcherModal(){ const m=$("#switcherModal");if(m?.open){m.close();switcherClosed();} }
 $("#switcherModal")?.addEventListener("cancel",switcherClosed);  // Esc
+$("#switcherModal")?.addEventListener("close",()=>{   // any other way the dialog closes
+  if($("#switcherTrigger").getAttribute("aria-expanded")==="true")switcherClosed();});
 /* Arrow keys move the highlight, Enter opens it — same model as the command palette. */
 $("#switcherInput")?.addEventListener("keydown",e=>{
   const opts=[...document.querySelectorAll("#switcherList .switcher-opt")];
@@ -2027,11 +2128,11 @@ function renderSwitcherList(filter=""){
     const isCur=s.id===state.scanId;
     const opt=el("button",{type:"button",class:"switcher-opt"+(i===switcherSel?" selected":""),
       "aria-current":isCur?"true":null},
-      el("span",{class:`dot ${s.status==="success"?"ok":["failed","cancelled"].includes(s.status)?"fail":"run"}`}),
+      el("span",{class:`dot ${statusKind(s.status)}`}),
       el("div",{class:"s-info"},
         el("div",{class:"s-title"},s.target),
         el("div",{class:"s-meta"},
-          el("span",{class:"pill "+(s.status==="success"?"low":"high")},s.status),
+          el("span",{class:"pill "+({ok:"low",fail:"high",run:"medium",warn:"medium"})[statusKind(s.status)]},s.status),
           el("span",{},`• ${t("selFindings",{n:s.findings})}`),
           el("span",{},`• ${fmtDate(s.created_at)}`)
         )
@@ -2041,8 +2142,42 @@ function renderSwitcherList(filter=""){
       selectScan(s.id);
       closeSwitcherModal();
     };
-    list.append(opt);
+    const del=el("button",{type:"button",class:"switcher-del","data-i18n-title":"del.title",
+      title:t("del.title"),"aria-label":t("del.title")},"\u{1F5D1}");
+    let armed=false,armTimer=null;
+    del.onclick=ev=>{
+      ev.stopPropagation();
+      if(!armed){  // first click arms, second within 3s confirms
+        armed=true;del.classList.add("confirm");del.textContent=t("del.confirm");
+        clearTimeout(armTimer);
+        armTimer=setTimeout(()=>{armed=false;del.classList.remove("confirm");
+          del.textContent="\u{1F5D1}";},3000);
+        return;
+      }
+      clearTimeout(armTimer);deleteScan(s.id);
+    };
+    list.append(el("div",{class:"switcher-row"},opt,del));
   });
+}
+async function deleteScan(id){
+  try{
+    const res=await fetch(`/api/scans/${id}`,{method:"DELETE"});
+    if(!res.ok){
+      const j=await res.json().catch(()=>({}));
+      throw new Error(res.status===409?t("del.running"):(j.detail||res.status));
+    }
+    toast(t("del.done"),"ok");
+    const wasCurrent=id===state.scanId;
+    await loadScans(!wasCurrent);
+    if(wasCurrent){
+      state.scanId=state.scans[0]?.id||null;
+      if(state.scanId)store.set("wr-scan",state.scanId);
+    }
+    fillScanSelect();
+    if(!state.scans.length){closeSwitcherModal();renderNav();render();return;}
+    renderSwitcherList($("#switcherInput")?.value||"");
+    refreshCounts().then(render);
+  }catch(e){toast(t("del.fail",{e:e.message}),"err");}
 }
 
 async function refreshCounts(){
@@ -2120,7 +2255,11 @@ $("#startScanBtn").onclick=async()=>{
 };
 $("#cancelBtn").onclick=()=>{ if(state.runningId){fetch(`/api/scans/${state.runningId}/cancel`,{method:"POST"});
   toast(t("prog.cancelling"));}};
+let progTimer=null;
+const doneLabel=s=>s==="done"?t("prog.finished"):String(s).startsWith("error")?t("prog.failed"):s;
 function watch(scanId){
+  clearTimeout(progTimer);  // a previous scan's "clear the bar in 4s" must not wipe this one
+  let done=false;
   state.runningId=scanId;$("#cancelBtn").hidden=false;
   const prog=$("#progress"),bar=el("i"),wrap=el("span",{class:"bar"},bar),
     label=el("span",{class:"lbl"},t("prog.starting"));
@@ -2129,23 +2268,29 @@ function watch(scanId){
   const ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/api/scans/${scanId}/events`);
   state.ws=ws;
   ws.onmessage=m=>{const ev=JSON.parse(m.data);
-    if(ev.module==="_done"){bar.style.width="100%";label.textContent=ev.status;
-      prog.querySelector(".dot").className="dot "+(ev.status==="done"?"ok":"fail");
+    if(ev.module==="_done"){done=true;bar.style.width="100%";label.textContent=doneLabel(ev.status);
+      const dot=prog.querySelector(".dot");if(dot)dot.className="dot "+(ev.status==="done"?"ok":"fail");
       $("#cancelBtn").hidden=true;state.runningId=null;
-      toast(t("prog.done",{s:ev.status}),ev.status==="done"?"ok":"err");
+      toast(t("prog.done",{s:doneLabel(ev.status)}),ev.status==="done"?"ok":"err");
       ws.close();
       loadScans().then(()=>{if(state.scans.find(s=>s.id===scanId)){state.scanId=scanId;store.set("wr-scan",scanId);
-        fillScanSelect();}
+        resetFilters();fillScanSelect();}
         refreshCounts().then(()=>go("Home"));});
-      setTimeout(()=>{prog.innerHTML="";},4000);return;}
+      progTimer=setTimeout(()=>{prog.innerHTML="";},4000);return;}
     const pct=ev.total?Math.round((ev.index+1)/ev.total*100):0;
     bar.style.width=pct+"%";label.textContent=t("prog.running",{m:ev.module,i:ev.index+1,n:ev.total});};
   ws.onerror=()=>{prog.querySelector(".dot")?.classList.add("fail");};
+  ws.onclose=()=>{  // server restart / network drop before `_done`: don't leave the UI "running"
+    if(done||state.ws!==ws)return;
+    prog.querySelector(".dot")?.classList.add("fail");label.textContent=t("prog.failed");
+    $("#cancelBtn").hidden=true;state.runningId=null;toast(t("prog.lost"),"err");
+    progTimer=setTimeout(()=>{prog.innerHTML="";},6000);
+  };
 }
 
 /* ============================ command palette ============================ */
 const PAL=$("#palette"),PALIN=$("#palInput"),PALRES=$("#palResults");let palSel=0,palItems=[],palPrev=null;
-function openPalette(){palPrev=document.activeElement;buildPalette("");PAL.classList.add("on");PALIN.value="";PALIN.focus();}
+function openPalette(){closeSwitcherModal();palPrev=document.activeElement;buildPalette("");PAL.classList.add("on");PALIN.value="";PALIN.focus();}
 function closePalette(){if(!PAL.classList.contains("on"))return;PAL.classList.remove("on");palPrev?.focus?.();}
 $("#paletteBtn").onclick=openPalette;
 addEventListener("keydown",e=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openPalette();}});

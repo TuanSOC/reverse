@@ -35,6 +35,11 @@ otherwise the deterministic offline stub. `--show` prints the latest stored
 analysis without calling a provider. Every claim lists the evidence IDs it is
 based on.
 
+### `webrecon delete SCAN_ID [--yes]`
+Delete a stored scan and every row it owns (findings, endpoints, assets, events,
+AI analyses, screenshot…) plus an orphaned target. Irreversible; prompts for
+confirmation unless `--yes`.
+
 ### Read commands — `findings`, `endpoints`, `assets`, `graph`
 ```
 webrecon findings  [SCAN_ID] [--min-severity high] [--json]
@@ -59,7 +64,7 @@ All take `--database-url`.
 | `--timeout S` | Per-request timeout. |
 | `--no-robots` | Ignore robots.txt (authorized only). |
 | `--probe` | Probe curated sensitive files (.git/.env/…), content-verified, GET-only. Authorized targets only. |
-| `--active` | Active assessment (`apitest` + `active_verify`): DB errors, error-based SQLi susceptibility, data exposure, unauth access, GraphQL introspection, plus canary-confirmed open-redirect & reflected-XSS. GET-only, observed endpoints only, budget-capped, detection/confirmation-level (no payload execution or data extraction). Authorized targets only. |
+| `--active` | Active assessment (`apitest` + `active_verify` + `ratelimit` probe): DB errors, error-based SQLi susceptibility, data exposure, unauth access, GraphQL introspection, canary-confirmed open-redirect & reflected-XSS, and a hard-capped (≤12 GET) rate-limit enforcement probe. GET-only, observed endpoints only, budget-capped, detection/confirmation-level (no payload execution, no flooding, no bypass). Authorized targets only. |
 | `--cookie "k=v; k2=v2"` | Authenticated scan: raw Cookie header sent **only to the target host** (never third parties) so the crawler/browser/active checks reach behind a login. Authorized targets only. |
 | `--header "Name: value"` / `-H` | Extra request header (repeatable), e.g. `Authorization`. Sent **only to the target host**. |
 | `--login-url U --login-user N --login-pass P` | Auto-login: a headless browser logs in and the session is reused. The login page must be on the target's own site and pass the SSRF guard; otherwise the scan continues unauthenticated. The password is never stored or reported. |

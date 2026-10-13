@@ -10,6 +10,7 @@ class of bug exists so the finding can be upgraded from POTENTIAL to OBSERVED.
 from __future__ import annotations
 
 import hashlib
+import re
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 # Off-origin, non-resolving canary host (RFC 2606 .invalid never resolves).
@@ -25,7 +26,8 @@ REDIRECT_VARIANTS: tuple[tuple[str, str], ...] = (
     ("scheme_relative", f"//{REDIRECT_CANARY_HOST}/"),        # //canary/
     ("backslash", f"/\\{REDIRECT_CANARY_HOST}/"),             # /\canary/  (\ → /)
     ("userinfo", f"https://trusted.example@{REDIRECT_CANARY_HOST}/"),  # user@canary
-    ("double_encoded", f"%252f%252f{REDIRECT_CANARY_HOST}%252f"),  # //canary/ (2x enc)
+    # urlencode() adds the second layer: on the wire this is %252f%252fcanary%252f
+    ("double_encoded", f"%2f%2f{REDIRECT_CANARY_HOST}%2f"),  # //canary/ (2x enc)
 )
 
 
@@ -60,9 +62,11 @@ def effective_redirect_host(location: str) -> str | None:
     from urllib.parse import unquote
 
     loc = unquote(location.strip()).replace("\\", "/")
-    # Drop a leading scheme ("https:") so scheme-relative and absolute align.
-    if "://" in loc:
-        loc = loc.split("://", 1)[1]
+    # Only a scheme/authority at the *start* leaves the site; "://" further in is
+    # just data (e.g. /login?next=https://x is a same-site relative URL).
+    m = re.match(r"[a-zA-Z][a-zA-Z0-9+.-]*://", loc)
+    if m:
+        loc = loc[m.end():]
     elif loc.startswith("//"):
         loc = loc[2:]
     else:

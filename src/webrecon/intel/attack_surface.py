@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 
 _SEV_RANK = {"critical": 4, "high": 3, "medium": 2, "low": 1, "informational": 0}
 _INFRA_TYPES = ("ip", "dns", "certificate")
+_MAX_PATH_DEPTH = 16
 
 
 def _tnode(node_id: str, label: str, type_: str, props: dict | None = None) -> dict[str, Any]:
@@ -57,6 +58,8 @@ def build_attack_surface(graph: dict[str, Any]) -> dict[str, Any]:
             web["children"].append(hosts[host])
         parent = hosts[host]
         segs = [s for s in (parts.path or "/").split("/") if s]
+        if len(segs) > _MAX_PATH_DEPTH:  # fold the tail into one leaf (bounded recursion)
+            segs = segs[:_MAX_PATH_DEPTH] + ["/".join(segs[_MAX_PATH_DEPTH:])]
         prefix = ""
         for seg in segs[:-1]:
             prefix += "/" + seg
@@ -139,3 +142,19 @@ def _rollup(node: dict) -> tuple[int, int]:
     node["finding_count"] = count
     node["max_severity"] = next((k for k, v in _SEV_RANK.items() if v == best), None)
     return best, count
+
+
+def prune_findings(tree: dict[str, Any], keep) -> dict[str, Any]:
+    """Copy of ``tree`` keeping only findings where ``keep(finding)``; rollups recomputed."""
+    import copy
+
+    out = copy.deepcopy(tree)
+
+    def _walk(node: dict) -> None:
+        node["findings"] = [f for f in node["findings"] if keep(f)]
+        for c in node["children"]:
+            _walk(c)
+
+    _walk(out)
+    _rollup(out)
+    return out

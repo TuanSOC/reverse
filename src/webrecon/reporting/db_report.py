@@ -54,7 +54,14 @@ async def build_report_from_db(
         "ip_intel": overview.get("ip_intel"),
     }
     report["ip_intel"] = overview.get("ip_intel")
-    report["intelligence"] = await intel_from_db(
-        db, scan_id, overview=overview, findings=findings, endpoints=endpoints,
-        pages=pages, assets=assets)
+    try:
+        report["intelligence"] = await intel_from_db(
+            db, scan_id, overview=overview, findings=findings, endpoints=endpoints,
+            pages=pages, assets=assets)
+    except Exception as exc:  # noqa: BLE001 - sections are best-effort; the report is not
+        from ..core.logging import get_logger
+
+        get_logger("report").warning("intel sections failed", scan_id=scan_id,
+                                     error=f"{type(exc).__name__}: {exc}")
+        report["intelligence"] = None
     return report, extras

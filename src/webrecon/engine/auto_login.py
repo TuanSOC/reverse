@@ -138,7 +138,11 @@ async def capture_session_cookies(cfg, target_host: str, log) -> str:
                 # The pipeline vetted the login URL; this re-checks every request
                 # the page makes (redirect hops, subresources, script fetches) so
                 # the browser can't be steered to an internal/metadata address.
-                await page.route("**/*", _ssrf_gate(cfg))
+                from .browser_gate import make_route_gate
+                from .ssrf_guard import SsrfGuard
+
+                await page.route("**/*", make_route_gate(
+                    SsrfGuard(allow_private_targets=cfg.scope.allow_private_targets)))
                 before = auth.login_url or ""
                 try:
                     await page.goto(before, wait_until=bcfg.wait_until,
@@ -192,31 +196,6 @@ async def capture_session_cookies(cfg, target_host: str, log) -> str:
     except Exception as exc:  # noqa: BLE001 - never crash the scan on login problems
         log.warning("auto-login error", error=f"{type(exc).__name__}: {exc}")
         return ""
-
-
-def _ssrf_gate(cfg):
-    """Playwright route handler: abort requests the SSRF guard blocks."""
-    from ..core.errors import SsrfBlockedError
-    from .ssrf_guard import SsrfGuard
-
-    guard = SsrfGuard(allow_private_targets=cfg.scope.allow_private_targets)
-
-    async def _gate(route) -> None:
-        url = route.request.url
-        if not url.startswith(("http://", "https://")):
-            await route.continue_()  # data:/blob: never leave the browser
-            return
-        try:
-            await guard.check_url(url)
-        except SsrfBlockedError:
-            await route.abort()
-            return
-        except Exception:  # noqa: BLE001 - unresolvable host etc.: fail closed
-            await route.abort()
-            return
-        await route.continue_()
-
-    return _gate
 
 
 async def _submit(page, auth, handles, fields) -> None:

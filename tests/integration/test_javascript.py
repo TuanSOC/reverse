@@ -35,16 +35,15 @@ async def test_js_module_flags_exposed_source_map(mock_site: str) -> None:
     assert "exposure.sourcemap.exposed" in checks
 
 
-async def test_js_module_flags_secret_but_masks_it(mock_site: str) -> None:
+async def test_js_module_defers_secrets_and_never_leaks_them(mock_site: str) -> None:
     ctx = await Pipeline(_lab_config()).run(mock_site)
-    secret_findings = [
-        f for f in ctx.results["javascript"].findings if f.check_id.startswith("exposure.secret")
-    ]
-    assert secret_findings
-    # The AWS example key must be masked everywhere in evidence.
-    for f in secret_findings:
-        for ev in f.evidence:
-            assert "AKIAIOSFODNN7EXAMPLE" not in str(ev.data)
+    # secret_leak runs in a full scan, so javascript does not report the same
+    # secret a second time.
+    assert not [f for f in ctx.results["javascript"].findings
+                if f.check_id.startswith("exposure.secret")]
+    # No raw key (documentation example or the reconstructed-source key) anywhere.
+    blob = str([f.model_dump() for f in ctx.all_findings()])
+    assert "AKIAIOSFODNN7EXAMPLE" not in blob and "AKIAZZZZ1111WWWW2222" not in blob
 
 
 async def test_js_endpoints_are_referenced_not_observed(mock_site: str) -> None:

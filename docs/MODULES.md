@@ -27,7 +27,8 @@ Each scanner is an independent `ScannerModule` (see `ARCHITECTURE.md` and
 | IP intelligence | `ip_intel` | `target`, `dns` | ✅ v0.3 | Reverse DNS (PTR), ASN/AS-name/registry (Team Cymru DNS), geolocation (public API via `ctx.http`), cloud/CDN classification, and CDN origin-IP exposure. Skips private/lab IPs. |
 | Secret leak | `secret_leak` | `javascript`, `crawler` | ✅ v0.3 | Scan JS + all crawled HTML for hardcoded AWS/Google/GitHub/Stripe/Slack/PEM/JWT credentials. Evidence is always **masked** (first-4/last-4); example keys excluded. |
 | Active verify | `active_verify` | `api` | ✅ (opt-in `--active`) | Confirms open-redirect & reflected-XSS candidates with **benign canaries** (unresolvable `.invalid` redirect target; inert `<xss>` marker). GET-only, budget-capped, no payload execution / data extraction. Upgrades findings potential→observed. |
-| Security | `security` | headers/cookies/cors/tls/dns/technology/javascript/api/exposure/apitest/dom_security/forms_auth/ip_intel/secret_leak/active_verify | ✅ P8 | Cross-module rules (mixed content, outdated tech, dir listing) + deterministic risk classification. |
+| Rate limit | `ratelimit` | `http` | ✅ v0.4 | **Passive:** report advertised rate-limit quotas (`RateLimit-*`/`Retry-After`) and WAF/protection layers (Cloudflare/Sucuri/Imperva/AWS WAF…) from responses already received — zero extra requests. **Active (`--active` only):** a hard-capped (≤12) same-endpoint GET probe to confirm throttling/blocking; detection-only, never a flood or bypass. Flags endpoints with no observed rate limiting. |
+| Security | `security` | …/ip_intel/secret_leak/active_verify/ratelimit | ✅ P8 | Cross-module rules (mixed content, outdated tech, dir listing) + deterministic risk classification. |
 | Browser | `browser` | `scope` | ✅ P9 | Opt-in Playwright render; XHR/fetch/WebSocket observation; scope-enforced in-browser; screenshots. |
 
 ## Result contract (every module)

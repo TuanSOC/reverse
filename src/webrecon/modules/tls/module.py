@@ -70,14 +70,17 @@ class TlsModule(ScannerModule):
         # Reuse the SSRF guard so TLS cannot connect to an internal address.
         guard = SsrfGuard(allow_private_targets=ctx.config.scope.allow_private_targets)
         try:
-            await guard.check_url(f"https://{host}:{port}/")
+            resolved = await guard.check_url(f"https://{host}:{port}/")
         except Exception as exc:  # noqa: BLE001
             result.error = f"blocked/unresolvable: {exc}"
             result.mark_finished(ModuleStatus.SKIPPED)
             return result
 
         try:
-            der, meta = await asyncio.to_thread(_fetch_cert, host, port, connect_timeout)
+            # Connect to the address the guard just vetted (SNI still uses ``host``),
+            # so a DNS answer that changes between check and connect can't redirect us.
+            ip = (list(getattr(resolved, "addresses", []) or []) or [None])[0]
+            der, meta = await asyncio.to_thread(_fetch_cert, host, port, connect_timeout, ip)
         except (OSError, ssl.SSLError) as exc:
             result.data = {"skipped": f"no TLS on {host}:{port} ({type(exc).__name__})"}
             result.mark_finished(ModuleStatus.SKIPPED)
@@ -197,7 +200,9 @@ class TlsModule(ScannerModule):
         await storage.save_certificate(ctx.scan_id, info)
 
 
-def _fetch_cert(host: str, port: int, timeout: float) -> tuple[bytes, dict]:
+def _fetch_cert(
+    host: str, port: int, timeout: float, connect_ip: str | None = None
+) -> tuple[bytes, dict]:
     """Blocking TLS handshake to fetch the leaf certificate + negotiation meta.
 
     Tries a verifying context first (to learn ``verified``); on verification
@@ -207,7 +212,7 @@ def _fetch_cert(host: str, port: int, timeout: float) -> tuple[bytes, dict]:
     meta: dict = {}
     verify_ctx = ssl.create_default_context()
     try:
-        with socket.create_connection((host, port), timeout=timeout) as sock:
+        with socket.create_connection((connect_ip or host, port), timeout=timeout) as sock:
             with verify_ctx.wrap_socket(sock, server_hostname=host) as ss:
                 cipher = ss.cipher()
                 meta["protocol"] = ss.version()
@@ -221,7 +226,7 @@ def _fetch_cert(host: str, port: int, timeout: float) -> tuple[bytes, dict]:
     unverified = ssl._create_unverified_context()  # noqa: S323 - deliberate: read invalid cert  # type: ignore[attr-defined]
     unverified.check_hostname = False
     unverified.verify_mode = ssl.CERT_NONE
-    with socket.create_connection((host, port), timeout=timeout) as sock:
+    with socket.create_connection((connect_ip or host, port), timeout=timeout) as sock:
         with unverified.wrap_socket(sock, server_hostname=host) as ss:
             cipher = ss.cipher()
             meta["protocol"] = ss.version()

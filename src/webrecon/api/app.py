@@ -210,23 +210,41 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
         ok = app.state.manager.cancel(scan_id)
         return {"cancelled": ok}
 
+    @app.delete("/api/scans/{scan_id}")
+    async def delete_scan(scan_id: str) -> dict:
+        from ..storage.repository import ScanRepository
+
+        if app.state.manager.status.get(scan_id) == "running":
+            raise HTTPException(409, "scan is running; cancel it first")
+        if not await ScanRepository(db()).delete_scan(scan_id):
+            raise HTTPException(404, "scan not found")
+        return {"deleted": True}
+
     @app.websocket("/api/scans/{scan_id}/events")
     async def events(ws: WebSocket, scan_id: str) -> None:
         await ws.accept()
         manager = app.state.manager
         q = manager.subscribe(scan_id)
         try:
-            for ev in manager.progress(scan_id):  # replay any buffered events
+            # Subscribe first, then replay a snapshot; events that land in both the
+            # snapshot and the queue (same dict object) are sent only once.
+            replayed = list(manager.progress(scan_id))
+            seen = {id(ev) for ev in replayed}
+            for ev in replayed:
                 await ws.send_json(ev)
             # If the scan already finished before this socket connected, emit the
             # terminal event immediately so the client doesn't hang waiting.
             status = manager.status.get(scan_id)
-            if status and status != "running":
+            done_sent = bool(status and status != "running")
+            if done_sent:
                 await ws.send_json(
                     {"module": "_done", "status": status, "index": 0, "total": 0}
                 )
             while True:
                 ev = await q.get()
+                if id(ev) in seen or (ev.get("module") == "_done" and done_sent):
+                    continue
+                done_sent = done_sent or ev.get("module") == "_done"
                 await ws.send_json(ev)
         except WebSocketDisconnect:
             pass
@@ -261,9 +279,12 @@ class _SimpleManager:
         self.status: dict[str, str] = {}
         #: scans whose post-scan AI analysis is still running (dashboard hint)
         self.ai_running: set[str] = set()
+        self._tasks: set[asyncio.Task] = set()
 
     def cancel(self, scan_id: str) -> bool:
         token = self._cancels.get(scan_id)
+        if self.status.get(scan_id) != "running":
+            return False  # finished scans can't be cancelled
         if token is not None and not token.cancelled:
             token.cancel()
             return True
@@ -306,7 +327,9 @@ class _SimpleManager:
         pipeline = Pipeline(cfg, db=self.db, progress=on_progress)
         self.status[scan_id] = "running"
         ai_provider = (req.ai_provider or "auto") if req.ai else None
-        asyncio.create_task(self._run(pipeline, req.url, scan_id, token, ai_provider))
+        task = asyncio.create_task(self._run(pipeline, req.url, scan_id, token, ai_provider))
+        self._tasks.add(task)  # keep a strong ref: un-referenced tasks can be GC'd mid-scan
+        task.add_done_callback(self._tasks.discard)
         return scan_id
 
     async def _run(
@@ -314,8 +337,10 @@ class _SimpleManager:
         ai_provider: str | None = None,
     ) -> None:
         try:
-            await pipeline.run(url, scan_id=scan_id, cancellation=token)
-            self.status[scan_id] = "done"
+            ctx = await pipeline.run(url, scan_id=scan_id, cancellation=token)
+            overall = ctx.shared.get("overall_status", "success")
+            # "done" keeps its meaning for clients; cancelled/failed are reported as such
+            self.status[scan_id] = "done" if overall in ("success", "partial") else overall
         except Exception as exc:  # noqa: BLE001
             self.status[scan_id] = f"error: {exc}"
         finally:

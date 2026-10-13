@@ -28,6 +28,16 @@ from ..storage.models import (
     Technology,
 )
 
+
+def _iso(dt) -> str | None:
+    """ISO-8601 with an explicit UTC offset (SQLite hands back naive UTC datetimes)."""
+    if dt is None:
+        return None
+    from datetime import UTC
+
+    return (dt if dt.tzinfo else dt.replace(tzinfo=UTC)).isoformat()
+
+
 _SEVERITY_RANK = {
     "critical": 4, "high": 3, "medium": 2, "low": 1, "informational": 0,
 }
@@ -56,6 +66,13 @@ def filter_report_min_severity(rep: dict[str, Any], min_severity: str) -> dict[s
 
     out = dict(rep)
     out["findings"] = kept
+    intel = rep.get("intelligence")
+    if isinstance(intel, dict) and intel.get("attack_surface"):
+        from ..intel.attack_surface import prune_findings
+
+        out["intelligence"] = {**intel, "attack_surface": prune_findings(
+            intel["attack_surface"],
+            lambda f: _SEVERITY_RANK.get(str(f.get("severity") or "").lower(), 0) >= threshold)}
     summary = dict(rep.get("summary", {}))
     summary["total_findings"] = len(kept)
     summary["by_severity"] = by_severity
@@ -81,8 +98,8 @@ async def list_scans(db: Database) -> list[dict[str, Any]]:
                     "id": scan.id,
                     "target": target.base_url,
                     "status": scan.status,
-                    "created_at": scan.created_at.isoformat(),
-                    "finished_at": scan.finished_at.isoformat() if scan.finished_at else None,
+                    "created_at": _iso(scan.created_at),
+                    "finished_at": _iso(scan.finished_at),
                     "findings": fcount or 0,
                 }
             )
@@ -125,8 +142,8 @@ async def get_overview(db: Database, scan_id: str) -> dict[str, Any] | None:
                 "hostname": target.hostname if target else None,
                 "scheme": target.scheme if target else None,
             },
-            "created_at": scan.created_at.isoformat(),
-            "finished_at": scan.finished_at.isoformat() if scan.finished_at else None,
+            "created_at": _iso(scan.created_at),
+            "finished_at": _iso(scan.finished_at),
             "risk_level": risk_level,
             "findings_by_severity": by_sev,
             "total_findings": len(findings),
@@ -153,11 +170,18 @@ async def get_findings(db: Database, scan_id: str) -> list[dict[str, Any]]:
         rows = (
             await s.execute(select(FindingRecord).where(FindingRecord.scan_id == scan_id))
         ).scalars().all()
+        by_finding: dict[str, list[EvidenceRecord]] = {}
+        if rows:  # one query for all evidence (was one per finding)
+            ev_rows = (
+                await s.execute(select(EvidenceRecord).where(
+                    EvidenceRecord.scan_id == scan_id,
+                    EvidenceRecord.finding_id.is_not(None)))
+            ).scalars().all()
+            for e in ev_rows:
+                by_finding.setdefault(e.finding_id or "", []).append(e)
         out = []
         for f in sorted(rows, key=lambda f: _SEVERITY_RANK.get(f.severity, 0), reverse=True):
-            evidence = (
-                await s.execute(select(EvidenceRecord).where(EvidenceRecord.finding_id == f.id))
-            ).scalars().all()
+            evidence = by_finding.get(f.id, [])
             out.append(
                 {
                     "id": f.id,
@@ -299,7 +323,7 @@ async def get_events(db: Database, scan_id: str, kind: str | None = None) -> lis
             stmt = stmt.where(ScanEventRecord.kind == kind)
         rows = (await s.execute(stmt.order_by(ScanEventRecord.seq))).scalars().all()
         return [
-            {"seq": r.seq, "ts": r.ts.isoformat() if r.ts else None, "kind": r.kind,
+            {"seq": r.seq, "ts": _iso(r.ts), "kind": r.kind,
              "module": r.module, "label": r.label, "data": r.data or {}}
             for r in rows
         ]

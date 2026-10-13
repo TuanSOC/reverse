@@ -22,6 +22,7 @@ from . import (  # noqa: F401  (import side-effect: registration)
     http,
     ip_intel,
     javascript,
+    ratelimit,
     scope,
     secret_leak,
     security,

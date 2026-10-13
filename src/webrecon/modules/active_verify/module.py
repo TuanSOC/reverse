@@ -70,9 +70,10 @@ class ActiveVerifyModule(ScannerModule):
 
         redirect_hits = 0
         xss_hits = 0
+        budget_exhausted = False
         for url, param in candidates:
             if self._budget >= MAX_REQUESTS:
-                result.data = {"budget_exhausted": True}
+                budget_exhausted = True
                 break
             if param.lower() in OPEN_REDIRECT_PARAMS:
                 if await self._check_redirect(engine, url, param, result):
@@ -86,6 +87,7 @@ class ActiveVerifyModule(ScannerModule):
             "requests": self._budget,
             "open_redirect_confirmed": redirect_hits,
             "xss_reflected": xss_hits,
+            "budget_exhausted": budget_exhausted,
         }
         result.stats = {"requests": self._budget, "confirmed": redirect_hits + xss_hits}
         result.mark_finished(ModuleStatus.SUCCESS)

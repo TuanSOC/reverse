@@ -7,6 +7,7 @@ runs), and publishes a :class:`TargetInfo` onto the context for downstream use.
 
 from __future__ import annotations
 
+from ...core.config import scrub_url
 from ...core.enums import ModuleStatus
 from ...core.errors import SsrfBlockedError
 from ...core.models import Evidence, ModuleResult, TargetInfo
@@ -59,7 +60,7 @@ class TargetModule(ScannerModule):
             return result
 
         target = TargetInfo(
-            input_url=raw,
+            input_url=scrub_url(raw),  # user:pass@ and query values never persisted
             scheme=p.scheme,
             hostname=p.hostname,
             port=p.port,

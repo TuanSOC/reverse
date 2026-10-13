@@ -59,6 +59,12 @@ default**, for **authorized targets only**:
   exploitation, no data extraction, no DoS, no auth bypass) remain in force
   even under `--active`.
 
+- **Rate-limit enforcement probe** (`ratelimit`, under `--active`): up to 12
+  sequential GETs to one already-observed endpoint, through the normal rate
+  limiter, to observe whether throttling/blocking kicks in. It never speeds up
+  to force a limit, never tries to bypass one, and is hard-capped so it cannot
+  become a flood. Passive rate-limit/WAF header detection needs no flag.
+
 These remain within the boundary: they detect and evidence issues; they do not
 weaponize them.
 

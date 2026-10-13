@@ -80,12 +80,15 @@ def analyze_js(url: str, content: str, *, truncated: bool = False) -> JsAnalysis
     if sm:
         result.sourcemap_url = sm.group(1).strip()
 
+    # lazy: secret_leak imports the javascript module (import cycle at load time)
+    from ..secret_leak.analysis import is_known_example
+
     seen_secrets: set[tuple[str, str]] = set()
     for kind, pat in patterns.SECRETS:
         for m in pat.finditer(data):
             raw = m.group(0)
             key = (kind, raw)
-            if key in seen_secrets:  # same value repeated in the file → one finding
+            if key in seen_secrets or is_known_example(raw):  # dup / documentation value
                 continue
             seen_secrets.add(key)
             result.secrets.append(SecretHit(kind=kind, masked=_mask(raw)))

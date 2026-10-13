@@ -13,6 +13,7 @@ so it never double-fetches the root.
 from __future__ import annotations
 
 import hashlib
+import time
 
 from ...core.enums import ModuleStatus
 from ...core.models import Evidence, ModuleResult
@@ -43,6 +44,8 @@ class CrawlerModule(ScannerModule):
     name = "crawler"
     version = "0.1.0"
     requires = ("http",)
+    # One page at a time at a polite rate: 300 pages need more than the 120s default.
+    timeout_seconds = 300.0
     description = "Bounded BFS crawl; link/asset/form/robots/sitemap discovery."
 
     async def run(self, ctx) -> ModuleResult:  # type: ignore[override]
@@ -59,7 +62,12 @@ class CrawlerModule(ScannerModule):
 
         cfg = ctx.config
         inv = CrawlInventory()
+        # Published up front (and mutated in place) so downstream modules still get
+        # a partial inventory if this module is ever cut off by its timeout.
+        ctx.shared["inventory"] = inv
         ctx.shared.setdefault(DISCLOSURES_KEY, Disclosures())
+        # Stop early, keeping (and persisting) what was crawled, before the hard timeout.
+        deadline = time.monotonic() + 0.8 * (self.timeout_seconds or 120.0)
         visited: set[str] = set()
         asset_urls: set[str] = set()
         requests_made = 0
@@ -81,6 +89,9 @@ class CrawlerModule(ScannerModule):
             if requests_made >= cfg.scope.max_requests:
                 inv.stats["stopped_reason"] = "max_requests"
                 break
+            if time.monotonic() > deadline:
+                inv.stats["stopped_reason"] = "time_budget"
+                break
             try:
                 ctx.cancellation.raise_if_cancelled()
             except Exception:  # noqa: BLE001 - cancellation surfaces as CANCELLED
@@ -90,7 +101,11 @@ class CrawlerModule(ScannerModule):
                 return result
 
             url, depth, src = queue.pop(0)
-            norm = normalize_url(url, keep_query=cfg.crawl.distinct_query)
+            try:
+                norm = normalize_url(url, keep_query=cfg.crawl.distinct_query)
+            except ValueError:  # e.g. port out of range — skip the link, not the crawl
+                inv.stats["malformed_links"] = inv.stats.get("malformed_links", 0) + 1
+                continue
             if norm in visited:
                 continue
             if depth > cfg.scope.max_depth:

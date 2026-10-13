@@ -72,21 +72,14 @@ class BrowserModule(ScannerModule):
                     if cookies:
                         await page.context.add_cookies(cookies)  # type: ignore[arg-type]
 
-                    async def _router(route):
-                        url = route.request.url
-                        scheme = url.split(":", 1)[0].lower()
-                        if scheme in ("data", "blob", "about"):
-                            await route.continue_()
-                            return
-                        if scheme not in ("http", "https"):
-                            await route.abort()
-                            return
-                        if not ctx.scope.is_allowed(url):
-                            await route.abort()  # keep the browser inside scope
-                            return
-                        await route.continue_()
+                    # Every request — and every redirect hop — is checked against
+                    # scope and the SSRF guard before the browser may make it.
+                    from ...engine.browser_gate import make_route_gate
+                    from ...engine.ssrf_guard import SsrfGuard
 
-                    await page.route("**/*", _router)
+                    guard = SsrfGuard(
+                        allow_private_targets=ctx.config.scope.allow_private_targets)
+                    await page.route("**/*", make_route_gate(guard, ctx.scope.is_allowed))
                     page.on("request", lambda r: requested.append(r.url))
                     page.on("response", lambda r: responses.append(_resp_dict(r)))
                     page.on("websocket", lambda ws: websockets.append(ws.url))

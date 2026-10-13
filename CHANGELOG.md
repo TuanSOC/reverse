@@ -7,6 +7,14 @@ semantic versioning.
 ## [Unreleased] — v0.4.0 intelligence + hardening
 
 ### Added
+- Scan cleanup: delete a stored scan and everything it owns via
+  `DELETE /api/scans/{id}`, `webrecon delete <id>`, and a trash button (two-click
+  confirm) in the dashboard scan switcher.
+- `ratelimit` module: passive rate-limit / WAF-protection posture detection
+  (advertised `RateLimit-*`/`Retry-After` headers and Cloudflare/Sucuri/Imperva/
+  AWS WAF edge signals, zero extra requests, on by default), plus an opt-in
+  `--active` hard-capped (≤12 GET) probe that confirms whether an endpoint
+  enforces throttling and flags endpoints with no observed rate limiting.
 - Web application intelligence: JS AST endpoint extraction, parameter
   classification, source-map reconstruction, unified asset graph, auth-flow
   model, scan event timeline, attack-surface tree.
@@ -23,6 +31,9 @@ semantic versioning.
 
 - Dashboard: searchable scan switcher (keyboard operable), auth-flow step
   pipeline with role/method badges.
+- Dashboard: colored HTTP-method badges across Endpoints / Attack Surface /
+  Timeline / Auth Flow, inline copy-URI in the endpoints table, and KPI cards
+  with icons + coverage/confidence rings (SPEC.md visual items; no external fonts).
 - `auth-flow` now returns `step_keys` alongside `steps` (stable ids for UIs).
 
 ### Security
@@ -47,6 +58,37 @@ semantic versioning.
   concurrently; AST URL templates with an unresolved base are no longer stored
   as endpoints; session-cookie detection no longer matches `csrftoken` or
   `visid_*`; a hinted username field at index 0 is no longer skipped.
+
+### Fixed (codebase-wide bug hunt)
+- Browser + auto-login: every redirect hop is now checked against scope and the
+  SSRF guard (Playwright skipped route handlers on redirects); the browser
+  module also applies the SSRF guard, not just scope.
+- Crawl no longer aborts on a malformed link (port out of range); crawler and
+  JS analysis stop on a time budget and keep partial results; crawler timeout
+  raised to 300s.
+- Cancelled scans are recorded as `cancelled` (were `success`) and skip the
+  post-scan AI step; cancelling a finished scan returns false.
+- `webrecon scan` no longer crashes on Rich markup in target-derived finding
+  names; credentials in the target URL are scrubbed from logs, timeline and DB.
+- IP-literal targets no longer put other IPs in scope; open-redirect is only
+  "confirmed" when the Location itself leaves the site; GraphQL responses with
+  a non-object `data` no longer crash apitest; "unauthenticated access" is not
+  reported on authenticated scans; plugin / `?ver=` versions no longer pollute
+  library and CMS versions; trailing dots trimmed from versions.
+- Deep URL paths no longer crash the attack surface / reports; malformed AI
+  evidence is rejected instead of crashing; cookie names are persisted so the
+  stored auth flow sees session cookies; findings load their evidence in one
+  query; finding/evidence ids match between live and stored reports.
+- TLS: IP SANs honoured and the connection uses the vetted address; DNS:
+  only NXDOMAIN counts as dangling (timeouts no longer produce findings),
+  subdomain lookups run concurrently; server-status probe can fire; request
+  timing excludes rate-limit/backoff waits; site-wide forms reported once;
+  consecutive robots.txt User-agent lines handled; AWS documentation key and
+  duplicate JS/secret_leak secret findings removed.
+- API timestamps carry a UTC offset (dashboard/CLI show local time);
+  `min_severity` exports also trim the attack-surface tree; dashboard fixes for
+  stale progress timers, dropped WebSockets, filters carried across scans,
+  focus after navigation, light-theme badge contrast and remaining i18n strings.
 
 ## [0.3.0] — 2026-09-23
 

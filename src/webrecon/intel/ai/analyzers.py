@@ -96,6 +96,8 @@ def _claim(raw: Any, valid: set[str]) -> tuple[Claim | None, bool]:
     cited = raw.get("evidence") or []
     if isinstance(cited, str):
         cited = [cited]
+    elif not isinstance(cited, list | tuple):
+        cited = []  # e.g. a number/bool from a confused model → claim gets rejected
     ids = list(dict.fromkeys(str(c).strip() for c in cited if str(c).strip() in valid))
     if not ids:
         return None, True

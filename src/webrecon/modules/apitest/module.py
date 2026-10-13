@@ -53,6 +53,10 @@ class ApiTestModule(ScannerModule):
             return result
 
         engine = SafeGetEngine(ctx.http)
+        # Requests carry the session/auth headers on authenticated scans, so a 200
+        # there says nothing about *unauthenticated* access.
+        authenticated = bool(ctx.config.http.cookie or ctx.config.http.auth_headers
+                             or ctx.shared.get("authenticated"))
         worklist = self._worklist(endpoints)
         self._budget = 0
         tested = 0
@@ -69,7 +73,8 @@ class ApiTestModule(ScannerModule):
             tested += 1
             db_error = self._check_db_error(result, ep, resp)
             exposed = self._check_data_exposure(result, ep, resp, db_error)
-            self._check_unauth(result, ep, resp, exposed)
+            if not authenticated:
+                self._check_unauth(result, ep, resp, exposed)
             # Differential input-validation testing (structured inputs).
             probes_used = await self._check_input_validation(engine, result, ep, resp, probes_used)
             # Phase 2 hook: SQLi susceptibility uses the remaining probe budget.

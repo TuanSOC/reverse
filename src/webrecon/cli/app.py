@@ -322,6 +322,8 @@ def _print_ai(analysis: dict) -> None:
 
 def _print_summary(report: dict) -> None:
     """Render a scan summary + findings table."""
+    from rich.markup import escape
+
     from ..core.enums import SEVERITY_ORDER, Severity
 
     sev_style = {
@@ -334,6 +336,8 @@ def _print_summary(report: dict) -> None:
     summary = report["summary"]
     console.print()
     console.print(f"[bold]Scan {report['scan_id']}[/] — {summary['total_findings']} finding(s)")
+    if report.get("target") and report["target"].get("base_url"):
+        console.print(f"  {escape(report['target']['base_url'])}")
     counts = summary["by_severity"]
     parts = [
         f"[{sev_style.get(s.value, 'white')}]{s.value}={counts.get(s.value, 0)}[/]"
@@ -355,10 +359,22 @@ def _print_summary(report: dict) -> None:
                 f"[{style}]{f['severity']}[/]",
                 f["confidence"],
                 f["observation"],
-                f["check_id"],
-                f["name"],
+                escape(f["check_id"]),
+                escape(f["name"]),  # names embed target data (cookie names, URLs…)
             )
         console.print(table)
+
+
+def _local_time(iso: str | None) -> str:
+    """API timestamps are UTC; show them in the operator's local time."""
+    from datetime import datetime
+
+    if not iso:
+        return ""
+    try:
+        return datetime.fromisoformat(iso).astimezone().strftime("%Y-%m-%d %H:%M")
+    except ValueError:
+        return iso[:16]
 
 
 @app.command()
@@ -390,8 +406,51 @@ def scans(
     table.add_column("created")
     for r in rows:
         table.add_row(r["id"][:8], r["target"], r["status"], str(r["findings"]),
-                      r["created_at"][:19])
+                      _local_time(r["created_at"]))
     console.print(table)
+
+
+@app.command("delete")
+def delete_cmd(
+    scan_id: str = typer.Argument(..., help="Scan id or 8-char prefix to delete."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt."),
+    database_url: str = typer.Option(
+        "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
+    ),
+) -> None:
+    """Delete a stored scan and everything it owns (irreversible)."""
+    from rich.markup import escape
+
+    from ..api import queries
+    from ..storage.repository import ScanRepository
+
+    configure_logging()
+
+    async def _run() -> tuple[str, str] | None:
+        db = await init_db(database_url)
+        try:
+            sid = await _resolve_scan_id(db, scan_id)
+            if sid is None:
+                return None
+            rows = await queries.list_scans(db)
+            target = next((r["target"] for r in rows if r["id"] == sid), "?")
+            if not yes:
+                console.print(f"About to delete scan [bold]{sid[:8]}[/] "
+                              f"([cyan]{escape(target)}[/]) and all its data.")
+                if not typer.confirm("Proceed?"):
+                    console.print("[yellow]Cancelled.[/]")
+                    raise typer.Exit(0)
+            await ScanRepository(db).delete_scan(sid)
+            return sid, target
+        finally:
+            await db.dispose()
+
+    result = asyncio.run(_run())
+    if result is None:
+        console.print(f"[red]Scan not found:[/] {scan_id}")
+        raise typer.Exit(1)
+    sid, target = result
+    console.print(f"[green]Deleted[/] scan {sid[:8]} ({target}).")
 
 
 @app.command()

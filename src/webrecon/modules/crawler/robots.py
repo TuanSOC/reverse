@@ -33,6 +33,7 @@ def parse_robots(text: str, *, user_agent: str = "*") -> RobotsRules:
     current_agents: list[str] = []
     applicable = {user_agent.lower(), "*"}
     active = False
+    last_was_agent = False
 
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].strip()
@@ -43,10 +44,14 @@ def parse_robots(text: str, *, user_agent: str = "*") -> RobotsRules:
         value = value.strip()
 
         if key == "user-agent":
-            # A new group; consecutive user-agent lines share the next rules.
-            current_agents = [value.lower()]
+            # Consecutive user-agent lines share the next rules; any other directive
+            # in between closes the group.
+            current_agents = (current_agents if last_was_agent else []) + [value.lower()]
             active = any(a in applicable for a in current_agents)
-        elif key == "disallow" and active:
+            last_was_agent = True
+            continue
+        last_was_agent = False
+        if key == "disallow" and active:
             if value:
                 rules.disallow.append(value)
         elif key == "allow" and active:

@@ -156,9 +156,14 @@ class HttpEngine:
                 continue
 
             body, truncated = await self._read_capped(resp)
-            elapsed = (time.perf_counter() - started) * 1000.0
             set_cookie = resp.headers.get_list("set-cookie")
             await resp.aclose()
+            # Network latency of the final response only — rate-limit slots, 429
+            # penalties and retry backoff would otherwise skew timing analysis.
+            try:
+                elapsed = resp.elapsed.total_seconds() * 1000.0
+            except RuntimeError:
+                elapsed = (time.perf_counter() - started) * 1000.0
             return HttpResponse(
                 url=str(resp.url),
                 requested_url=requested_url,

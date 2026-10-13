@@ -48,7 +48,8 @@ def parse_certificate(der: bytes) -> CertInfo:
         info.common_name = value.decode() if isinstance(value, bytes) else value
     try:
         ext = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
-        info.san = ext.value.get_values_for_type(x509.DNSName)
+        info.san = ext.value.get_values_for_type(x509.DNSName) + [
+            str(ip) for ip in ext.value.get_values_for_type(x509.IPAddress)]
     except x509.ExtensionNotFound:
         info.san = []
     return info

@@ -21,7 +21,7 @@ from .risk import classify
 _UPSTREAM = (
     "headers", "cookies", "cors", "tls", "dns", "technology", "javascript",
     "api", "exposure", "subdomains", "apitest", "dom_security", "forms_auth",
-    "ip_intel", "secret_leak", "active_verify",
+    "ip_intel", "secret_leak", "active_verify", "ratelimit",
 )
 
 RISK_SUMMARY_KEY = "risk_summary"

@@ -65,6 +65,11 @@ def _fingerprint(raw: str) -> str:
     return hashlib.sha256(raw.encode("utf-8", errors="ignore")).hexdigest()[:16]
 
 
+def is_known_example(raw: str) -> bool:
+    """True for documentation/placeholder values (e.g. AWS's AKIAIOSFODNN7EXAMPLE)."""
+    return raw in _KNOWN_EXAMPLES
+
+
 def find_secrets(text: str, cap_per_kind: int = 20) -> list[SecretHit]:
     """Return masked secret hits found in ``text``.
 

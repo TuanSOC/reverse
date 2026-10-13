@@ -12,6 +12,7 @@ credentials) are always masked.
 | `GET` | `/api/scans` | List scans, newest first: `[{id, target, status, created_at, finished_at, findings}]`. |
 | `POST` | `/api/scans` | Start a scan in the background → `{scan_id}`. Body: `url`, `depth`, `max_pages`, `scope_mode`, `browser`, `allow_private`, `active`, `probe`, `cookie`, `headers[]`, `login_url`/`login_user`/`login_pass`, `ai`, `ai_provider`. A bad `ai_provider` (or `groq` without a key) → `400` before anything starts. |
 | `POST` | `/api/scans/{id}/cancel` | Cooperative cancellation → `{cancelled: bool}`. |
+| `DELETE` | `/api/scans/{id}` | Delete the scan and all its data → `{deleted: true}`. `404` unknown, `409` while running. |
 | `WS` | `/api/scans/{id}/events` | Live progress `{module, index, total, status}`; ends with `{module: "_done", status}`. Sent as soon as the scan ends — a requested AI analysis runs afterwards. |
 
 ## Scan data (`/api/scans/{id}/…`)

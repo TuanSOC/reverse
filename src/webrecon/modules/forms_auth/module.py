@@ -35,7 +35,7 @@ class FormsAuthModule(ScannerModule):
         log = ctx.bind_logger(self.name)
 
         inv = ctx.shared.get("inventory")
-        forms = list(getattr(inv, "forms", []) or [])
+        forms = _distinct_forms(list(getattr(inv, "forms", []) or []))
         if not forms:
             result.data = {"skipped": "no forms discovered"}
             result.mark_finished(ModuleStatus.SKIPPED)
@@ -106,3 +106,20 @@ class FormsAuthModule(ScannerModule):
                       "fields": fields[:25]},
             )],
         )
+
+
+def _distinct_forms(forms: list) -> list:
+    """Collapse a site-wide form (same action, method and fields) to one entry.
+
+    Forms without an action submit to their own page, so the page stays part of
+    their identity.
+    """
+    seen: set[tuple] = set()
+    out = []
+    for f in forms:
+        names = tuple(sorted(str(i.get("name") or "") for i in (f.inputs or [])))
+        key = ((f.method or "get").lower(), f.action or f"page:{f.page_url}", names)
+        if key not in seen:
+            seen.add(key)
+            out.append(f)
+    return out

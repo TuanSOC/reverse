@@ -12,6 +12,7 @@ Nothing downloaded is executed; JS is treated as inert text (threat T5).
 from __future__ import annotations
 
 import asyncio
+import time
 from urllib.parse import urljoin
 
 from ...core.enums import (
@@ -63,11 +64,16 @@ class JavaScriptModule(ScannerModule):
         selected = in_scope[: cfg.max_files]
 
         analyses: list[JsAnalysis] = []
+        ctx.shared[JS_ANALYSIS_KEY] = analyses  # partial results survive a timeout
+        deadline = time.monotonic() + 0.8 * (self.timeout_seconds or 120.0)
         requests = 0
         for url in selected:
             try:
                 ctx.cancellation.raise_if_cancelled()
             except Exception:  # noqa: BLE001
+                break
+            if time.monotonic() > deadline:
+                log.info("js time budget reached", analyzed=len(analyses), selected=len(selected))
                 break
             try:
                 resp = await ctx.http.get(url)
@@ -95,7 +101,9 @@ class JavaScriptModule(ScannerModule):
 
                 disc.merge(scan_disclosures(resp.text))
 
-            if cfg.scan_secrets:
+            # secret_leak scans the same JS (with masking + example filtering); only
+            # report here when it is not part of this run, to avoid duplicate findings.
+            if cfg.scan_secrets and "secret_leak" not in ctx.shared.get("module_order", ()):
                 self._secret_findings(result, analysis)
             if cfg.fetch_source_maps:
                 requests += await self._check_source_map(ctx, result, url, analysis, log)

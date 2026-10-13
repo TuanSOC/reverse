@@ -9,6 +9,7 @@ targets are skipped.
 
 from __future__ import annotations
 
+import asyncio
 import ipaddress
 
 import dns.asyncresolver
@@ -25,6 +26,7 @@ from ...core.enums import (
 from ...core.models import Evidence, ModuleResult
 from ...core.module import ScannerModule
 from ...core.registry import default_registry
+from ..dns.analysis import resolve_state
 from .collect import collect_subdomains
 
 
@@ -61,9 +63,18 @@ class SubdomainsModule(ScannerModule):
         resolver = dns.asyncresolver.Resolver()
         resolver.lifetime = 6.0
         live: list[str] = []
-        unresolved: list[str] = []
-        for host in subs[:200]:
-            (live if await self._resolves(resolver, host) else unresolved).append(host)
+        unresolved: list[str] = []  # NXDOMAIN only — timeouts are not "unresolved"
+        sem = asyncio.Semaphore(10)  # sequential 6s lookups blew the module timeout
+
+        async def _state(host: str) -> tuple[str, str]:
+            async with sem:
+                return host, await resolve_state(resolver, host)
+
+        for host, state in await asyncio.gather(*(_state(h) for h in subs[:200])):
+            if state == "resolves":
+                live.append(host)
+            elif state == "nxdomain":
+                unresolved.append(host)
 
         ctx.shared["subdomains"] = {"live": live, "unresolved": unresolved}
         self._findings(result, target.hostname, live, unresolved)

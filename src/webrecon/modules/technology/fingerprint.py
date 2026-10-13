@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 
 from ...core.enums import CONFIDENCE_ORDER, Confidence
 from .signatures import COOKIE, HEADER, HTML, META, SCRIPT, SIGNATURES, Signature
@@ -47,7 +48,20 @@ def extract_url_version(url: str) -> str | None:
     m = _URL_VERSION.search(url)
     if not m:
         return None
-    return next((g for g in m.groups() if g), None)
+    return _clean_version(next((g for g in m.groups() if g), None))
+
+
+def _clean_version(v: str | None) -> str | None:
+    """Trim separators a pattern may have swallowed ("1.12.4." from -1.12.4.min.js)."""
+    v = (v or "").strip().strip(".-_")
+    return v or None
+
+
+def _is_library_file(tech: str, url: str) -> bool:
+    """True when the URL's file name is the library itself (jquery-3.7.1.min.js)."""
+    name = urlsplit(url).path.rsplit("/", 1)[-1].lower()
+    lib = re.escape(tech.lower().replace(" ", "").replace(".js", ""))
+    return re.match(rf"{lib}(?:[-_.@]v?\d|\.min\b|\.js\b|$)", name) is not None
 
 
 def _match(sig: Signature, text: str) -> tuple[bool, str | None]:
@@ -57,7 +71,7 @@ def _match(sig: Signature, text: str) -> tuple[bool, str | None]:
     version = None
     if sig.version_group is not None:
         try:
-            version = m.group(sig.version_group)
+            version = _clean_version(m.group(sig.version_group))
         except IndexError:
             version = None
     return True, version
@@ -116,14 +130,23 @@ def fingerprint(
             if ok:
                 record(sig, "matched in HTML body", ver)
         elif sig.source == SCRIPT:
+            first_hit: str | None = None
             for url in script_urls:
                 ok, ver = _match(sig, url)
-                if ok:
-                    # Fall back to a version embedded in the asset URL itself
-                    # (?v=1.2.3, @1.2.3/, -1.2.3.min.js) when the signature's own
-                    # pattern did not capture one.
-                    record(sig, f"script {url}", ver or extract_url_version(url))
+                if not ok:
+                    continue
+                # A version from the asset URL itself (?v=1.2.3, -1.2.3.min.js) only
+                # counts when the file *is* the library — not a plugin of it
+                # (jquery.validate-1.19.5.js) or another asset's ?ver=.
+                ver = ver or (extract_url_version(url) if _is_library_file(sig.tech, url)
+                              else None)
+                if ver:
+                    record(sig, f"script {url}", ver)
+                    first_hit = None
                     break
+                first_hit = first_hit or url
+            if first_hit:
+                record(sig, f"script {first_hit}", None)
         elif sig.source == META and meta_generator:
             ok, ver = _match(sig, meta_generator)
             if ok:

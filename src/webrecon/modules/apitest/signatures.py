@@ -77,7 +77,8 @@ def is_introspection_result(body: str) -> bool:
         doc = json.loads(body)
     except (json.JSONDecodeError, ValueError):
         return False
-    schema = (doc.get("data") or {}).get("__schema") if isinstance(doc, dict) else None
+    data = doc.get("data") if isinstance(doc, dict) else None
+    schema = data.get("__schema") if isinstance(data, dict) else None
     return isinstance(schema, dict) and "types" in schema
 
 

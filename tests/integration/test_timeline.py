@@ -83,7 +83,7 @@ def test_js_files_and_attack_surface(mock_site: str, tmp_path) -> None:
         assert len(app["sha256"]) == 64 and app["size"] > 0
         assert app["sourcemap_exposed"] and app["reconstructed_files"] >= 1
         assert any("/api/admin/settings" in c.get("url", "") for c in app["ast_calls"])
-        assert app["secrets"] >= 1  # a count only — never the value
+        assert app["secrets"] == 0  # only AWS's documentation example key → ignored
         assert "AKIAIOSFODNN7EXAMPLE" not in client.get(f"/api/scans/{sid}/js").text
 
         tree = client.get(f"/api/scans/{sid}/attack-surface").json()

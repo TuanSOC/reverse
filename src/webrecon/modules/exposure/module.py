@@ -129,7 +129,7 @@ class ExposureModule(ScannerModule):
                 continue
             body = resp.text
             # Skip generic SPA/HTML pages unless the probe itself is HTML-ish.
-            if looks_like_html(body) and probe.path not in ("phpinfo.php",):
+            if looks_like_html(body) and probe.path not in ("phpinfo.php", "server-status"):
                 continue
             if not probe.signature.search(body):
                 continue

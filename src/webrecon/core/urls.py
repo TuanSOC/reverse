@@ -7,6 +7,7 @@ separately in ``engine/ssrf_guard.py``.
 
 from __future__ import annotations
 
+import ipaddress
 from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit
 
@@ -85,7 +86,12 @@ def registrable_domain(hostname: str) -> str:
     three labels; otherwise the last two. Still a heuristic (not the full Public
     Suffix List) but closes the common sibling-under-public-suffix case.
     """
-    host = hostname.strip(".").lower()
+    host = hostname.strip(".").strip("[]").lower()
+    try:  # IP literals have no parent domain: 203.0.113.10 must not match 8.8.113.10
+        ipaddress.ip_address(host)
+        return host
+    except ValueError:
+        pass
     labels = host.split(".")
     if len(labels) <= 2:
         return host

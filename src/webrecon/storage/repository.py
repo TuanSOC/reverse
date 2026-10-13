@@ -15,6 +15,7 @@ from .database import Database
 from .models import (
     Asset,
     Certificate,
+    Cookie,
     DnsRecord,
     Endpoint,
     EvidenceRecord,
@@ -86,6 +87,7 @@ class ScanRepository:
             )
             for f in result.findings:
                 finding = FindingRecord(
+                    id=f.id,  # same id as the live report / timeline
                     scan_id=scan_id,
                     check_id=f.check_id,
                     name=f.name,
@@ -104,6 +106,7 @@ class ScanRepository:
                 for ev in f.evidence:
                     s.add(
                         EvidenceRecord(
+                            id=ev.id,
                             scan_id=scan_id,
                             finding_id=finding.id,
                             source=ev.source,
@@ -272,6 +275,13 @@ class ScanRepository:
                 # Reassign (not mutate) so the JSON column change is tracked.
                 row.meta = {**(row.meta or {}), "js": js}
 
+    async def save_cookies(self, scan_id: str, cookies: list) -> None:
+        """Persist cookie names + flags from Set-Cookie (values are never stored)."""
+        async with self.db.session() as s:
+            for c in cookies:
+                s.add(Cookie(scan_id=scan_id, name=c.name, domain=c.domain, path=c.path,
+                             secure=c.secure, http_only=c.http_only, same_site=c.same_site))
+
     async def save_events(self, scan_id: str, events: list[ScanEvent]) -> None:
         """Append timeline events (the pipeline flushes them incrementally)."""
         if not events:
@@ -296,3 +306,55 @@ class ScanRepository:
                 .where(Scan.id == scan_id)
                 .values(status=status, finished_at=_utcnow())
             )
+
+    async def delete_scan(self, scan_id: str) -> bool:
+        """Delete a scan and every row it owns; drop an orphaned target too.
+
+        Returns ``False`` if the scan did not exist. Children are removed before
+        parents so the delete holds regardless of FK-enforcement settings.
+        """
+        from sqlalchemy import delete, func, select
+
+        from .models import (
+            AiAnalysisRecord,
+            Certificate,
+            Cookie,
+            DnsRecord,
+            EvidenceRecord,
+            IpIntelRecord,
+            RequestRecord,
+            ResponseRecord,
+            ScanEventRecord,
+        )
+
+        # child-first order (evidence→findings, responses→requests, then the rest)
+        scoped = [
+            EvidenceRecord, FindingRecord, ResponseRecord, RequestRecord, ModuleRun,
+            Page, Asset, Technology, DnsRecord, IpIntelRecord, Certificate, Endpoint,
+            Form, Cookie, ScanEventRecord, AiAnalysisRecord,
+        ]
+        async with self.db.session() as s:
+            scan = await s.get(Scan, scan_id)
+            if scan is None:
+                return False
+            target_id = scan.target_id
+            for model in scoped:
+                await s.execute(delete(model).where(model.scan_id == scan_id))  # type: ignore[attr-defined]
+            await s.execute(delete(Scan).where(Scan.id == scan_id))
+            # Remove the target if no other scan references it.
+            remaining = await s.scalar(
+                select(func.count()).select_from(Scan).where(Scan.target_id == target_id))
+            if not remaining:
+                await s.execute(delete(Target).where(Target.id == target_id))
+        _delete_screenshot(scan_id)
+        return True
+
+
+def _delete_screenshot(scan_id: str) -> None:
+    """Best-effort removal of a scan's screenshot file."""
+    from pathlib import Path
+
+    with __import__("contextlib").suppress(OSError):
+        p = Path("scans/screenshots") / f"{scan_id}.png"
+        if p.exists():
+            p.unlink()
