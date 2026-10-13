@@ -1,0 +1,34 @@
+# WebRecon — PUBLIC READ-ONLY DEMO image.
+#
+# Serves a dashboard that anyone can view but NO ONE can scan with: starting,
+# cancelling or deleting a scan and running the AI all return HTTP 403. Bakes a
+# pre-made scan database into the image so a stateless cloud host (Render,
+# Railway, Fly.io, …) can serve it with no volume and no secrets.
+#
+# Build (from the repo root, after putting the scan DB at ./demo.db):
+#     cp webrecon.db demo.db
+#     docker build -f Dockerfile.demo -t webrecon-demo .
+#     docker run -p 8000:8000 webrecon-demo
+#
+# NOTE: do NOT pass GROQ_API_KEY to this image — read-only mode never calls the
+# AI, so the key is neither needed nor exposed. The demo.db you bake in becomes
+# public, so only include scans you are comfortable publishing.
+FROM mcr.microsoft.com/playwright/python:v1.47.0-jammy
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY src ./src
+RUN pip install --no-cache-dir ".[engine,browser,api,report]"
+
+# The scan database to show, baked in (read-only, no volume needed).
+COPY demo.db /data/webrecon.db
+
+ENV WEBRECON_READ_ONLY=1 \
+    WEBRECON_DATABASE_URL="sqlite+aiosqlite:////data/webrecon.db"
+EXPOSE 8000
+
+ENTRYPOINT ["webrecon"]
+# A host that injects $PORT: override with  serve --host 0.0.0.0 --port $PORT --read-only
+CMD ["serve", "--host", "0.0.0.0", "--port", "8000", "--read-only", \
+     "--database-url", "sqlite+aiosqlite:////data/webrecon.db"]
