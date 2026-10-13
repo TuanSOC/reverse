@@ -25,6 +25,7 @@ credentials) are always masked.
 | `assets`, `pages`, `forms`, `technologies`, `dns`, `certificates` | Inventories. |
 | `js` | JS Explorer rows: hash, size, frameworks, regex + AST endpoints, source-map status, secret *count*. |
 | `graph` | Unified asset graph `{nodes:[{id,label,type,source,confidence,props}], edges:[{source,target,relation}]}`. |
+| `openapi.json` / `openapi.yaml` | Reconstructed OpenAPI 3.1 spec from the scan's endpoints (downloadable; unknown format → `400`). |
 | `attack-surface` | Hierarchical tree (domain → web surface / assets / tech / infra) with per-branch `max_severity` and `finding_count`. |
 | `auth-flow` | Detection-only auth model: `kind`, `confidence`, `steps` (English narrative) with parallel `step_keys` (stable ids: `form`, `login`, `session`, `identity`, `logout`, `redirect`, `authorize`, `callback`, `token`), auth endpoints, login-form / session-cookie flags. |
 | `timeline?kind=` | Ordered scan events (`scan`, `module`, `auth`, `discovered`, `observed`, `finding`). |

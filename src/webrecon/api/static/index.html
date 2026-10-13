@@ -744,6 +744,7 @@ en:{
   "d.validity":"Validity","d.notBefore":"Not before","d.notAfter":"Not after","d.details":"Details",
   "d.signals":"Evidence signals","d.provenance":"Provenance","d.from":"Discovered from","d.seed":"seed",
   "d.integrity":"Integrity",
+  "ep.openapi":"↓ OpenAPI 3.1","ep.openapiTip":"Download a reconstructed OpenAPI 3.1 spec (JSON)",
   "ep.title":"Endpoint Explorer","ep.sub":"{n} endpoints · click a row for parameters and provenance",
   "ep.none":"No endpoints were discovered.","ep.search":"Search URL…","ep.authParam":"auth param",
   "js.title":"JS Explorer","js.sub":"{n} scripts · {a} fetched and analyzed","js.none":"No JavaScript files.",
@@ -885,6 +886,7 @@ vi:{
   "d.subjIssuer":"Chủ thể / Nơi cấp","d.validity":"Hiệu lực","d.notBefore":"Bắt đầu","d.notAfter":"Hết hạn",
   "d.details":"Chi tiết","d.signals":"Tín hiệu nhận diện","d.provenance":"Nguồn gốc","d.from":"Phát hiện từ",
   "d.seed":"trang gốc","d.integrity":"Toàn vẹn",
+  "ep.openapi":"↓ OpenAPI 3.1","ep.openapiTip":"Tải spec OpenAPI 3.1 dựng lại (JSON)",
   "ep.title":"Khám phá endpoint","ep.sub":"{n} endpoint · bấm vào dòng để xem tham số và nguồn gốc",
   "ep.none":"Không tìm thấy endpoint nào.","ep.search":"Tìm URL…","ep.authParam":"tham số xác thực",
   "js.title":"Khám phá JavaScript","js.sub":"{n} script · {a} đã tải và phân tích","js.none":"Không có file JavaScript.",
@@ -1705,7 +1707,7 @@ async function endpointExplorer(){
     return {...e,host:hostOf(e.url),status:e.meta?.discovery_status||"",params,
       pclasses:uniq(params.map(p=>p.classification)),
       auth:role[e.url]||(params.some(p=>AUTH_PARAM.has(p.classification))?t("ep.authParam"):"")};});
-  const w=el("div");w.append(pageHead(t("ep.title"),t("ep.sub",{n:d.length})));
+  const w=el("div");w.append(pageHead(t("ep.title"),t("ep.sub",{n:d.length}),el("a",{href:`/api/scans/${SID()}/openapi.json`,target:"_blank",rel:"noopener",title:t("ep.openapiTip")},el("button",{class:"ghost",tabindex:"-1"},t("ep.openapi")))));
   if(!d.length){w.append(emptyState(t("ep.none")));return w;}
   const f={};const bar=el("div",{class:"filters"});
   const q=el("input",{placeholder:t("ep.search"),oninput:apply});bar.append(el("label",{},t("search"),q));

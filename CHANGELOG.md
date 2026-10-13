@@ -7,6 +7,9 @@ semantic versioning.
 ## [Unreleased] — v0.4.0 intelligence + hardening
 
 ### Added
+- OpenAPI 3.1 synthesis: reconstruct a spec from a scan's endpoints +
+  classified parameters — `webrecon openapi`, `GET /api/scans/{id}/openapi.{json,yaml}`,
+  and a “Download OpenAPI” button in the dashboard Endpoint Explorer.
 - Scan cleanup: delete a stored scan and everything it owns via
   `DELETE /api/scans/{id}`, `webrecon delete <id>`, and a trash button (two-click
   confirm) in the dashboard scan switcher.
@@ -34,6 +37,8 @@ semantic versioning.
 - Dashboard: colored HTTP-method badges across Endpoints / Attack Surface /
   Timeline / Auth Flow, inline copy-URI in the endpoints table, and KPI cards
   with icons + coverage/confidence rings (SPEC.md visual items; no external fonts).
+- Dashboard: auth-flow pipeline nodes now show the matched endpoint's method
+  badge and observed/referenced status dot with its URL (SPEC.md §2.2).
 - `auth-flow` now returns `step_keys` alongside `steps` (stable ids for UIs).
 
 ### Security

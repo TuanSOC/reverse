@@ -40,6 +40,11 @@ Delete a stored scan and every row it owns (findings, endpoints, assets, events,
 AI analyses, screenshot…) plus an orphaned target. Irreversible; prompts for
 confirmation unless `--yes`.
 
+### `webrecon openapi [SCAN_ID] [--out FILE] [--yaml]`
+Synthesize an OpenAPI 3.1 spec from a stored scan's endpoints and classified
+parameters (default: latest scan). JSON to stdout, or `--out` to a file; `--yaml`
+for YAML. Pure reconstruction — nothing is sent to the target.
+
 ### Read commands — `findings`, `endpoints`, `assets`, `graph`
 ```
 webrecon findings  [SCAN_ID] [--min-severity high] [--json]

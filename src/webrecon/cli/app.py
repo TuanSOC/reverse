@@ -747,6 +747,30 @@ def graph_cmd(
     console.print(et)
 
 
+@app.command("openapi")
+def openapi_cmd(
+    scan_id: str | None = _SCAN_ARG,
+    out: str | None = typer.Option(None, "--out", help="Write the spec to this file."),
+    as_yaml: bool = typer.Option(False, "--yaml", help="Emit YAML instead of JSON."),
+    database_url: str = _DB_OPT,
+) -> None:
+    """Synthesize an OpenAPI 3.1 spec from a stored scan's endpoints."""
+    import json as _json
+    from pathlib import Path
+
+    from ..intel.openapi import openapi_from_db, to_yaml
+
+    sid, doc = _load_for_scan(database_url, scan_id, openapi_from_db)
+    text = to_yaml(doc) if as_yaml else _json.dumps(doc, indent=2)
+    if out:
+        p = Path(out)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        console.print(f"[green]OK[/] OpenAPI 3.1 ({len(doc['paths'])} path(s)) -> {out}")
+    else:
+        typer.echo(text)
+
+
 @app.command()
 def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Bind host."),

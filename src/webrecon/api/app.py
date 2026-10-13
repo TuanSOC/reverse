@@ -134,6 +134,20 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
     async def attack_surface(scan_id: str) -> dict:
         return await queries.get_attack_surface(db(), scan_id)
 
+    @app.get("/api/scans/{scan_id}/openapi.{fmt}")
+    async def openapi_spec(scan_id: str, fmt: str):
+        from ..intel.openapi import openapi_from_db, to_yaml
+
+        if fmt not in ("json", "yaml", "yml"):
+            raise HTTPException(400, "format must be json or yaml")
+        doc = await openapi_from_db(db(), scan_id)
+        name = f"openapi-{scan_id[:8]}"
+        if fmt == "json":
+            return JSONResponse(doc, headers={
+                "Content-Disposition": f'attachment; filename="{name}.json"'})
+        return Response(to_yaml(doc), media_type="application/yaml", headers={
+            "Content-Disposition": f'attachment; filename="{name}.yaml"'})
+
     @app.get("/api/scans/{scan_id}/js")
     async def js_files(scan_id: str) -> list[dict]:
         return await queries.get_js_files(db(), scan_id)
