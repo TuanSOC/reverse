@@ -52,7 +52,22 @@ class StartScanRequest(BaseModel):
     ai_provider: str | None = None
 
 
-def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI:
+def _env_read_only() -> bool:
+    import os
+
+    return os.getenv("WEBRECON_READ_ONLY", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def create_app(
+    database_url: str = "sqlite+aiosqlite:///webrecon.db",
+    *,
+    read_only: bool | None = None,
+) -> FastAPI:
+    # Public/demo deploy: serve stored scans for viewing but refuse anything that
+    # starts traffic, mutates, or spends the AI key. CLI flag wins; env is the
+    # fallback so a container can enable it without arguments.
+    ro = _env_read_only() if read_only is None else read_only
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         configure_logging()
@@ -63,9 +78,26 @@ def create_app(database_url: str = "sqlite+aiosqlite:///webrecon.db") -> FastAPI
         await db.dispose()
 
     app = FastAPI(title="WebRecon", version="0.1.0", lifespan=lifespan)
+    app.state.read_only = ro
+
+    if ro:
+        # Defense in depth: block every write method, so a mutating route added
+        # later is refused by default rather than silently exposed.
+        @app.middleware("http")
+        async def _block_writes(request, call_next):  # type: ignore[no-untyped-def]
+            if request.method not in ("GET", "HEAD", "OPTIONS"):
+                return JSONResponse(
+                    {"detail": "read-only demo: this instance cannot start or modify scans"},
+                    status_code=403,
+                )
+            return await call_next(request)
 
     def db() -> Database:
         return app.state.db
+
+    @app.get("/api/meta")
+    async def meta() -> dict[str, Any]:
+        return {"read_only": bool(app.state.read_only), "version": app.version}
 
     @app.get("/api/scans")
     async def scans() -> list[dict]:

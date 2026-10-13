@@ -5,10 +5,15 @@ dashboard at `/` is a client of exactly these routes. All responses are JSON
 unless noted; secret values (cookies, auth headers, passwords, matched
 credentials) are always masked.
 
+When started with `--read-only` (or `WEBRECON_READ_ONLY=1`) the server refuses
+every non-`GET` request with `403` — a public/demo instance that can be viewed
+but not used to scan. `GET /api/meta` → `{read_only, version}` reports the mode.
+
 ## Scans
 
 | Method | Path | Purpose |
 |---|---|---|
+| `GET` | `/api/meta` | `{read_only, version}` — server mode, so clients can hide write controls. |
 | `GET` | `/api/scans` | List scans, newest first: `[{id, target, status, created_at, finished_at, findings}]`. |
 | `POST` | `/api/scans` | Start a scan in the background → `{scan_id}`. Body: `url`, `depth`, `max_pages`, `scope_mode`, `browser`, `allow_private`, `active`, `probe`, `cookie`, `headers[]`, `login_url`/`login_user`/`login_pass`, `ai`, `ai_provider`. A bad `ai_provider` (or `groq` without a key) → `400` before anything starts. |
 | `POST` | `/api/scans/{id}/cancel` | Cooperative cancellation → `{cancelled: bool}`. |

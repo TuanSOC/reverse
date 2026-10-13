@@ -17,9 +17,15 @@ Create the local scan database schema. Defaults to
 List registered scanner modules in dependency order (name, version, requires,
 description).
 
-### `webrecon serve [--host H] [--port P] [--database-url URL]`
+### `webrecon serve [--host H] [--port P] [--database-url URL] [--read-only]`
 Launch the dashboard (FastAPI) at `http://host:port` (default 127.0.0.1:8000).
 Reads scans from the database and can start new scans with live progress.
+
+`--read-only` (or env `WEBRECON_READ_ONLY=1`) starts a public/demo instance:
+stored scans stay fully viewable but every write — starting, cancelling, or
+deleting a scan, and running the AI — is refused with HTTP 403, and the
+dashboard hides those controls. Use it to share a scan publicly without
+exposing a scanner or the AI key.
 
 ### `webrecon scans [--database-url URL]`
 List stored scans (id prefix, target, status, findings, created).

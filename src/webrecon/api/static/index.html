@@ -493,6 +493,12 @@
     dialog .row{flex-direction:column;gap:0}
     .finding .head .cid{flex-basis:100%;margin-left:0;order:9}
   }
+  /* read-only / public demo: hide every control that would start or change a scan */
+  body.ro #newScanBtn,body.ro .switcher-del,body.ro .ai-run{display:none!important}
+  .demo-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+    letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;
+    background:var(--accent-weak,rgba(120,120,255,.14));color:var(--accent,#5b6cff);
+    border:1px solid var(--accent,#5b6cff)}
 </style>
 </head>
 <body>
@@ -513,6 +519,7 @@
     <div id="progress" class="prog" aria-live="polite"></div>
     <button id="cancelBtn" class="danger" hidden data-i18n="cancel">Cancel</button>
     <div class="spacer"></div>
+    <span id="demoBadge" class="demo-badge" hidden data-i18n="demo.badge" data-i18n-title="demo.tip">Demo · read-only</span>
     <button class="icon" id="paletteBtn" data-i18n-title="palette">⌘K</button>
     <button class="icon" id="langBtn">VI</button>
     <button class="icon" id="themeBtn" data-i18n-title="theme">◐</button>
@@ -663,6 +670,8 @@ function card(k,v){return el("div",{class:"card"},el("div",{class:"k"},k),
 const I18N={
 en:{
   newScan:"New Scan",cancel:"Cancel",close:"Close",menu:"Menu",palette:"Command palette (Ctrl+K)",
+  "demo.badge":"Demo · read-only","demo.tip":"Public demo: viewing stored scans only. Starting, deleting, or AI runs are disabled.",
+  "demo.blocked":"Read-only demo — scanning is disabled on this instance.",
   theme:"Toggle light/dark theme",lang:"Tiếng Việt",selectScan:"Select a scan",noScans:"— no scans yet —",
   selFindings:"{n} findings",search:"search",searchRows:"Search {n} rows…",all:"all",nothing:"Nothing here.",
   noMatch:"No matches.",shownOf:"{a} of {b} shown",copy:"copy",copied:"Copied",rawToggle:"Toggle raw JSON",
@@ -804,6 +813,8 @@ en:{
 },
 vi:{
   newScan:"Quét mới",cancel:"Hủy",close:"Đóng",menu:"Menu",palette:"Bảng lệnh (Ctrl+K)",
+  "demo.badge":"Demo · chỉ xem","demo.tip":"Bản demo công khai: chỉ xem các scan đã lưu. Không thể bắt đầu quét, xoá, hay chạy AI.",
+  "demo.blocked":"Bản demo chỉ-xem — tính năng quét đã bị tắt trên instance này.",
   theme:"Đổi giao diện sáng/tối",lang:"English",selectScan:"Chọn lần quét",noScans:"— chưa có lần quét —",
   selFindings:"{n} phát hiện",search:"tìm",searchRows:"Tìm trong {n} dòng…",all:"tất cả",nothing:"Không có dữ liệu.",
   noMatch:"Không có kết quả phù hợp.",shownOf:"Hiển thị {a}/{b}",copy:"chép",copied:"Đã chép",
@@ -985,7 +996,7 @@ const slug=s=>s.toLowerCase().replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"");
 const BYSLUG=Object.fromEntries(FLATSECTIONS.map(s=>[slug(s),s]));
 const state={scanId:null,scans:[],section:"Home",ws:null,runningId:null,renderSeq:0,
   sevFilter:new Set(),catFilter:new Set(),confFilter:new Set(),secretsOnly:false,
-  counts:{},searchIndex:[]};
+  counts:{},searchIndex:[],readOnly:false};
 const SID=()=>state.scanId;
 function fromHash(){return BYSLUG[location.hash.replace(/^#\/?/,"")]||"Home";}
 function go(section){const h="#/"+slug(section);if(location.hash===h)route();else location.hash=h;}
@@ -1991,7 +2002,7 @@ async function aiView(){
   const w=el("div");w.append(pageHead(t("sec.AI Analysis"),t("ai.sub")));
   const opts=r.groq_available?[["groq","Groq"],["stub",t("ai.stub")]]:[["stub",t("ai.stub")]];
   const prov=el("select",{"aria-label":t("ai.provider")},...opts.map(([v,l])=>el("option",{value:v},l)));
-  const btn=el("button",{class:"primary",onclick:run},r.analysis?t("ai.rerun"):t("ai.run"));
+  const btn=el("button",{class:"primary ai-run",onclick:run},r.analysis?t("ai.rerun"):t("ai.run"));
   const bar=el("div",{class:"toolbar"},el("span",{class:"sub"},t("ai.provider")),prov,btn);
   if(!r.groq_available)bar.append(el("span",{class:"kv"},t("ai.noKey")));
   w.append(bar);
@@ -2001,6 +2012,7 @@ async function aiView(){
     aiPoll=setTimeout(()=>{if(state.section==="AI Analysis"&&SID()===sid)render();},3000);}
   else out.append(emptyState(t("ai.none"),{label:t("ai.run"),run},t("ai.noneHint")));
   async function run(){
+    if(state.readOnly){toast(t("demo.blocked"),"err");return;}
     btn.disabled=true;btn.textContent=t("ai.running");out.innerHTML="";out.append(skeleton(6));
     try{
       const res=await fetch(`/api/scans/${sid}/ai?provider=${encodeURIComponent(prov.value)}`,{method:"POST"});
@@ -2215,6 +2227,7 @@ async function buildSearchIndex(){
 
 /* ---- new scan dialog ---- */
 function openScanDialog(prefill={}){
+  if(state.readOnly){toast(t("demo.blocked"),"err");return;}
   if(prefill.url)$("#f_url").value=prefill.url;
   $("#f_authBox").open=!!prefill.auth;
   $("#f_err").textContent="";
@@ -2299,7 +2312,7 @@ addEventListener("keydown",e=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==
 function buildPalette(q){
   const actions=[
     ...FLATSECTIONS.map(s=>({label:t("pal.goto",{s:t("sec."+s)}),hint:t("pal.section"),run:()=>go(s)})),
-    {label:t("newScan"),hint:t("pal.action"),run:()=>openScanDialog()},
+    ...(state.readOnly?[]:[{label:t("newScan"),hint:t("pal.action"),run:()=>openScanDialog()}]),
     {label:t("x.title")+"…",hint:t("pal.action"),run:()=>$("#exportDialog").showModal()},
     {label:t("theme"),hint:t("pal.action"),run:()=>$("#themeBtn").click()},
     {label:t("lang"),hint:t("pal.action"),run:()=>$("#langBtn").click()},
@@ -2328,11 +2341,20 @@ PALIN.onkeydown=e=>{
 PAL.onclick=e=>{if(e.target===PAL)closePalette();};
 
 /* ============================ boot ============================ */
+async function applyMeta(){
+  try{
+    const m=await api("/api/meta");
+    state.readOnly=!!m.read_only;
+  }catch{/* older server without /api/meta: treat as writable */}
+  document.body.classList.toggle("ro",state.readOnly);
+  const badge=$("#demoBadge");if(badge)badge.hidden=!state.readOnly;
+}
 applyStatic();
 syncNavInert();
 state.section=fromHash();
 renderNav();
-loadScans().then(()=>refreshCounts()).then(render)
+applyMeta()
+  .then(()=>loadScans()).then(()=>refreshCounts()).then(render)
   .catch(e=>{$("#main").innerHTML="";$("#main").append(errorState(e,()=>location.reload()));});
 </script>
 </body>

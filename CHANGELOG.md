@@ -7,6 +7,12 @@ semantic versioning.
 ## [Unreleased] — v0.4.0 intelligence + hardening
 
 ### Added
+- Read-only / public-demo mode: `webrecon serve --read-only` (or
+  `WEBRECON_READ_ONLY=1`) serves stored scans for viewing but refuses every
+  write — starting, cancelling, or deleting a scan and running the AI all return
+  403 (enforced by middleware, defence in depth), `GET /api/meta` advertises the
+  mode, and the dashboard hides the Scan/Delete/AI controls and shows a demo
+  badge. Lets a scan be shared publicly without exposing a scanner or the AI key.
 - OpenAPI 3.1 synthesis: reconstruct a spec from a scan's endpoints +
   classified parameters — `webrecon openapi`, `GET /api/scans/{id}/openapi.{json,yaml}`,
   and a “Download OpenAPI” button in the dashboard Endpoint Explorer.

@@ -778,6 +778,11 @@ def serve(
     database_url: str = typer.Option(
         "sqlite+aiosqlite:///webrecon.db", "--database-url", help="SQLAlchemy async URL."
     ),
+    read_only: bool = typer.Option(
+        False,
+        "--read-only",
+        help="Public/demo mode: view stored scans only; block starting, deleting, or AI runs.",
+    ),
 ) -> None:
     """Launch the dashboard (FastAPI) at http://host:port."""
     try:
@@ -788,8 +793,11 @@ def serve(
         console.print("[red]Dashboard deps missing.[/] Install with: pip install -e '.[api]'")
         raise typer.Exit(1) from None
 
-    console.print(f"[bold]WebRecon dashboard[/] on [cyan]http://{host}:{port}[/]")
-    uvicorn.run(create_app(database_url), host=host, port=port, log_level="info")
+    mode = " [yellow](read-only demo)[/]" if read_only else ""
+    console.print(f"[bold]WebRecon dashboard[/] on [cyan]http://{host}:{port}[/]{mode}")
+    uvicorn.run(
+        create_app(database_url, read_only=read_only), host=host, port=port, log_level="info"
+    )
 
 
 def _force_utf8_stdio() -> None:
