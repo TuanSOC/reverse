@@ -1,0 +1,27 @@
+# Fly.io config for the PUBLIC READ-ONLY demo (uses Dockerfile.demo).
+# One-time deploy from the repo root:
+#     cp webrecon.db demo.db        # the scan to show (becomes public)
+#     fly auth login                # YOUR account — only you can do this
+#     fly launch --no-deploy --copy-config --name <pick-a-name>
+#     fly deploy
+# The app serves read-only (writes return 403); no secrets, no AI key needed.
+app = "webrecon-demo"            # change to your own unique app name
+primary_region = "sin"          # Singapore; pick the region nearest your viewers
+
+[build]
+  dockerfile = "Dockerfile.demo"
+
+[env]
+  WEBRECON_READ_ONLY = "1"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0      # scale to zero when idle (demo, cost-free)
+
+[[vm]]
+  memory = "1gb"                # Playwright base image is large; 1GB is safe
+  cpu_kind = "shared"
+  cpus = 1
